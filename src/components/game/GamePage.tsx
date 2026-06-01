@@ -28,6 +28,9 @@ export default function GamePage() {
   const [modal, setModal] = useState<ModalId>(null);
   const [plotIndex, setPlotIndex] = useState(0);
   const [offlineSeen, setOfflineSeen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return <div className="fixed inset-0 bg-gradient-sky" />;
 
   const dailyReady = Date.now() - game.state.lastDailyClaim >= 22 * 3600 * 1000;
   const claimableAchievements = ACHIEVEMENTS.filter((a) => {
