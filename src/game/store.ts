@@ -48,19 +48,25 @@ export const computeRates = (state: GameState): Resources => {
   const island = ISLANDS.find((i) => i.id === state.activeIsland)!;
   const islandMult = island.rateBonus;
   const speed = state.boosters.speedBoostUntil > Date.now() ? 2 : 1;
-  const workerMult = 1 + state.boosters.extraWorkers * 0.1;
+  const workerMult = 1 + state.boosters.extraWorkers * 0.05;
   const goldDouble = state.boosters.doubleIncomeUntil > Date.now() ? 2 : 1;
 
-  const rates: Resources = { gold: 0, wood: 0, stone: 0, energy: 0 };
+  const raw: Resources = { gold: 0, wood: 0, stone: 0, energy: 0 };
   for (const b of state.buildings) {
     if (!b) continue;
     const def = BUILDINGS.find((d) => d.id === b.id);
     if (!def) continue;
     let r = buildingRate(def, b.level) * islandMult * speed * workerMult;
     if (def.produces === "gold") r *= goldDouble;
-    rates[def.produces] += r;
+    raw[def.produces] += r;
   }
-  return rates;
+  // Apply soft cap per resource to prevent early-game wealth explosions.
+  return {
+    gold: applySoftCap(raw.gold, state.level),
+    wood: applySoftCap(raw.wood, state.level),
+    stone: applySoftCap(raw.stone, state.level),
+    energy: applySoftCap(raw.energy, state.level),
+  };
 };
 
 export function useGameStore() {
