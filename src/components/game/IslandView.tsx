@@ -2205,12 +2205,47 @@ function Crate({ position, rotation = 0 }: { position: [number, number, number];
   );
 }
 
-function SandPathTile({ position, rotation = 0 }: { position: [number, number, number]; rotation?: number }) {
+function PathSegment({
+  position,
+  rotation = 0,
+  length = 1,
+  width = 0.9,
+}: {
+  position: [number, number, number];
+  rotation?: number;
+  length?: number;
+  width?: number;
+}) {
   return (
-    <mesh position={position} rotation={[-Math.PI / 2, 0, rotation]} receiveShadow>
-      <circleGeometry args={[0.35, 16]} />
-      <meshStandardMaterial color={PALETTE.sandLight} roughness={1} />
-    </mesh>
+    <group position={position} rotation={[0, rotation, 0]}>
+      {/* Dark border / shadow base */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.005, 0]} receiveShadow>
+        <planeGeometry args={[length + 0.18, width + 0.18]} />
+        <meshStandardMaterial color="#8a6a3d" roughness={1} />
+      </mesh>
+      {/* Sand surface */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+        <planeGeometry args={[length, width]} />
+        <meshStandardMaterial color={PALETTE.sandLight} roughness={1} />
+      </mesh>
+      {/* Stepping stones */}
+      {Array.from({ length: Math.max(1, Math.round(length / 0.55)) }).map((_, i, arr) => {
+        const t = (i + 0.5) / arr.length;
+        const x = (t - 0.5) * length;
+        const off = ((i % 2) - 0.5) * 0.18;
+        return (
+          <mesh
+            key={i}
+            position={[x, 0.012, off]}
+            rotation={[-Math.PI / 2, 0, (i * 0.7) % Math.PI]}
+            receiveShadow
+          >
+            <circleGeometry args={[0.18 + (i % 3) * 0.02, 10]} />
+            <meshStandardMaterial color={PALETTE.pathStone} roughness={0.95} />
+          </mesh>
+        );
+      })}
+    </group>
   );
 }
 
@@ -2356,14 +2391,7 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
         rot: rng() * Math.PI,
       };
     });
-    // Low hills/mounds on the grass for terrain variation
-    const hills: { pos: [number, number, number]; scale: number }[] = [
-      { pos: [-4.5, 0.45, -2.5], scale: 2.6 },
-      { pos: [4.2, 0.45, 3.2], scale: 2.3 },
-      { pos: [-2, 0.45, 5.5], scale: 1.8 },
-      { pos: [5.5, 0.45, -4], scale: 2.0 },
-    ];
-    return { flowers, rocks, bushes, mushrooms, lanterns, grassTufts, shells, driftwood, hills };
+    return { flowers, rocks, bushes, mushrooms, lanterns, grassTufts, shells, driftwood };
   }, []);
 
 
@@ -2432,9 +2460,6 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
         {decor.lanterns.map((p, i) => (
           <Lantern key={`l-${i}`} position={p} />
         ))}
-        {decor.hills.map((h, i) => (
-          <Hill key={`h-${i}`} position={h.pos} scale={h.scale} tint={tint} />
-        ))}
         {decor.grassTufts.map((p, i) => (
           <GrassTuft key={`gt-${i}`} position={p} tint={PALETTE.grassMid} />
         ))}
@@ -2502,19 +2527,37 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
         </NoHit>
       )}
 
-      {/* Sand paths from the central fountain to every built plot */}
+      {/* Sand road from the central fountain to every built plot */}
       <NoHit>
         {slots.map((pos, i) => {
           if (!state.buildings[i]) return null;
-          const tiles = 6;
-          return Array.from({ length: tiles }).map((_, t) => {
-            const k = (t + 1) / (tiles + 1);
-            const x = pos[0] * k;
-            const z = pos[1] * k;
-            return <SandPathTile key={`pth-${i}-${t}`} position={[x, 0.515, z]} />;
+          const dx = pos[0];
+          const dz = pos[1];
+          const dist = Math.hypot(dx, dz);
+          if (dist < 0.4) return null;
+          const angle = Math.atan2(dz, dx);
+          // Stop short of building footprint
+          const usable = Math.max(0.5, dist - 0.9);
+          const segLen = 1.6;
+          const segCount = Math.max(1, Math.ceil(usable / segLen));
+          const actualLen = usable / segCount;
+          return Array.from({ length: segCount }).map((_, t) => {
+            const center = (t + 0.5) * actualLen;
+            const x = Math.cos(angle) * center;
+            const z = Math.sin(angle) * center;
+            return (
+              <PathSegment
+                key={`pth-${i}-${t}`}
+                position={[x, 0.515, z]}
+                rotation={-angle}
+                length={actualLen + 0.02}
+                width={0.85}
+              />
+            );
           });
         })}
       </NoHit>
+
 
       {/* Plots / buildings */}
       {slots.map((pos, i) => {
