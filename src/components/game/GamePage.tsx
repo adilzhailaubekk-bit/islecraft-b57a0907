@@ -227,13 +227,14 @@ function UpgradesShortcut({
 }) {
   return (
     <Modal open={open} onClose={onClose} title="Ваши здания" icon="🔨">
-      {state.buildings.length === 0 ? (
+      {state.buildings.filter(Boolean).length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
           Постройте первое здание, нажав на свободный участок на острове!
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 gap-2">
           {state.buildings.map((b, i) => {
+            if (!b) return null;
             const def = BUILDINGS.find((d) => d.id === b.id)!;
             return (
               <button
