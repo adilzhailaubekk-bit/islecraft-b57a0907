@@ -1871,6 +1871,11 @@ function IslandScene({ state, onPlotClick }: IslandViewProps) {
       <Fish radius={11} depth={-0.7} speed={0.5} color="#ff8040" />
       <Fish radius={13} depth={-0.9} speed={-0.35} color="#60c0ff" />
       <Fish radius={9} depth={-0.6} speed={0.65} color="#ff60a0" />
+
+      <Crab seed={1} />
+      {!lowPower && <Crab seed={3} />}
+      <Dolphin radius={20} phase={0} speed={0.18} />
+      {!lowPower && <Dolphin radius={22} phase={3} speed={-0.16} />}
     </>
   );
 }
