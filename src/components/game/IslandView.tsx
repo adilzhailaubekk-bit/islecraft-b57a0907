@@ -86,11 +86,6 @@ function IslandBase({ tint }: { tint: string }) {
         <cylinderGeometry args={[7.2, 8.4, 0.55, 64]} />
         <meshStandardMaterial color={tint} roughness={0.85} />
       </mesh>
-      {/* Slight hill in centre */}
-      <mesh position={[1.5, 0.55, -1]} receiveShadow castShadow>
-        <sphereGeometry args={[2.2, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
-        <meshStandardMaterial color={tint} roughness={0.9} />
-      </mesh>
     </group>
   );
 }
