@@ -2205,12 +2205,47 @@ function Crate({ position, rotation = 0 }: { position: [number, number, number];
   );
 }
 
-function SandPathTile({ position, rotation = 0 }: { position: [number, number, number]; rotation?: number }) {
+function PathSegment({
+  position,
+  rotation = 0,
+  length = 1,
+  width = 0.9,
+}: {
+  position: [number, number, number];
+  rotation?: number;
+  length?: number;
+  width?: number;
+}) {
   return (
-    <mesh position={position} rotation={[-Math.PI / 2, 0, rotation]} receiveShadow>
-      <circleGeometry args={[0.35, 16]} />
-      <meshStandardMaterial color={PALETTE.sandLight} roughness={1} />
-    </mesh>
+    <group position={position} rotation={[0, rotation, 0]}>
+      {/* Dark border / shadow base */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.005, 0]} receiveShadow>
+        <planeGeometry args={[length + 0.18, width + 0.18]} />
+        <meshStandardMaterial color="#8a6a3d" roughness={1} />
+      </mesh>
+      {/* Sand surface */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+        <planeGeometry args={[length, width]} />
+        <meshStandardMaterial color={PALETTE.sandLight} roughness={1} />
+      </mesh>
+      {/* Stepping stones */}
+      {Array.from({ length: Math.max(1, Math.round(length / 0.55)) }).map((_, i, arr) => {
+        const t = (i + 0.5) / arr.length;
+        const x = (t - 0.5) * length;
+        const off = ((i % 2) - 0.5) * 0.18;
+        return (
+          <mesh
+            key={i}
+            position={[x, 0.012, off]}
+            rotation={[-Math.PI / 2, 0, (i * 0.7) % Math.PI]}
+            receiveShadow
+          >
+            <circleGeometry args={[0.18 + (i % 3) * 0.02, 10]} />
+            <meshStandardMaterial color={PALETTE.pathStone} roughness={0.95} />
+          </mesh>
+        );
+      })}
+    </group>
   );
 }
 
