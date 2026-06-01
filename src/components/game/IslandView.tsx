@@ -2360,7 +2360,7 @@ export function IslandView({ state, onPlotClick, moveMode, movingFrom }: IslandV
           frameloop="always"
         >
           <Suspense fallback={null}>
-            <IslandScene state={state} onPlotClick={onPlotClick} />
+            <IslandScene state={state} onPlotClick={onPlotClick} moveMode={moveMode} movingFrom={movingFrom} />
             <CameraRig />
           </Suspense>
         </Canvas>
