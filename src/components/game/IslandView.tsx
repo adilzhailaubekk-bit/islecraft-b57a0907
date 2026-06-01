@@ -2391,14 +2391,7 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
         rot: rng() * Math.PI,
       };
     });
-    // Low hills/mounds on the grass for terrain variation
-    const hills: { pos: [number, number, number]; scale: number }[] = [
-      { pos: [-4.5, 0.45, -2.5], scale: 2.6 },
-      { pos: [4.2, 0.45, 3.2], scale: 2.3 },
-      { pos: [-2, 0.45, 5.5], scale: 1.8 },
-      { pos: [5.5, 0.45, -4], scale: 2.0 },
-    ];
-    return { flowers, rocks, bushes, mushrooms, lanterns, grassTufts, shells, driftwood, hills };
+    return { flowers, rocks, bushes, mushrooms, lanterns, grassTufts, shells, driftwood };
   }, []);
 
 
