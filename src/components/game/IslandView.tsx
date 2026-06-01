@@ -2444,9 +2444,6 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
       
       <FoamRing />
       <BeachDecor />
-      {!lowPower && (
-        <ContactShadows position={[0, 0.52, 0]} opacity={0.3} scale={18} blur={2.4} far={5} resolution={256} />
-      )}
 
       <StonePath />
       <FenceRing />
