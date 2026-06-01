@@ -1473,7 +1473,7 @@ function DayNightSystem({ speed = 0.012 }: { speed?: number }) {
 
   return (
     <>
-      <Sky ref={skyRef as unknown as React.Ref<never>} sunPosition={[18, 25, 14]} turbidity={3} rayleigh={1.8} mieCoefficient={0.005} mieDirectionalG={0.85} />
+      <Sky ref={skyRef as unknown as Ref<never>} sunPosition={[18, 25, 14]} turbidity={3} rayleigh={1.8} mieCoefficient={0.005} mieDirectionalG={0.85} />
       <ambientLight ref={ambRef} intensity={0.75} color="#fff4d8" />
       <hemisphereLight ref={hemiRef} args={["#cdeaff", "#5fb050", 0.7]} />
       <directionalLight
