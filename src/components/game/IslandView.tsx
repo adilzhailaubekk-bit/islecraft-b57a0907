@@ -64,26 +64,36 @@ const PALETTE = {
    ============================================================ */
 const ISLAND_SCALE = 1.75;
 
-const PLOT_POSITIONS: [number, number][] = [
+// Static fallback positions (used only if grid generation yields nothing)
+const FALLBACK_PLOT_POSITIONS: [number, number][] = [
   [0, 0],
   [-3.2, -1.2],
   [3.2, -1.2],
-  [-4.4, 1.8],
-  [4.4, 1.8],
-  [0, -3.6],
-  [-2.2, 3.3],
-  [2.2, 3.3],
-  [-5.4, -2.6],
-  [5.4, -2.6],
-  [0, 4.6],
-  [0, -5.2],
-  [-6.2, 0.4],
-  [6.2, 0.4],
-  [-3.8, -4.6],
-  [3.8, -4.6],
-  [-4.6, 4.6],
-  [4.6, 4.6],
 ];
+
+/** Generate a hex-like grid of placement positions across the island,
+ *  removing any cell that overlaps a forbidden footprint (plants/decor). */
+function generatePlotGrid(forbidden: { x: number; z: number; r: number }[]): [number, number][] {
+  const positions: { p: [number, number]; d: number }[] = [];
+  const spacing = 1.65;
+  const maxR = 6.4;
+  const rows = Math.ceil((maxR * 2) / spacing);
+  for (let row = -rows; row <= rows; row++) {
+    const z = row * spacing * 0.88;
+    const offset = (row & 1) ? spacing / 2 : 0;
+    for (let col = -rows; col <= rows; col++) {
+      const x = col * spacing + offset;
+      const d = Math.hypot(x, z);
+      if (d > maxR) continue;
+      const blocked = forbidden.some((f) => Math.hypot(x - f.x, z - f.z) < f.r);
+      if (blocked) continue;
+      positions.push({ p: [x, z], d });
+    }
+  }
+  // Stable order: closer to center first
+  positions.sort((a, b) => a.d - b.d);
+  return positions.length > 0 ? positions.map((q) => q.p) : FALLBACK_PLOT_POSITIONS;
+}
 
 /* ============================================================
    Deterministic RNG so SSR/CSR/refresh match
@@ -97,6 +107,21 @@ function mulberry32(seed: number) {
     r ^= r + Math.imul(r ^ (r >>> 7), r | 61);
     return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+/* ============================================================
+   NoHit — make a subtree invisible to raycaster so it never
+   intercepts clicks meant for plots underneath.
+   ============================================================ */
+function NoHit({ children }: { children: React.ReactNode }) {
+  const ref = useRef<THREE.Group>(null!);
+  useEffect(() => {
+    if (!ref.current) return;
+    ref.current.traverse((o) => {
+      (o as THREE.Object3D & { raycast: () => void }).raycast = () => {};
+    });
+  });
+  return <group ref={ref}>{children}</group>;
 }
 
 /* ============================================================
@@ -2097,11 +2122,6 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
     }
   }, [island.id]);
 
-  const slots = useMemo(
-    () => PLOT_POSITIONS.slice(0, Math.max(state.plots, state.buildings.length)),
-    [state.plots, state.buildings.length],
-  );
-
   const palms = useMemo(
     () =>
       [
@@ -2129,7 +2149,7 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
   const decor = useMemo(() => {
     const rng = mulberry32(42);
     const flowerColors = [PALETTE.flowerPink, PALETTE.flowerOrange, PALETTE.flowerPurple, PALETTE.flowerYellow, PALETTE.flowerWhite];
-    const flowers = Array.from({ length: 22 }).map((_, i) => {
+    const flowers = Array.from({ length: 22 }).map(() => {
       const a = rng() * Math.PI * 2;
       const r = 2.5 + rng() * 4.2;
       return {
@@ -2166,6 +2186,25 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
     return { flowers, rocks, bushes, mushrooms, lanterns };
   }, []);
 
+  // Build a grid of legal plot positions that avoids every plant/decor footprint.
+  const slots = useMemo<[number, number][]>(() => {
+    const forbidden: { x: number; z: number; r: number }[] = [];
+    for (const p of palms) forbidden.push({ x: p[0], z: p[2], r: 1.7 });
+    for (const t of trees) forbidden.push({ x: t[0], z: t[2], r: 1.6 });
+    for (const r of decor.rocks) forbidden.push({ x: r.pos[0], z: r.pos[2], r: 0.9 + r.scale * 0.4 });
+    for (const b of decor.bushes) forbidden.push({ x: b[0], z: b[2], r: 1.1 });
+    for (const m of decor.mushrooms) forbidden.push({ x: m[0], z: m[2], r: 0.85 });
+    for (const f of decor.flowers) forbidden.push({ x: f.pos[0], z: f.pos[2], r: 0.7 });
+    for (const l of decor.lanterns) forbidden.push({ x: l[0], z: l[2], r: 0.9 });
+    // Centerpieces
+    forbidden.push({ x: 0, z: 0, r: 1.5 });   // Fountain
+    forbidden.push({ x: -6, z: -1, r: 1.0 }); // FlagPole
+    forbidden.push({ x: 7.2, z: 0, r: 1.5 }); // Bridge
+    forbidden.push({ x: -6.5, z: 4, r: 1.3 }); // Lighthouse cosmetic
+    forbidden.push({ x: 6, z: -4, r: 1.2 });   // Statue cosmetic
+    return generatePlotGrid(forbidden);
+  }, [palms, trees, decor]);
+
   return (
     <>
       <fog attach="fog" args={["#bfe6f5", 35, 95]} />
@@ -2185,88 +2224,98 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
       <StonePath />
       <FenceRing />
 
-      {/* Vegetation */}
-      {palms.map((p, i) => (
-        <Palm key={`palm-${i}`} position={[p[0], p[1], p[2]]} scale={p[3]} delay={p[4]} />
-      ))}
-      {trees.map((t, i) => (
-        <Tree key={`tree-${i}`} position={[t[0], t[1], t[2]]} scale={t[3]} />
-      ))}
-      {decor.flowers.map((f, i) => (
-        <Flower key={`f-${i}`} position={f.pos} color={f.color} delay={f.delay} />
-      ))}
-      {decor.rocks.map((r, i) => (
-        <Rock key={`r-${i}`} position={r.pos} scale={r.scale} seed={r.seed} />
-      ))}
-      {decor.bushes.map((p, i) => (
-        <Bush key={`b-${i}`} position={p} />
-      ))}
-      {decor.mushrooms.map((p, i) => (
-        <Mushroom key={`m-${i}`} position={p} />
-      ))}
-      {decor.lanterns.map((p, i) => (
-        <Lantern key={`l-${i}`} position={p} />
-      ))}
+      {/* Vegetation — wrapped in NoHit so it never blocks plot clicks */}
+      <NoHit>
+        {palms.map((p, i) => (
+          <Palm key={`palm-${i}`} position={[p[0], p[1], p[2]]} scale={p[3]} delay={p[4]} />
+        ))}
+        {trees.map((t, i) => (
+          <Tree key={`tree-${i}`} position={[t[0], t[1], t[2]]} scale={t[3]} />
+        ))}
+        {decor.flowers.map((f, i) => (
+          <Flower key={`f-${i}`} position={f.pos} color={f.color} delay={f.delay} />
+        ))}
+        {decor.rocks.map((r, i) => (
+          <Rock key={`r-${i}`} position={r.pos} scale={r.scale} seed={r.seed} />
+        ))}
+        {decor.bushes.map((p, i) => (
+          <Bush key={`b-${i}`} position={p} />
+        ))}
+        {decor.mushrooms.map((p, i) => (
+          <Mushroom key={`m-${i}`} position={p} />
+        ))}
+        {decor.lanterns.map((p, i) => (
+          <Lantern key={`l-${i}`} position={p} />
+        ))}
 
-      {/* Centerpiece decor */}
-      <Fountain position={[0, 0.45, 0]} />
-      <FlagPole position={[-6, 0.45, -1]} />
-      <Bridge position={[7.2, -0.05, 0]} rotation={Math.PI / 2} />
+        {/* Centerpiece decor */}
+        <Fountain position={[0, 0.45, 0]} />
+        <FlagPole position={[-6, 0.45, -1]} />
+        <Bridge position={[7.2, -0.05, 0]} rotation={Math.PI / 2} />
+      </NoHit>
 
-      {/* Cosmetics */}
+      {/* Cosmetics — also non-interactive */}
       {state.cosmetics.includes("lighthouse") && (
-        <group position={[-6.5, 0.4, 4]}>
-          <mesh castShadow position={[0, 0.6, 0]}>
-            <cylinderGeometry args={[0.45, 0.6, 0.4, 16]} />
-            <meshStandardMaterial color={PALETTE.rockLight} />
-          </mesh>
-          <mesh castShadow position={[0, 1.5, 0]}>
-            <cylinderGeometry args={[0.32, 0.45, 1.6, 16]} />
-            <meshStandardMaterial color="#ffffff" />
-          </mesh>
-          {[0.9, 1.6, 2.2].map((y, i) => (
-            <mesh key={i} position={[0, y, 0]}>
-              <cylinderGeometry args={[0.34, 0.34, 0.18, 16]} />
+        <NoHit>
+          <group position={[-6.5, 0.4, 4]}>
+            <mesh castShadow position={[0, 0.6, 0]}>
+              <cylinderGeometry args={[0.45, 0.6, 0.4, 16]} />
+              <meshStandardMaterial color={PALETTE.rockLight} />
+            </mesh>
+            <mesh castShadow position={[0, 1.5, 0]}>
+              <cylinderGeometry args={[0.32, 0.45, 1.6, 16]} />
+              <meshStandardMaterial color="#ffffff" />
+            </mesh>
+            {[0.9, 1.6, 2.2].map((y, i) => (
+              <mesh key={i} position={[0, y, 0]}>
+                <cylinderGeometry args={[0.34, 0.34, 0.18, 16]} />
+                <meshStandardMaterial color={PALETTE.roofRed} />
+              </mesh>
+            ))}
+            <mesh position={[0, 2.65, 0]}>
+              <cylinderGeometry args={[0.4, 0.4, 0.35, 12]} />
+              <meshStandardMaterial color={PALETTE.flowerYellow} emissive="#ffaa00" emissiveIntensity={1.5} />
+            </mesh>
+            <mesh castShadow position={[0, 2.95, 0]}>
+              <coneGeometry args={[0.4, 0.4, 12]} />
               <meshStandardMaterial color={PALETTE.roofRed} />
             </mesh>
-          ))}
-          <mesh position={[0, 2.65, 0]}>
-            <cylinderGeometry args={[0.4, 0.4, 0.35, 12]} />
-            <meshStandardMaterial color={PALETTE.flowerYellow} emissive="#ffaa00" emissiveIntensity={1.5} />
-          </mesh>
-          <mesh castShadow position={[0, 2.95, 0]}>
-            <coneGeometry args={[0.4, 0.4, 12]} />
-            <meshStandardMaterial color={PALETTE.roofRed} />
-          </mesh>
-          <pointLight position={[0, 2.65, 0]} color="#ffcc66" intensity={2.5} distance={10} />
-        </group>
+            <pointLight position={[0, 2.65, 0]} color="#ffcc66" intensity={2.5} distance={10} />
+          </group>
+        </NoHit>
       )}
       {state.cosmetics.includes("statue") && (
-        <group position={[6, 0.4, -4]}>
-          <mesh castShadow position={[0, 0.25, 0]}>
-            <cylinderGeometry args={[0.5, 0.55, 0.5, 12]} />
-            <meshStandardMaterial color={PALETTE.rockLight} />
-          </mesh>
-          <mesh castShadow position={[0, 0.85, 0]}>
-            <cylinderGeometry args={[0.18, 0.3, 0.6, 12]} />
-            <meshStandardMaterial color={PALETTE.gold} metalness={0.7} roughness={0.3} />
-          </mesh>
-          <mesh castShadow position={[0, 1.35, 0]}>
-            <sphereGeometry args={[0.28, 16, 14]} />
-            <meshStandardMaterial color={PALETTE.gold} metalness={0.8} roughness={0.2} emissive="#ffae00" emissiveIntensity={0.2} />
-          </mesh>
-          <pointLight position={[0, 1.4, 0]} color="#ffd060" intensity={0.8} distance={3} />
-        </group>
+        <NoHit>
+          <group position={[6, 0.4, -4]}>
+            <mesh castShadow position={[0, 0.25, 0]}>
+              <cylinderGeometry args={[0.5, 0.55, 0.5, 12]} />
+              <meshStandardMaterial color={PALETTE.rockLight} />
+            </mesh>
+            <mesh castShadow position={[0, 0.85, 0]}>
+              <cylinderGeometry args={[0.18, 0.3, 0.6, 12]} />
+              <meshStandardMaterial color={PALETTE.gold} metalness={0.7} roughness={0.3} />
+            </mesh>
+            <mesh castShadow position={[0, 1.35, 0]}>
+              <sphereGeometry args={[0.28, 16, 14]} />
+              <meshStandardMaterial color={PALETTE.gold} metalness={0.8} roughness={0.2} emissive="#ffae00" emissiveIntensity={0.2} />
+            </mesh>
+            <pointLight position={[0, 1.4, 0]} color="#ffd060" intensity={0.8} distance={3} />
+          </group>
+        </NoHit>
       )}
 
       {/* Plots / buildings */}
       {slots.map((pos, i) => {
         const hasBuilding = !!state.buildings[i];
+        const ownedPlot = i < state.plots;
+        // In normal mode: show only owned plots or plots that contain a building.
+        // In move mode: show every legal cell so the user can place anywhere free of plants.
+        if (!moveMode && !ownedPlot && !hasBuilding) return null;
         const isSource = movingFrom === i;
         const isHighlighted = !!moveMode && (
           isSource ||
           (movingFrom === null && hasBuilding) ||
-          (movingFrom !== null && movingFrom !== undefined && movingFrom !== i)
+          (movingFrom !== null && movingFrom !== undefined && movingFrom !== i && !hasBuilding)
         );
         return (
           <Plot

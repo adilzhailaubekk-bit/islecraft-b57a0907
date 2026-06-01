@@ -230,11 +230,11 @@ export function useGameStore() {
     addXp(15);
   }, [addXp]);
 
-  // Swap (or move into empty) two plot slots
+  // Swap (or move into empty) two plot slots. Moving costs nothing and
+  // can target any legal slot on the island grid, regardless of owned-plot count.
   const moveBuilding = useCallback((from: number, to: number) => {
     setState((p) => {
-      if (from === to) return p;
-      if (to < 0 || to >= p.plots) return p;
+      if (from === to || to < 0 || from < 0) return p;
       const buildings = p.buildings.slice();
       while (buildings.length <= Math.max(from, to)) buildings.push(null);
       const a = buildings[from] ?? null;
