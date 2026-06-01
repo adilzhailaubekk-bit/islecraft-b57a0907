@@ -19,6 +19,7 @@ import type { GameState } from "@/game/types";
 interface IslandViewProps {
   state: GameState;
   onPlotClick: (index: number) => void;
+  selectedPlot?: number | null;
 }
 
 /* ============================================================
@@ -60,6 +61,8 @@ const PALETTE = {
 /* ============================================================
    Plot layout
    ============================================================ */
+const ISLAND_SCALE = 1.4;
+
 const PLOT_POSITIONS: [number, number][] = [
   [0, 0],
   [-3.2, -1.2],
@@ -73,6 +76,12 @@ const PLOT_POSITIONS: [number, number][] = [
   [5.4, -2.6],
   [0, 4.6],
   [0, -5.2],
+  [-6.2, 0.4],
+  [6.2, 0.4],
+  [-3.8, -4.6],
+  [3.8, -4.6],
+  [-4.6, 4.6],
+  [4.6, 4.6],
 ];
 
 /* ============================================================
@@ -2128,6 +2137,7 @@ function IslandScene({ state, onPlotClick }: IslandViewProps) {
       <Ocean />
       <Sparkles count={60} scale={[60, 1, 60]} position={[0, -0.15, 0]} size={3} speed={0.3} color="#ffffff" />
 
+      <group scale={ISLAND_SCALE}>
       <IslandBase grassTint={tint} />
       
       <FoamRing />
@@ -2176,7 +2186,6 @@ function IslandScene({ state, onPlotClick }: IslandViewProps) {
             <cylinderGeometry args={[0.32, 0.45, 1.6, 16]} />
             <meshStandardMaterial color="#ffffff" />
           </mesh>
-          {/* Red stripes */}
           {[0.9, 1.6, 2.2].map((y, i) => (
             <mesh key={i} position={[0, y, 0]}>
               <cylinderGeometry args={[0.34, 0.34, 0.18, 16]} />
@@ -2217,13 +2226,15 @@ function IslandScene({ state, onPlotClick }: IslandViewProps) {
         <Plot
           key={i}
           position={[pos[0], 0.51, pos[1]]}
-          building={state.buildings[i]}
+          building={state.buildings[i] ?? undefined}
           empty={!state.buildings[i]}
+          
           onClick={() => onPlotClick(i)}
         />
       ))}
 
       <WindowGlows slots={slots} buildings={state.buildings.slice(0, slots.length)} />
+      </group>
 
       {/* Sky life */}
       <Clouds material={THREE.MeshBasicMaterial}>
@@ -2263,8 +2274,8 @@ function CameraRig() {
       enablePan={false}
       enableDamping
       dampingFactor={0.1}
-      minDistance={10}
-      maxDistance={28}
+      minDistance={14}
+      maxDistance={40}
       minPolarAngle={Math.PI / 6}
       maxPolarAngle={Math.PI / 2.4}
       target={[0, 0.5, 0]}
@@ -2296,7 +2307,7 @@ export function IslandView({ state, onPlotClick }: IslandViewProps) {
         <Canvas
           shadows={!lowPower}
           dpr={lowPower ? [1, 1.25] : [1, 1.75]}
-          camera={{ position: [14, 12, 14], fov: 45 }}
+          camera={{ position: [20, 17, 20], fov: 45 }}
           gl={{ antialias: !lowPower, alpha: false, powerPreference: "high-performance", toneMappingExposure: 1.15 }}
           frameloop="always"
         >

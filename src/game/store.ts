@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { BuildingDef, GameState, Resources } from "./types";
+import type { BuildingDef, BuildingState, GameState, Resources } from "./types";
 import { BUILDINGS, ISLANDS, xpForLevel, plotCost } from "./data";
 
 const STORAGE_KEY = "island-tycoon-save-v1";
@@ -16,9 +16,18 @@ const initialState = (): GameState => ({
   achievements: [],
   lastTick: Date.now(),
   lastDailyClaim: 0,
+  dailyStreak: 0,
   cosmetics: [],
   totalGoldEarned: 0,
 });
+
+// Normalize older save formats — dense BuildingState[] → sparse (BuildingState | null)[]
+const normalize = (s: GameState): GameState => {
+  const buildings = Array.isArray(s.buildings)
+    ? s.buildings.map((b) => (b && typeof b === "object" && "id" in b ? (b as BuildingState) : null))
+    : [];
+  return { ...s, buildings, dailyStreak: s.dailyStreak ?? 0 };
+};
 
 export const buildingCost = (def: BuildingDef, level: number): Partial<Resources> => {
   const mult = Math.pow(def.costMultiplier, level);
@@ -44,6 +53,7 @@ export const computeRates = (state: GameState): Resources => {
 
   const rates: Resources = { gold: 0, wood: 0, stone: 0, energy: 0 };
   for (const b of state.buildings) {
+    if (!b) continue;
     const def = BUILDINGS.find((d) => d.id === b.id);
     if (!def) continue;
     let r = buildingRate(def, b.level) * islandMult * speed * workerMult;
@@ -58,7 +68,7 @@ export function useGameStore() {
     if (typeof window === "undefined") return initialState();
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return { ...initialState(), ...JSON.parse(raw) };
+      if (raw) return normalize({ ...initialState(), ...JSON.parse(raw) });
     } catch {}
     return initialState();
   });
@@ -66,13 +76,12 @@ export function useGameStore() {
   const stateRef = useRef(state);
   stateRef.current = state;
 
-  // Offline catch-up on mount
   const offlineEarnings = useRef<{ gold: number; seconds: number } | null>(null);
   useEffect(() => {
     const s = stateRef.current;
     const now = Date.now();
-    const elapsed = Math.min((now - s.lastTick) / 1000, 60 * 60 * 8); // cap 8h
-    if (elapsed > 30 && s.buildings.length) {
+    const elapsed = Math.min((now - s.lastTick) / 1000, 60 * 60 * 8);
+    if (elapsed > 30 && s.buildings.some(Boolean)) {
       const rates = computeRates(s);
       const earned: Resources = {
         gold: rates.gold * elapsed * 0.5,
@@ -96,7 +105,6 @@ export function useGameStore() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // tick loop
   useEffect(() => {
     const id = setInterval(() => {
       setState((p) => {
@@ -118,7 +126,6 @@ export function useGameStore() {
     return () => clearInterval(id);
   }, []);
 
-  // autosave
   useEffect(() => {
     const id = setInterval(() => {
       try {
@@ -149,27 +156,94 @@ export function useGameStore() {
     });
   }, []);
 
+  // Build into the FIRST empty slot among existing plots, or upgrade if same id elsewhere
   const buyOrUpgrade = useCallback((buildingId: string) => {
     setState((p) => {
       const def = BUILDINGS.find((b) => b.id === buildingId);
       if (!def) return p;
-      const existing = p.buildings.find((b) => b.id === buildingId);
-      const level = existing?.level ?? 0;
+      const existingIdx = p.buildings.findIndex((b) => b && b.id === buildingId);
+      const level = existingIdx >= 0 ? p.buildings[existingIdx]!.level : 0;
       const cost = buildingCost(def, level);
       if (!canAfford(p.resources, cost)) return p;
-      const usedPlots = p.buildings.length;
-      if (!existing && usedPlots >= p.plots) return p;
       const newRes = { ...p.resources };
       for (const k of Object.keys(cost) as (keyof Resources)[]) {
         newRes[k] -= cost[k] ?? 0;
       }
-      const buildings = existing
-        ? p.buildings.map((b) => (b.id === buildingId ? { ...b, level: b.level + 1 } : b))
-        : [...p.buildings, { id: buildingId, level: 1 }];
+      let buildings = p.buildings.slice();
+      if (existingIdx >= 0) {
+        buildings[existingIdx] = { id: buildingId, level: level + 1 };
+      } else {
+        // find first empty slot within owned plots
+        let slot = -1;
+        for (let i = 0; i < p.plots; i++) {
+          if (!buildings[i]) {
+            slot = i;
+            break;
+          }
+        }
+        if (slot < 0) return p;
+        while (buildings.length <= slot) buildings.push(null);
+        buildings[slot] = { id: buildingId, level: 1 };
+      }
       return { ...p, resources: newRes, buildings };
     });
     addXp(15);
   }, [addXp]);
+
+  // Build at a specific plot (used when player taps an empty plot directly)
+  const buildAtPlot = useCallback((buildingId: string, plotIdx: number) => {
+    setState((p) => {
+      const def = BUILDINGS.find((b) => b.id === buildingId);
+      if (!def) return p;
+      if (plotIdx < 0 || plotIdx >= p.plots) return p;
+      if (p.buildings[plotIdx]) return p;
+      const cost = buildingCost(def, 0);
+      if (!canAfford(p.resources, cost)) return p;
+      const newRes = { ...p.resources };
+      for (const k of Object.keys(cost) as (keyof Resources)[]) {
+        newRes[k] -= cost[k] ?? 0;
+      }
+      const buildings = p.buildings.slice();
+      while (buildings.length <= plotIdx) buildings.push(null);
+      buildings[plotIdx] = { id: buildingId, level: 1 };
+      return { ...p, resources: newRes, buildings };
+    });
+    addXp(15);
+  }, [addXp]);
+
+  const upgradeAtPlot = useCallback((plotIdx: number) => {
+    setState((p) => {
+      const existing = p.buildings[plotIdx];
+      if (!existing) return p;
+      const def = BUILDINGS.find((b) => b.id === existing.id);
+      if (!def) return p;
+      const cost = buildingCost(def, existing.level);
+      if (!canAfford(p.resources, cost)) return p;
+      const newRes = { ...p.resources };
+      for (const k of Object.keys(cost) as (keyof Resources)[]) {
+        newRes[k] -= cost[k] ?? 0;
+      }
+      const buildings = p.buildings.slice();
+      buildings[plotIdx] = { ...existing, level: existing.level + 1 };
+      return { ...p, resources: newRes, buildings };
+    });
+    addXp(15);
+  }, [addXp]);
+
+  // Swap (or move into empty) two plot slots
+  const moveBuilding = useCallback((from: number, to: number) => {
+    setState((p) => {
+      if (from === to) return p;
+      if (to < 0 || to >= p.plots) return p;
+      const buildings = p.buildings.slice();
+      while (buildings.length <= Math.max(from, to)) buildings.push(null);
+      const a = buildings[from] ?? null;
+      const b = buildings[to] ?? null;
+      buildings[from] = b;
+      buildings[to] = a;
+      return { ...p, buildings };
+    });
+  }, []);
 
   const buyPlot = useCallback(() => {
     setState((p) => {
@@ -238,11 +312,17 @@ export function useGameStore() {
     setState((p) => {
       const now = Date.now();
       if (now - p.lastDailyClaim < 22 * 3600 * 1000) return p;
-      const reward = 500 + p.level * 100;
+      // streak continues if claimed within 48h, otherwise resets
+      const within = p.lastDailyClaim > 0 && now - p.lastDailyClaim < 48 * 3600 * 1000;
+      const streak = within ? p.dailyStreak + 1 : 1;
+      const base = 500 + p.level * 100;
+      const streakBonus = Math.min(streak - 1, 14) * 0.15; // up to +210% at streak 15
+      const reward = Math.floor(base * (1 + streakBonus));
       return {
         ...p,
         resources: { ...p.resources, gold: p.resources.gold + reward },
         lastDailyClaim: now,
+        dailyStreak: streak,
       };
     });
   }, []);
@@ -255,6 +335,9 @@ export function useGameStore() {
     state,
     rates: computeRates(state),
     buyOrUpgrade,
+    buildAtPlot,
+    upgradeAtPlot,
+    moveBuilding,
     buyPlot,
     unlockIsland,
     switchIsland,

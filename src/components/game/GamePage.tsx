@@ -29,6 +29,8 @@ export default function GamePage() {
   const [plotIndex, setPlotIndex] = useState(0);
   const [offlineSeen, setOfflineSeen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [moveMode, setMoveMode] = useState(false);
+  const [movingFrom, setMovingFrom] = useState<number | null>(null);
   useEffect(() => setMounted(true), []);
   if (!mounted) return <div className="fixed inset-0 bg-gradient-sky" />;
 
@@ -41,8 +43,12 @@ export default function GamePage() {
         : a.metric === "level"
           ? game.state.level
           : a.metric === "buildings"
-            ? game.state.buildings.reduce((s, b) => s + b.level, 0)
-            : game.state.unlockedIslands.length;
+            ? game.state.buildings.reduce((s, b) => s + (b?.level ?? 0), 0)
+            : a.metric === "plots"
+              ? game.state.plots
+              : a.metric === "streak"
+                ? game.state.dailyStreak
+                : game.state.unlockedIslands.length;
     return p >= a.goal;
   }).length;
 
@@ -94,10 +100,36 @@ export default function GamePage() {
         <IslandView
           state={game.state}
           onPlotClick={(i) => {
+            if (moveMode) {
+              if (movingFrom === null) {
+                if (game.state.buildings[i]) setMovingFrom(i);
+              } else {
+                if (movingFrom !== i) game.moveBuilding(movingFrom, i);
+                setMovingFrom(null);
+              }
+              return;
+            }
             setPlotIndex(i);
             setModal("build");
           }}
         />
+        {moveMode && (
+          <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-violet-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-pop border-2 border-white pointer-events-none">
+            {movingFrom === null ? "Выберите здание для переноса" : "Выберите участок назначения"}
+          </div>
+        )}
+        <button
+          onClick={() => {
+            setMoveMode((v) => !v);
+            setMovingFrom(null);
+          }}
+          className={`absolute top-3 right-3 btn-3d rounded-full w-12 h-12 flex items-center justify-center text-xl font-bold shadow-pop border-2 border-white ${
+            moveMode ? "bg-violet-500 text-white" : "bg-white text-violet-600"
+          }`}
+          title="Переместить здания"
+        >
+          🔀
+        </button>
       </div>
 
       {/* BOTTOM ACTION DOCK */}
@@ -223,13 +255,14 @@ function UpgradesShortcut({
 }) {
   return (
     <Modal open={open} onClose={onClose} title="Ваши здания" icon="🔨">
-      {state.buildings.length === 0 ? (
+      {state.buildings.filter(Boolean).length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
           Постройте первое здание, нажав на свободный участок на острове!
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 gap-2">
           {state.buildings.map((b, i) => {
+            if (!b) return null;
             const def = BUILDINGS.find((d) => d.id === b.id)!;
             return (
               <button
