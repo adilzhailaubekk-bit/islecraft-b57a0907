@@ -84,7 +84,9 @@ export function MainMenu({
   );
 
   const [showHint, setShowHint] = useState(true);
+  const [mounted, setMounted] = useState(false);
   useEffect(() => {
+    setMounted(true);
     const t = setTimeout(() => setShowHint(false), 4000);
     return () => clearTimeout(t);
   }, []);
@@ -117,7 +119,7 @@ export function MainMenu({
       </motion.div>
 
       {/* Clouds */}
-      {clouds.map((c) => (
+      {mounted && clouds.map((c) => (
         <motion.div
           key={`c-${c.id}`}
           className="absolute"
@@ -250,7 +252,7 @@ export function MainMenu({
       </div>
 
       {/* Birds */}
-      {birds.map((b) => (
+      {mounted && birds.map((b) => (
         <motion.div
           key={`b-${b.id}`}
           className="absolute"
@@ -275,7 +277,7 @@ export function MainMenu({
       ))}
 
       {/* Butterflies */}
-      {butterflies.map((b) => (
+      {mounted && butterflies.map((b) => (
         <motion.div
           key={`bf-${b.id}`}
           className="absolute"
@@ -301,7 +303,7 @@ export function MainMenu({
       ))}
 
       {/* Sparkles */}
-      {Array.from({ length: 12 }).map((_, i) => (
+      {mounted && Array.from({ length: 12 }).map((_, i) => (
         <motion.div
           key={`sp-${i}`}
           className="absolute w-1.5 h-1.5 rounded-full bg-white"
