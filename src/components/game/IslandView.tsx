@@ -19,7 +19,8 @@ import type { GameState } from "@/game/types";
 interface IslandViewProps {
   state: GameState;
   onPlotClick: (index: number) => void;
-  selectedPlot?: number | null;
+  moveMode?: boolean;
+  movingFrom?: number | null;
 }
 
 /* ============================================================
