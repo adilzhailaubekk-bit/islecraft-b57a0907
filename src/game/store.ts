@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { BuildingDef, BuildingState, GameState, Resources } from "./types";
 import { BUILDINGS, ISLANDS, xpForLevel, plotCost, applySoftCap } from "./data";
 
-const STORAGE_KEY = "island-tycoon-save-v1";
+const STORAGE_KEY = "island-tycoon-save-v2";
 
 const initialState = (): GameState => ({
   resources: { gold: 75, wood: 0, stone: 0, energy: 0 },
