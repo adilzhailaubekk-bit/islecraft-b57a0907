@@ -3,8 +3,6 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   OrbitControls,
   Sky,
-  Cloud,
-  Clouds,
   Float,
   Sparkles,
   Html,
