@@ -2460,9 +2460,6 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
         {decor.lanterns.map((p, i) => (
           <Lantern key={`l-${i}`} position={p} />
         ))}
-        {decor.hills.map((h, i) => (
-          <Hill key={`h-${i}`} position={h.pos} scale={h.scale} tint={tint} />
-        ))}
         {decor.grassTufts.map((p, i) => (
           <GrassTuft key={`gt-${i}`} position={p} tint={PALETTE.grassMid} />
         ))}
