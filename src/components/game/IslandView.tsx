@@ -2098,8 +2098,159 @@ function Dolphin({ radius = 18, speed = 0.18, phase = 0 }: { radius?: number; sp
 }
 
 /* ============================================================
+   Ambient details: hills, shells, driftwood, grass tufts,
+   barrels, crates, sand path tiles
+   ============================================================ */
+function Hill({ position, scale = 1, tint }: { position: [number, number, number]; scale?: number; tint: string }) {
+  return (
+    <mesh position={position} scale={[scale, scale * 0.45, scale]} receiveShadow castShadow>
+      <sphereGeometry args={[1, 14, 10]} />
+      <meshStandardMaterial color={tint} roughness={0.95} />
+    </mesh>
+  );
+}
+
+function Shell({ position, color = "#ffd8c2" }: { position: [number, number, number]; color?: string }) {
+  const ref = useRef<THREE.Group>(null);
+  useFrame((s) => {
+    if (ref.current) ref.current.rotation.y = Math.sin(s.clock.elapsedTime * 0.4 + position[0]) * 0.1;
+  });
+  return (
+    <group ref={ref} position={position} scale={0.18}>
+      <mesh castShadow>
+        <sphereGeometry args={[1, 12, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color={color} roughness={0.5} side={THREE.DoubleSide} />
+      </mesh>
+      {[0, 1, 2, 3, 4].map((i) => (
+        <mesh key={i} rotation={[0, (i / 5) * Math.PI - Math.PI / 2, 0]} position={[0, 0.02, 0]}>
+          <boxGeometry args={[0.04, 0.02, 1]} />
+          <meshStandardMaterial color="#e8a890" roughness={0.7} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function Driftwood({ position, rotation = 0 }: { position: [number, number, number]; rotation?: number }) {
+  return (
+    <group position={position} rotation={[0, rotation, 0]}>
+      <mesh castShadow rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.12, 0.16, 1.4, 8]} />
+        <meshStandardMaterial color="#a47148" roughness={0.95} />
+      </mesh>
+      <mesh castShadow position={[0.55, 0.05, 0.1]} rotation={[0, 0.3, Math.PI / 2.2]}>
+        <cylinderGeometry args={[0.07, 0.1, 0.5, 6]} />
+        <meshStandardMaterial color="#8a5a36" roughness={0.95} />
+      </mesh>
+    </group>
+  );
+}
+
+function GrassTuft({ position, tint }: { position: [number, number, number]; tint: string }) {
+  return (
+    <group position={position}>
+      {[0, 1, 2, 3].map((i) => {
+        const a = (i / 4) * Math.PI * 2;
+        return (
+          <mesh key={i} position={[Math.cos(a) * 0.06, 0.08, Math.sin(a) * 0.06]} rotation={[0, a, 0.15]}>
+            <coneGeometry args={[0.03, 0.22, 4]} />
+            <meshStandardMaterial color={tint} roughness={0.9} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+function Barrel({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position}>
+      <mesh castShadow position={[0, 0.18, 0]}>
+        <cylinderGeometry args={[0.18, 0.18, 0.36, 14]} />
+        <meshStandardMaterial color="#8a5a30" roughness={0.85} />
+      </mesh>
+      {[0.05, 0.18, 0.31].map((y, i) => (
+        <mesh key={i} position={[0, y, 0]}>
+          <torusGeometry args={[0.185, 0.018, 6, 18]} />
+          <meshStandardMaterial color="#3a2a18" roughness={0.6} metalness={0.4} />
+        </mesh>
+      ))}
+      <mesh position={[0, 0.37, 0]}>
+        <cylinderGeometry args={[0.16, 0.16, 0.02, 14]} />
+        <meshStandardMaterial color="#6b3a1c" roughness={0.9} />
+      </mesh>
+    </group>
+  );
+}
+
+function Crate({ position, rotation = 0 }: { position: [number, number, number]; rotation?: number }) {
+  return (
+    <group position={position} rotation={[0, rotation, 0]}>
+      <mesh castShadow position={[0, 0.17, 0]}>
+        <boxGeometry args={[0.36, 0.34, 0.36]} />
+        <meshStandardMaterial color="#c98a4a" roughness={0.9} />
+      </mesh>
+      {[
+        [0.18, 0.17, 0, 0.36, 0.34, 0.05],
+        [-0.18, 0.17, 0, 0.36, 0.34, 0.05],
+        [0, 0.17, 0.18, 0.05, 0.34, 0.36],
+        [0, 0.17, -0.18, 0.05, 0.34, 0.36],
+      ].map((b, i) => (
+        <mesh key={i} position={[b[0], b[1], b[2]]}>
+          <boxGeometry args={[b[3], 0.05, b[5]]} />
+          <meshStandardMaterial color="#6b3a1c" roughness={0.85} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function SandPathTile({ position, rotation = 0 }: { position: [number, number, number]; rotation?: number }) {
+  return (
+    <mesh position={position} rotation={[-Math.PI / 2, 0, rotation]} receiveShadow>
+      <circleGeometry args={[0.35, 16]} />
+      <meshStandardMaterial color={PALETTE.sandLight} roughness={1} />
+    </mesh>
+  );
+}
+
+function BuildingSurround({ position, seed }: { position: [number, number, number]; seed: number }) {
+  const rng = useMemo(() => mulberry32(seed * 97 + 13), [seed]);
+  const props = useMemo(() => {
+    const items: { kind: "barrel" | "crate" | "tuft" | "flower"; offset: [number, number]; rot: number }[] = [];
+    const n = 3 + Math.floor(rng() * 2);
+    for (let i = 0; i < n; i++) {
+      const a = rng() * Math.PI * 2;
+      const r = 0.85 + rng() * 0.35;
+      const kind = (["barrel", "crate", "tuft", "flower"] as const)[Math.floor(rng() * 4)];
+      items.push({ kind, offset: [Math.cos(a) * r, Math.sin(a) * r], rot: rng() * Math.PI });
+    }
+    return items;
+  }, [rng]);
+  return (
+    <group position={position}>
+      {props.map((p, i) => {
+        const pos: [number, number, number] = [p.offset[0], 0, p.offset[1]];
+        if (p.kind === "barrel") return <Barrel key={i} position={pos} />;
+        if (p.kind === "crate") return <Crate key={i} position={pos} rotation={p.rot} />;
+        if (p.kind === "tuft") return <GrassTuft key={i} position={pos} tint={PALETTE.grassMid} />;
+        return (
+          <Flower
+            key={i}
+            position={[pos[0], 0, pos[2]]}
+            color={[PALETTE.flowerPink, PALETTE.flowerYellow, PALETTE.flowerOrange][i % 3]}
+            delay={i * 0.7}
+          />
+        );
+      })}
+    </group>
+  );
+}
+
+/* ============================================================
    Scene
    ============================================================ */
+
 function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewProps) {
   const lowPower = useMemo(() => {
     if (typeof navigator === "undefined") return false;
