@@ -2209,40 +2209,62 @@ function PathSegment({
   position,
   rotation = 0,
   length = 1,
-  width = 0.9,
+  width = 0.95,
+  index = 0,
 }: {
   position: [number, number, number];
   rotation?: number;
   length?: number;
   width?: number;
+  index?: number;
 }) {
+  // Slightly lifted above grass so it never z-fights or sinks under terrain.
   return (
     <group position={position} rotation={[0, rotation, 0]}>
-      {/* Dark border / shadow base */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.005, 0]} receiveShadow>
-        <planeGeometry args={[length + 0.18, width + 0.18]} />
-        <meshStandardMaterial color="#8a6a3d" roughness={1} />
+      {/* Soft dirt halo */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.002, 0]} receiveShadow>
+        <planeGeometry args={[length + 0.32, width + 0.32]} />
+        <meshStandardMaterial color="#7a5a32" roughness={1} transparent opacity={0.55} />
+      </mesh>
+      {/* Dark border */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.006, 0]} receiveShadow>
+        <planeGeometry args={[length + 0.16, width + 0.16]} />
+        <meshStandardMaterial color="#6b4a24" roughness={1} />
       </mesh>
       {/* Sand surface */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, 0]} receiveShadow>
         <planeGeometry args={[length, width]} />
         <meshStandardMaterial color={PALETTE.sandLight} roughness={1} />
       </mesh>
-      {/* Stepping stones */}
-      {Array.from({ length: Math.max(1, Math.round(length / 0.55)) }).map((_, i, arr) => {
+      {/* Raised stone curbs along both sides */}
+      {[-1, 1].map((s) => (
+        <mesh key={s} position={[0, 0.05, s * (width / 2 + 0.02)]} castShadow receiveShadow>
+          <boxGeometry args={[length + 0.04, 0.1, 0.09]} />
+          <meshStandardMaterial color="#a89878" roughness={0.85} />
+        </mesh>
+      ))}
+      {/* Repeating premium tile pattern */}
+      {Array.from({ length: Math.max(2, Math.round(length / 0.42)) }).map((_, i, arr) => {
         const t = (i + 0.5) / arr.length;
         const x = (t - 0.5) * length;
-        const off = ((i % 2) - 0.5) * 0.18;
+        const tileLen = (length / arr.length) * 0.82;
+        const tileWid = width * 0.78;
+        const dark = (i + index) % 2 === 0;
         return (
-          <mesh
-            key={i}
-            position={[x, 0.012, off]}
-            rotation={[-Math.PI / 2, 0, (i * 0.7) % Math.PI]}
-            receiveShadow
-          >
-            <circleGeometry args={[0.18 + (i % 3) * 0.02, 10]} />
-            <meshStandardMaterial color={PALETTE.pathStone} roughness={0.95} />
-          </mesh>
+          <group key={i} position={[x, 0.022, 0]}>
+            <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+              <planeGeometry args={[tileLen, tileWid]} />
+              <meshStandardMaterial
+                color={dark ? PALETTE.pathStone : "#ece3c8"}
+                roughness={0.9}
+              />
+            </mesh>
+            {/* Grout line accent */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[tileLen / 2 + 0.01, 0.001, 0]}>
+              <planeGeometry args={[0.025, tileWid + 0.02]} />
+              <meshStandardMaterial color="#8a7654" roughness={1} />
+            </mesh>
+          </group>
         );
       })}
     </group>
