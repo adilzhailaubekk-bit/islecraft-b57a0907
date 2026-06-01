@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { BuildingDef, BuildingState, GameState, Resources } from "./types";
-import { BUILDINGS, ISLANDS, xpForLevel, plotCost } from "./data";
+import { BUILDINGS, ISLANDS, xpForLevel, plotCost, applySoftCap } from "./data";
 
 const STORAGE_KEY = "island-tycoon-save-v1";
 
