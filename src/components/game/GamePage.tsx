@@ -142,7 +142,7 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
         <div className="bg-white/80 backdrop-blur-xl rounded-3xl border-2 border-white shadow-pop p-2 sm:p-3 flex gap-1 sm:gap-2 max-w-3xl mx-auto">
           {ACTIONS.map((a) => {
             const notif =
-              a.id === "daily" ? (dailyReady ? "•" : null) :
+              a.id === "daily" ? (dailyTotalBadge > 0 ? String(dailyTotalBadge) : null) :
               a.id === "achievements" ? (claimableAchievements > 0 ? String(claimableAchievements) : null) :
               null;
             return (
