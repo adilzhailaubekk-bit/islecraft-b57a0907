@@ -119,7 +119,7 @@ export function MainMenu({
       </motion.div>
 
       {/* Clouds */}
-      {clouds.map((c) => (
+      {mounted && clouds.map((c) => (
         <motion.div
           key={`c-${c.id}`}
           className="absolute"
