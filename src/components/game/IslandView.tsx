@@ -2445,7 +2445,7 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
       <FoamRing />
       <BeachDecor />
 
-      <FenceRing />
+      
 
       {/* Vegetation — wrapped in NoHit so it never blocks plot clicks */}
       <NoHit>
