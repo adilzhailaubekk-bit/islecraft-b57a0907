@@ -322,8 +322,9 @@ export function useGameStore() {
       // streak continues if claimed within 48h, otherwise resets
       const within = p.lastDailyClaim > 0 && now - p.lastDailyClaim < 48 * 3600 * 1000;
       const streak = within ? p.dailyStreak + 1 : 1;
-      const base = 500 + p.level * 100;
-      const streakBonus = Math.min(streak - 1, 14) * 0.15; // up to +210% at streak 15
+      // Smaller flat base early, but grows quadratically with level so it scales late
+      const base = 150 + p.level * p.level * 25;
+      const streakBonus = Math.min(streak - 1, 14) * 0.12; // up to +168% at streak 15
       const reward = Math.floor(base * (1 + streakBonus));
       return {
         ...p,
