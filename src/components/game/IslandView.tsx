@@ -1656,6 +1656,13 @@ function Dolphin({ radius = 18, speed = 0.18, phase = 0 }: { radius?: number; sp
    Scene
    ============================================================ */
 function IslandScene({ state, onPlotClick }: IslandViewProps) {
+  const lowPower = useMemo(() => {
+    if (typeof navigator === "undefined") return false;
+    const cores = (navigator as Navigator & { hardwareConcurrency?: number }).hardwareConcurrency ?? 8;
+    const mem = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8;
+    const mobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    return cores <= 4 || mem <= 4 || mobile;
+  }, []);
   const island = ISLANDS.find((i) => i.id === state.activeIsland)!;
   const tint = useMemo(() => {
     switch (island.id) {
