@@ -589,32 +589,97 @@ function Fountain({ position }: { position: [number, number, number] }) {
 /* ============================================================
    Living things
    ============================================================ */
-function Bird({ radius, speed, height, color = "#ffffff" }: { radius: number; speed: number; height: number; color?: string }) {
+function Bird({
+  radius,
+  speed,
+  height,
+  color = "#ffffff",
+  accent = "#f0a070",
+}: {
+  radius: number;
+  speed: number;
+  height: number;
+  color?: string;
+  accent?: string;
+}) {
   const ref = useRef<THREE.Group>(null!);
-  const wingL = useRef<THREE.Mesh>(null!);
-  const wingR = useRef<THREE.Mesh>(null!);
+  const wingL = useRef<THREE.Group>(null!);
+  const wingR = useRef<THREE.Group>(null!);
+  const body = useRef<THREE.Group>(null!);
   useFrame(({ clock }) => {
     const t = clock.elapsedTime * speed;
-    ref.current.position.set(Math.cos(t) * radius, height + Math.sin(t * 2) * 0.4, Math.sin(t) * radius);
+    const x = Math.cos(t) * radius;
+    const z = Math.sin(t) * radius;
+    const y = height + Math.sin(t * 2) * 0.45;
+    ref.current.position.set(x, y, z);
     ref.current.rotation.y = -t + Math.PI / 2;
-    const flap = Math.sin(clock.elapsedTime * 14) * 0.7;
+    // gentle banking
+    body.current.rotation.z = Math.sin(t * 2) * 0.18;
+    body.current.rotation.x = -0.08;
+    // smooth wing flap with two segments
+    const flap = Math.sin(clock.elapsedTime * 10) * 0.55 + 0.1;
     wingL.current.rotation.z = flap;
     wingR.current.rotation.z = -flap;
   });
   return (
     <group ref={ref}>
-      <mesh>
-        <sphereGeometry args={[0.14, 10, 8]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
-      <mesh ref={wingL} position={[0, 0, 0.05]}>
-        <boxGeometry args={[0.55, 0.02, 0.18]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
-      <mesh ref={wingR} position={[0, 0, -0.05]}>
-        <boxGeometry args={[0.55, 0.02, 0.18]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
+      <group ref={body}>
+        {/* Body — elongated egg shape */}
+        <mesh castShadow scale={[1.4, 0.85, 0.9]}>
+          <sphereGeometry args={[0.14, 12, 10]} />
+          <meshStandardMaterial color={color} roughness={0.6} />
+        </mesh>
+        {/* Belly highlight */}
+        <mesh position={[0, -0.04, 0]} scale={[1.1, 0.5, 0.7]}>
+          <sphereGeometry args={[0.13, 12, 10]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.7} />
+        </mesh>
+        {/* Head */}
+        <mesh castShadow position={[0.18, 0.06, 0]}>
+          <sphereGeometry args={[0.1, 12, 10]} />
+          <meshStandardMaterial color={color} roughness={0.6} />
+        </mesh>
+        {/* Beak */}
+        <mesh position={[0.3, 0.04, 0]} rotation={[0, 0, -Math.PI / 2]}>
+          <coneGeometry args={[0.035, 0.12, 8]} />
+          <meshStandardMaterial color={accent} roughness={0.5} />
+        </mesh>
+        {/* Eyes */}
+        <mesh position={[0.24, 0.1, 0.07]}>
+          <sphereGeometry args={[0.018, 8, 6]} />
+          <meshStandardMaterial color="#101010" />
+        </mesh>
+        <mesh position={[0.24, 0.1, -0.07]}>
+          <sphereGeometry args={[0.018, 8, 6]} />
+          <meshStandardMaterial color="#101010" />
+        </mesh>
+        {/* Tail feathers */}
+        <mesh castShadow position={[-0.22, 0.02, 0]} rotation={[0, 0, 0.3]}>
+          <coneGeometry args={[0.09, 0.22, 6]} />
+          <meshStandardMaterial color={color} roughness={0.7} />
+        </mesh>
+        {/* Wings — two-segment for realistic shape */}
+        <group ref={wingL} position={[0, 0.04, 0.08]}>
+          <mesh castShadow position={[0, 0, 0.18]} rotation={[0, 0, 0.05]}>
+            <boxGeometry args={[0.22, 0.015, 0.32]} />
+            <meshStandardMaterial color={color} roughness={0.65} />
+          </mesh>
+          <mesh castShadow position={[-0.02, 0, 0.42]} rotation={[0, 0.2, 0.1]}>
+            <boxGeometry args={[0.18, 0.012, 0.28]} />
+            <meshStandardMaterial color={accent} roughness={0.65} />
+          </mesh>
+        </group>
+        <group ref={wingR} position={[0, 0.04, -0.08]}>
+          <mesh castShadow position={[0, 0, -0.18]} rotation={[0, 0, 0.05]}>
+            <boxGeometry args={[0.22, 0.015, 0.32]} />
+            <meshStandardMaterial color={color} roughness={0.65} />
+          </mesh>
+          <mesh castShadow position={[-0.02, 0, -0.42]} rotation={[0, -0.2, 0.1]}>
+            <boxGeometry args={[0.18, 0.012, 0.28]} />
+            <meshStandardMaterial color={accent} roughness={0.65} />
+          </mesh>
+        </group>
+      </group>
     </group>
   );
 }
