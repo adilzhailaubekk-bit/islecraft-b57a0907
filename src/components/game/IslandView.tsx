@@ -110,6 +110,21 @@ function mulberry32(seed: number) {
 }
 
 /* ============================================================
+   NoHit — make a subtree invisible to raycaster so it never
+   intercepts clicks meant for plots underneath.
+   ============================================================ */
+function NoHit({ children }: { children: React.ReactNode }) {
+  const ref = useRef<THREE.Group>(null!);
+  useEffect(() => {
+    if (!ref.current) return;
+    ref.current.traverse((o) => {
+      (o as THREE.Object3D & { raycast: () => void }).raycast = () => {};
+    });
+  });
+  return <group ref={ref}>{children}</group>;
+}
+
+/* ============================================================
    Ocean — bright tropical water with foam ring
    ============================================================ */
 function Ocean() {
