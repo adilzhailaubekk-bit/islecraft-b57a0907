@@ -1585,9 +1585,9 @@ function IslandScene({ state, onPlotClick }: IslandViewProps) {
         <Cloud seed={4} bounds={[9, 2, 9]} position={[-6, 13, 10]} color="#ffffff" opacity={0.65} />
       </Clouds>
 
-      <Bird radius={14} speed={0.4} height={10} />
-      <Bird radius={11} speed={0.55} height={8.5} color="#f8e8d0" />
-      <Bird radius={16} speed={0.3} height={11} color="#ffffff" />
+      <Bird radius={14} speed={0.4} height={10} color="#ffffff" accent="#ff9a3c" />
+      <Bird radius={11} speed={0.55} height={8.5} color="#f8e8d0" accent="#e85a3c" />
+      <Bird radius={16} speed={0.3} height={11} color="#dceefb" accent="#3b8fe6" />
 
       <Butterfly origin={[-2, 1, 2]} color={PALETTE.flowerPink} seed={1} />
       <Butterfly origin={[2.5, 0.9, -2]} color="#80c8ff" seed={2} />
