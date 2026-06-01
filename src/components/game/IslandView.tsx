@@ -2527,19 +2527,37 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
         </NoHit>
       )}
 
-      {/* Sand paths from the central fountain to every built plot */}
+      {/* Sand road from the central fountain to every built plot */}
       <NoHit>
         {slots.map((pos, i) => {
           if (!state.buildings[i]) return null;
-          const tiles = 6;
-          return Array.from({ length: tiles }).map((_, t) => {
-            const k = (t + 1) / (tiles + 1);
-            const x = pos[0] * k;
-            const z = pos[1] * k;
-            return <SandPathTile key={`pth-${i}-${t}`} position={[x, 0.515, z]} />;
+          const dx = pos[0];
+          const dz = pos[1];
+          const dist = Math.hypot(dx, dz);
+          if (dist < 0.4) return null;
+          const angle = Math.atan2(dz, dx);
+          // Stop short of building footprint
+          const usable = Math.max(0.5, dist - 0.9);
+          const segLen = 1.6;
+          const segCount = Math.max(1, Math.ceil(usable / segLen));
+          const actualLen = usable / segCount;
+          return Array.from({ length: segCount }).map((_, t) => {
+            const center = (t + 0.5) * actualLen;
+            const x = Math.cos(angle) * center;
+            const z = Math.sin(angle) * center;
+            return (
+              <PathSegment
+                key={`pth-${i}-${t}`}
+                position={[x, 0.515, z]}
+                rotation={-angle}
+                length={actualLen + 0.02}
+                width={0.85}
+              />
+            );
           });
         })}
       </NoHit>
+
 
       {/* Plots / buildings */}
       {slots.map((pos, i) => {
