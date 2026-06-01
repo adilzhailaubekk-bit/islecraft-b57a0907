@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import GamePage from "@/components/game/GamePage";
 import { MainMenu } from "@/components/game/MainMenu";
 import { toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 
 const STORAGE_KEY = "island-tycoon-save-v1";
 
@@ -22,6 +23,8 @@ function IndexPage() {
   };
 
   return (
+    <>
+    <Toaster />
     <AnimatePresence mode="wait">
       {screen === "menu" ? (
         <motion.div
@@ -64,6 +67,7 @@ function IndexPage() {
         </motion.div>
       )}
     </AnimatePresence>
+    </>
   );
 }
 
