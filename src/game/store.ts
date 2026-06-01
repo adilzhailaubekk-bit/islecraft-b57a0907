@@ -5,7 +5,7 @@ import { BUILDINGS, ISLANDS, xpForLevel, plotCost, applySoftCap } from "./data";
 const STORAGE_KEY = "island-tycoon-save-v1";
 
 const initialState = (): GameState => ({
-  resources: { gold: 50, wood: 10, stone: 0, energy: 0 },
+  resources: { gold: 75, wood: 0, stone: 0, energy: 0 },
   buildings: [],
   unlockedIslands: ["paradise"],
   activeIsland: "paradise",
