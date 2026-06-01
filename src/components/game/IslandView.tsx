@@ -1364,12 +1364,120 @@ function Plot({
 /* ============================================================
    Lighting — bright sunny day
    ============================================================ */
-function Lighting() {
+/* ============================================================
+   Day/Night cycle — shared signal + dynamic sky & lights
+   ============================================================ */
+const dayNight = { night: 0, warmth: 0 }; // night: 0 day → 1 deep night, warmth: 0..1 sunset/sunrise glow
+
+function DayNightSystem({ speed = 0.012 }: { speed?: number }) {
+  const skyRef = useRef<THREE.Object3D & { material: THREE.ShaderMaterial }>(null!);
+  const sunRef = useRef<THREE.DirectionalLight>(null!);
+  const ambRef = useRef<THREE.AmbientLight>(null!);
+  const hemiRef = useRef<THREE.HemisphereLight>(null!);
+  const fillRef = useRef<THREE.DirectionalLight>(null!);
+  const moonRef = useRef<THREE.DirectionalLight>(null!);
+  const starsRef = useRef<THREE.Points>(null!);
+  const sunPos = useMemo(() => new THREE.Vector3(), []);
+  const { scene } = useThree();
+
+  // Procedural starfield (cheap)
+  const starsGeom = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    const N = 350;
+    const arr = new Float32Array(N * 3);
+    for (let i = 0; i < N; i++) {
+      const u = Math.random();
+      const v = Math.random() * 0.5 + 0.5; // upper hemisphere
+      const theta = u * Math.PI * 2;
+      const phi = Math.acos(2 * v - 1);
+      const r = 80;
+      arr[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      arr[i * 3 + 1] = r * Math.cos(phi);
+      arr[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+    }
+    g.setAttribute("position", new THREE.BufferAttribute(arr, 3));
+    return g;
+  }, []);
+
+  useFrame(({ clock }) => {
+    // Cycle: 1 full day-night every ~2 minutes by default
+    const t = clock.elapsedTime * speed;
+    const angle = t * Math.PI * 2; // full revolution
+    const sunY = Math.sin(angle);
+    const sunX = Math.cos(angle) * 0.6;
+    const sunZ = Math.cos(angle) * 0.8;
+    // Distance for sky
+    const D = 80;
+    sunPos.set(sunX * D, sunY * D, sunZ * D);
+
+    // night factor: 1 when sun fully below, 0 when high
+    const dayAmt = THREE.MathUtils.clamp(sunY * 1.8 + 0.2, 0, 1); // soft transition
+    const nightAmt = 1 - dayAmt;
+    // warmth peaks near horizon (sunrise/sunset)
+    const horizon = 1 - Math.min(Math.abs(sunY) * 2.5, 1);
+    dayNight.night = nightAmt;
+    dayNight.warmth = horizon * (1 - Math.max(nightAmt - 0.6, 0));
+
+    // Sky uniforms
+    if (skyRef.current?.material?.uniforms) {
+      const u = skyRef.current.material.uniforms;
+      if (u.sunPosition) u.sunPosition.value.copy(sunPos);
+      if (u.turbidity) u.turbidity.value = 3 + horizon * 6;
+      if (u.rayleigh) u.rayleigh.value = 1.6 + horizon * 2.2 + nightAmt * 0.5;
+      if (u.mieCoefficient) u.mieCoefficient.value = 0.005 + horizon * 0.02;
+      if (u.mieDirectionalG) u.mieDirectionalG.value = 0.85;
+    }
+
+    // Sun light
+    if (sunRef.current) {
+      sunRef.current.position.set(sunX * 25, Math.max(sunY, -0.2) * 25, sunZ * 25);
+      sunRef.current.intensity = 2.2 * dayAmt;
+      const c = new THREE.Color("#fff0c8").lerp(new THREE.Color("#ff8a4a"), horizon * 0.8);
+      sunRef.current.color.copy(c);
+    }
+    // Ambient
+    if (ambRef.current) {
+      ambRef.current.intensity = 0.35 + dayAmt * 0.55;
+      const c = new THREE.Color("#fff4d8").lerp(new THREE.Color("#1a2a4a"), nightAmt * 0.85);
+      ambRef.current.color.copy(c);
+    }
+    // Hemisphere
+    if (hemiRef.current) {
+      hemiRef.current.intensity = 0.3 + dayAmt * 0.6;
+      hemiRef.current.color = new THREE.Color("#cdeaff").lerp(new THREE.Color("#2a3a6a"), nightAmt) as THREE.Color;
+      hemiRef.current.groundColor = new THREE.Color("#5fb050").lerp(new THREE.Color("#1a2030"), nightAmt) as THREE.Color;
+    }
+    // Fill
+    if (fillRef.current) {
+      fillRef.current.intensity = 0.2 + dayAmt * 0.4;
+    }
+    // Moon
+    if (moonRef.current) {
+      moonRef.current.position.set(-sunX * 25, Math.max(-sunY, -0.2) * 25, -sunZ * 25);
+      moonRef.current.intensity = 0.6 * nightAmt;
+    }
+    // Stars
+    if (starsRef.current) {
+      const m = starsRef.current.material as THREE.PointsMaterial;
+      m.opacity = nightAmt;
+      starsRef.current.visible = nightAmt > 0.02;
+    }
+    // Fog tint
+    if (scene.fog && scene.fog instanceof THREE.Fog) {
+      const c = new THREE.Color("#bfe6f5")
+        .lerp(new THREE.Color("#ff9a6a"), horizon * 0.6)
+        .lerp(new THREE.Color("#0a1530"), nightAmt * 0.85);
+      scene.fog.color.copy(c);
+    }
+  });
+
   return (
     <>
-      <ambientLight intensity={0.75} color="#fff4d8" />
-      <hemisphereLight args={["#cdeaff", "#5fb050", 0.7]} />
+      <Sky ref={skyRef as unknown as React.Ref<THREE.Object3D>} sunPosition={[18, 25, 14]} turbidity={3} rayleigh={1.8} mieCoefficient={0.005} mieDirectionalG={0.85} />
+      <ambientLight ref={ambRef} intensity={0.75} color="#fff4d8" />
+      <hemisphereLight ref={hemiRef} args={["#cdeaff", "#5fb050", 0.7]} />
       <directionalLight
+        ref={sunRef}
         position={[18, 25, 14]}
         intensity={2.2}
         color="#fff0c8"
@@ -1382,11 +1490,84 @@ function Lighting() {
         shadow-camera-bottom={-18}
         shadow-bias={-0.0005}
       />
-      {/* Fill light */}
-      <directionalLight position={[-12, 8, -8]} intensity={0.5} color="#a8d8ff" />
+      <directionalLight ref={fillRef} position={[-12, 8, -8]} intensity={0.5} color="#a8d8ff" />
+      <directionalLight ref={moonRef} position={[-18, -25, -14]} intensity={0} color="#9bb8ff" />
+      <points ref={starsRef} geometry={starsGeom}>
+        <pointsMaterial color="#ffffff" size={0.35} sizeAttenuation transparent opacity={0} depthWrite={false} />
+      </points>
     </>
   );
 }
+
+/* ============================================================
+   Window glows — soft warm panes + point light on each filled plot,
+   intensity tracks the global night factor.
+   ============================================================ */
+function WindowGlows({ slots, buildings }: { slots: [number, number][]; buildings: (GameState["buildings"][number] | undefined)[] }) {
+  const groupRef = useRef<THREE.Group>(null!);
+  useFrame(() => {
+    if (!groupRef.current) return;
+    const n = dayNight.night;
+    groupRef.current.visible = n > 0.03;
+    groupRef.current.traverse((obj) => {
+      const mesh = obj as THREE.Mesh;
+      if (mesh.isMesh) {
+        const mat = mesh.material as THREE.MeshStandardMaterial;
+        if (mat && mat.emissiveIntensity !== undefined && mesh.userData.glow) {
+          mat.emissiveIntensity = (mesh.userData.baseGlow ?? 1.6) * n;
+        }
+      } else if ((obj as THREE.PointLight).isLight) {
+        const l = obj as THREE.PointLight;
+        if (l.userData.glow) l.intensity = (l.userData.baseGlow ?? 1.4) * n;
+      }
+    });
+  });
+  return (
+    <group ref={groupRef}>
+      {slots.map((p, i) => {
+        const b = buildings[i];
+        if (!b) return null;
+        const offsets: [number, number, number][] = [
+          [-0.35, 0.85, 0.46],
+          [0.35, 0.85, 0.46],
+          [-0.35, 0.85, -0.46],
+          [0.35, 0.85, -0.46],
+        ];
+        return (
+          <group key={i} position={[p[0], 0.55, p[1]]}>
+            {offsets.map((o, j) => (
+              <mesh
+                key={j}
+                position={o}
+                rotation={[0, j < 2 ? 0 : Math.PI, 0]}
+                userData={{ glow: true, baseGlow: 1.8 }}
+              >
+                <planeGeometry args={[0.28, 0.22]} />
+                <meshStandardMaterial
+                  color="#fff0a8"
+                  emissive="#ffb734"
+                  emissiveIntensity={0}
+                  transparent
+                  opacity={0.95}
+                  side={THREE.DoubleSide}
+                />
+              </mesh>
+            ))}
+            <pointLight
+              position={[0, 0.7, 0]}
+              color="#ffc080"
+              intensity={0}
+              distance={3.5}
+              decay={2}
+              userData={{ glow: true, baseGlow: 1.4 }}
+            />
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
 
 /* ============================================================
    Instanced grass field — wind-animated via shader patch
