@@ -171,3 +171,124 @@ export const applySoftCap = (rate: number, level: number) => {
   const excess = rate - cap;
   return cap + Math.sqrt(excess * cap);
 };
+
+// ============ DAILY RETENTION ============
+
+export type DailyRewardKind = "gold" | "wood" | "stone" | "speed" | "double" | "worker" | "chest";
+
+export interface DailyRewardDef {
+  day: number; // 1..7
+  kind: DailyRewardKind;
+  amount: number; // for resources; for boosters: duration sec; for chest: gold base
+  emoji: string;
+  label: string;
+  rare?: boolean;
+}
+
+// 7-day cycle. Resource amounts scale with level at claim time.
+export const DAILY_REWARDS: DailyRewardDef[] = [
+  { day: 1, kind: "gold",   amount: 250,  emoji: "🪙", label: "Золото" },
+  { day: 2, kind: "wood",   amount: 120,  emoji: "🪵", label: "Дерево" },
+  { day: 3, kind: "speed",  amount: 300,  emoji: "⚡", label: "Ускоритель x2 · 5м" },
+  { day: 4, kind: "stone",  amount: 80,   emoji: "🪨", label: "Камень", rare: true },
+  { day: 5, kind: "gold",   amount: 1200, emoji: "💰", label: "Сундучок золота" },
+  { day: 6, kind: "double", amount: 600,  emoji: "💎", label: "x2 золото · 10м", rare: true },
+  { day: 7, kind: "chest",  amount: 5000, emoji: "🎁", label: "Большой сундук", rare: true },
+];
+
+// Resource rewards scale with level (gentle quadratic).
+export const dailyRewardAmount = (def: DailyRewardDef, level: number): number => {
+  if (def.kind === "gold" || def.kind === "chest") {
+    return Math.floor(def.amount * (1 + level * 0.35 + level * level * 0.04));
+  }
+  if (def.kind === "wood" || def.kind === "stone") {
+    return Math.floor(def.amount * (1 + level * 0.25));
+  }
+  return def.amount; // duration / worker count
+};
+
+// ============ DAILY SPIN ============
+
+export interface SpinSegment {
+  id: string;
+  kind: DailyRewardKind;
+  amount: number;
+  emoji: string;
+  label: string;
+  weight: number;
+  color: string; // tailwind gradient classes
+}
+
+export const SPIN_SEGMENTS: SpinSegment[] = [
+  { id: "s1", kind: "gold",   amount: 200,  emoji: "🪙", label: "Золото",       weight: 28, color: "from-amber-300 to-amber-500" },
+  { id: "s2", kind: "wood",   amount: 60,   emoji: "🪵", label: "Дерево",       weight: 22, color: "from-lime-300 to-emerald-500" },
+  { id: "s3", kind: "stone",  amount: 40,   emoji: "🪨", label: "Камень",       weight: 18, color: "from-slate-300 to-slate-500" },
+  { id: "s4", kind: "gold",   amount: 600,  emoji: "💰", label: "Куча золота",  weight: 12, color: "from-yellow-300 to-orange-500" },
+  { id: "s5", kind: "speed",  amount: 180,  emoji: "⚡", label: "x2 скорость 3м", weight: 8,  color: "from-cyan-300 to-sky-500" },
+  { id: "s6", kind: "double", amount: 300,  emoji: "💎", label: "x2 доход 5м",  weight: 6,  color: "from-fuchsia-300 to-purple-500" },
+  { id: "s7", kind: "wood",   amount: 250,  emoji: "🌲", label: "Много дерева", weight: 4,  color: "from-emerald-400 to-teal-600" },
+  { id: "s8", kind: "chest",  amount: 1500, emoji: "🎁", label: "Сундук!",      weight: 2,  color: "from-rose-400 to-pink-600" },
+];
+
+export const pickSpinSegment = (): SpinSegment => {
+  const total = SPIN_SEGMENTS.reduce((s, x) => s + x.weight, 0);
+  let r = Math.random() * total;
+  for (const s of SPIN_SEGMENTS) {
+    if ((r -= s.weight) <= 0) return s;
+  }
+  return SPIN_SEGMENTS[0];
+};
+
+// ============ DAILY MISSIONS ============
+
+import type { DailyMission, MissionType } from "./types";
+
+interface MissionTemplate {
+  type: MissionType;
+  title: string;
+  emoji: string;
+  baseGoal: number;
+}
+
+const MISSION_TEMPLATES: MissionTemplate[] = [
+  { type: "earnGold",  title: "Заработать {n} золота",  emoji: "🪙", baseGoal: 800 },
+  { type: "earnWood",  title: "Собрать {n} дерева",     emoji: "🪵", baseGoal: 300 },
+  { type: "earnStone", title: "Добыть {n} камня",       emoji: "🪨", baseGoal: 150 },
+  { type: "upgrade",   title: "Улучшить здания {n}×",  emoji: "🔨", baseGoal: 3 },
+  { type: "build",     title: "Построить {n} здания",   emoji: "🏗️", baseGoal: 2 },
+  { type: "spend",     title: "Потратить {n} золота",   emoji: "💸", baseGoal: 1500 },
+];
+
+export const generateDailyMissions = (level: number, date: string): DailyMission[] => {
+  // Deterministic shuffle by date so refresh feels consistent within a day
+  const seed = [...date].reduce((a, c) => a + c.charCodeAt(0), 0);
+  const pool = [...MISSION_TEMPLATES].sort((a, b) => {
+    const ha = (a.type.charCodeAt(0) * 17 + seed) % 100;
+    const hb = (b.type.charCodeAt(0) * 17 + seed) % 100;
+    return ha - hb;
+  });
+  const picks = pool.slice(0, 3);
+  const scale = 1 + level * 0.4 + level * level * 0.03;
+  return picks.map((t, i) => {
+    const goal =
+      t.type === "upgrade" || t.type === "build"
+        ? Math.max(2, Math.floor(t.baseGoal + level * 0.5))
+        : Math.floor(t.baseGoal * scale);
+    return {
+      id: `${date}-${i}-${t.type}`,
+      type: t.type,
+      goal,
+      progress: 0,
+      claimed: false,
+      title: t.title.replace("{n}", goal.toLocaleString("ru-RU")),
+      emoji: t.emoji,
+      rewardGold: Math.floor(400 * scale * (1 + i * 0.25)),
+      rewardXp: 20 + i * 15,
+    };
+  });
+};
+
+export const todayKey = (ts = Date.now()) => {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
