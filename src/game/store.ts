@@ -271,7 +271,8 @@ export function useGameStore() {
 
   // Build into the FIRST empty slot among existing plots, or upgrade if same id elsewhere
   const buyOrUpgrade = useCallback((buildingId: string) => {
-    setState((p) => {
+    setState((prev) => {
+      const p = ensureDaily(prev);
       const def = BUILDINGS.find((b) => b.id === buildingId);
       if (!def) return p;
       const existingIdx = p.buildings.findIndex((b) => b && b.id === buildingId);
@@ -282,30 +283,30 @@ export function useGameStore() {
       for (const k of Object.keys(cost) as (keyof Resources)[]) {
         newRes[k] -= cost[k] ?? 0;
       }
-      let buildings = p.buildings.slice();
-      if (existingIdx >= 0) {
+      const buildings = p.buildings.slice();
+      const isUpgrade = existingIdx >= 0;
+      if (isUpgrade) {
         buildings[existingIdx] = { id: buildingId, level: level + 1 };
       } else {
-        // find first empty slot within owned plots
         let slot = -1;
         for (let i = 0; i < p.plots; i++) {
-          if (!buildings[i]) {
-            slot = i;
-            break;
-          }
+          if (!buildings[i]) { slot = i; break; }
         }
         if (slot < 0) return p;
         while (buildings.length <= slot) buildings.push(null);
         buildings[slot] = { id: buildingId, level: 1 };
       }
-      return { ...p, resources: newRes, buildings };
+      let next: GameState = { ...p, resources: newRes, buildings };
+      next = applyGoldSpent(next, cost.gold ?? 0);
+      next = isUpgrade ? applyUpgrade(next) : applyBuild(next);
+      return next;
     });
     addXp(5);
   }, [addXp]);
 
-  // Build at a specific plot (used when player taps an empty plot directly)
   const buildAtPlot = useCallback((buildingId: string, plotIdx: number) => {
-    setState((p) => {
+    setState((prev) => {
+      const p = ensureDaily(prev);
       const def = BUILDINGS.find((b) => b.id === buildingId);
       if (!def) return p;
       if (plotIdx < 0 || plotIdx >= p.plots) return p;
@@ -319,13 +320,17 @@ export function useGameStore() {
       const buildings = p.buildings.slice();
       while (buildings.length <= plotIdx) buildings.push(null);
       buildings[plotIdx] = { id: buildingId, level: 1 };
-      return { ...p, resources: newRes, buildings };
+      let next: GameState = { ...p, resources: newRes, buildings };
+      next = applyGoldSpent(next, cost.gold ?? 0);
+      next = applyBuild(next);
+      return next;
     });
     addXp(5);
   }, [addXp]);
 
   const upgradeAtPlot = useCallback((plotIdx: number) => {
-    setState((p) => {
+    setState((prev) => {
+      const p = ensureDaily(prev);
       const existing = p.buildings[plotIdx];
       if (!existing) return p;
       const def = BUILDINGS.find((b) => b.id === existing.id);
@@ -338,13 +343,14 @@ export function useGameStore() {
       }
       const buildings = p.buildings.slice();
       buildings[plotIdx] = { ...existing, level: existing.level + 1 };
-      return { ...p, resources: newRes, buildings };
+      let next: GameState = { ...p, resources: newRes, buildings };
+      next = applyGoldSpent(next, cost.gold ?? 0);
+      next = applyUpgrade(next);
+      return next;
     });
     addXp(5);
   }, [addXp]);
 
-  // Swap (or move into empty) two plot slots. Moving costs nothing and
-  // can target any legal slot on the island grid, regardless of owned-plot count.
   const moveBuilding = useCallback((from: number, to: number) => {
     setState((p) => {
       if (from === to || to < 0 || from < 0) return p;
@@ -359,24 +365,28 @@ export function useGameStore() {
   }, []);
 
   const buyPlot = useCallback(() => {
-    setState((p) => {
+    setState((prev) => {
+      const p = ensureDaily(prev);
       const cost = plotCost(p.plots);
       if (p.resources.gold < cost) return p;
-      return { ...p, resources: { ...p.resources, gold: p.resources.gold - cost }, plots: p.plots + 1 };
+      const next = { ...p, resources: { ...p.resources, gold: p.resources.gold - cost }, plots: p.plots + 1 };
+      return applyGoldSpent(next, cost);
     });
     addXp(10);
   }, [addXp]);
 
   const unlockIsland = useCallback((islandId: string) => {
-    setState((p) => {
+    setState((prev) => {
+      const p = ensureDaily(prev);
       const isle = ISLANDS.find((i) => i.id === islandId);
       if (!isle || p.unlockedIslands.includes(islandId)) return p;
       if (p.resources.gold < isle.unlockCost) return p;
-      return {
+      const next = {
         ...p,
         resources: { ...p.resources, gold: p.resources.gold - isle.unlockCost },
         unlockedIslands: [...p.unlockedIslands, islandId],
       };
+      return applyGoldSpent(next, isle.unlockCost);
     });
     addXp(80);
   }, [addXp]);
@@ -388,25 +398,29 @@ export function useGameStore() {
   }, []);
 
   const buyBooster = useCallback((boosterId: string, price: number, duration: number) => {
-    setState((p) => {
+    setState((prev) => {
+      const p = ensureDaily(prev);
       if (p.resources.gold < price) return p;
       const now = Date.now();
       const b = { ...p.boosters };
       if (boosterId === "speed") b.speedBoostUntil = Math.max(b.speedBoostUntil, now) + duration * 1000;
       if (boosterId === "double") b.doubleIncomeUntil = Math.max(b.doubleIncomeUntil, now) + duration * 1000;
       if (boosterId === "worker") b.extraWorkers += 1;
-      return { ...p, resources: { ...p.resources, gold: p.resources.gold - price }, boosters: b };
+      const next = { ...p, resources: { ...p.resources, gold: p.resources.gold - price }, boosters: b };
+      return applyGoldSpent(next, price);
     });
   }, []);
 
   const buyCosmetic = useCallback((id: string, price: number) => {
-    setState((p) => {
+    setState((prev) => {
+      const p = ensureDaily(prev);
       if (p.resources.gold < price || p.cosmetics.includes(id)) return p;
-      return {
+      const next = {
         ...p,
         resources: { ...p.resources, gold: p.resources.gold - price },
         cosmetics: [...p.cosmetics, id],
       };
+      return applyGoldSpent(next, price);
     });
   }, []);
 
@@ -421,25 +435,123 @@ export function useGameStore() {
     });
   }, []);
 
-  const claimDaily = useCallback(() => {
-    setState((p) => {
+  // ============ DAILY ACTIONS ============
+
+  // Apply a reward kind/amount to state (gold/wood/stone/booster/chest).
+  const applyReward = (p: GameState, kind: DailyRewardKind, amount: number): GameState => {
+    const now = Date.now();
+    if (kind === "gold") {
+      return { ...p, resources: { ...p.resources, gold: p.resources.gold + amount }, totalGoldEarned: p.totalGoldEarned + amount };
+    }
+    if (kind === "wood") {
+      return { ...p, resources: { ...p.resources, wood: p.resources.wood + amount } };
+    }
+    if (kind === "stone") {
+      return { ...p, resources: { ...p.resources, stone: p.resources.stone + amount } };
+    }
+    if (kind === "speed") {
+      const b = { ...p.boosters, speedBoostUntil: Math.max(p.boosters.speedBoostUntil, now) + amount * 1000 };
+      return { ...p, boosters: b };
+    }
+    if (kind === "double") {
+      const b = { ...p.boosters, doubleIncomeUntil: Math.max(p.boosters.doubleIncomeUntil, now) + amount * 1000 };
+      return { ...p, boosters: b };
+    }
+    if (kind === "worker") {
+      return { ...p, boosters: { ...p.boosters, extraWorkers: p.boosters.extraWorkers + 1 } };
+    }
+    // chest: gold + a small booster bundle
+    const goldAdd = amount;
+    const b = {
+      ...p.boosters,
+      speedBoostUntil: Math.max(p.boosters.speedBoostUntil, now) + 300 * 1000,
+      doubleIncomeUntil: Math.max(p.boosters.doubleIncomeUntil, now) + 300 * 1000,
+    };
+    return {
+      ...p,
+      resources: { ...p.resources, gold: p.resources.gold + goldAdd },
+      totalGoldEarned: p.totalGoldEarned + goldAdd,
+      boosters: b,
+    };
+  };
+
+  // Claim today's slot in the 7-day cycle.
+  const claimDailyReward = useCallback((): { kind: DailyRewardKind; amount: number; day: number } | null => {
+    let result: { kind: DailyRewardKind; amount: number; day: number } | null = null;
+    setState((prev) => {
+      const p = ensureDaily(prev);
       const now = Date.now();
       if (now - p.lastDailyClaim < 22 * 3600 * 1000) return p;
-      // streak continues if claimed within 48h, otherwise resets
       const within = p.lastDailyClaim > 0 && now - p.lastDailyClaim < 48 * 3600 * 1000;
       const streak = within ? p.dailyStreak + 1 : 1;
-      // Smaller flat base early, but grows quadratically with level so it scales late
-      const base = 150 + p.level * p.level * 25;
-      const streakBonus = Math.min(streak - 1, 14) * 0.12; // up to +168% at streak 15
-      const reward = Math.floor(base * (1 + streakBonus));
-      return {
-        ...p,
-        resources: { ...p.resources, gold: p.resources.gold + reward },
+      // Determine cycle day (1..7). Reset to 1 if streak broke.
+      const day = within ? ((p.dailyCycleDay - 1) % 7) + 1 : 1;
+      const def = DAILY_REWARDS.find((r) => r.day === day) ?? DAILY_REWARDS[0];
+      const amount = dailyRewardAmount(def, p.level);
+      const streakMult = 1 + Math.min(streak - 1, 30) * 0.04; // up to +120% at streak 30
+      const scaledAmount =
+        def.kind === "gold" || def.kind === "wood" || def.kind === "stone" || def.kind === "chest"
+          ? Math.floor(amount * streakMult)
+          : amount;
+      let next = applyReward(p, def.kind, scaledAmount);
+      next = {
+        ...next,
         lastDailyClaim: now,
         dailyStreak: streak,
+        dailyCycleDay: (day % 7) + 1,
       };
+      result = { kind: def.kind, amount: scaledAmount, day };
+      return next;
+    });
+    return result;
+  }, []);
+
+  // Free daily spin — returns the segment that was won, or null if not ready.
+  const claimSpin = useCallback((): SpinSegment | null => {
+    const p = stateRef.current;
+    const now = Date.now();
+    if (now - (p.lastSpinAt ?? 0) < 22 * 3600 * 1000) return null;
+    const segment = pickSpinSegment();
+    setState((prev) => {
+      const s = ensureDaily(prev);
+      const amount =
+        segment.kind === "gold" || segment.kind === "chest"
+          ? Math.floor(segment.amount * (1 + s.level * 0.2))
+          : segment.kind === "wood" || segment.kind === "stone"
+            ? Math.floor(segment.amount * (1 + s.level * 0.15))
+            : segment.amount;
+      let next = applyReward(s, segment.kind, amount);
+      next = { ...next, lastSpinAt: now };
+      return next;
+    });
+    return segment;
+  }, []);
+
+  // Claim a completed mission's reward.
+  const claimMission = useCallback((missionId: string) => {
+    setState((prev) => {
+      const p = ensureDaily(prev);
+      const m = p.dailyMissions.find((x) => x.id === missionId);
+      if (!m || m.claimed || m.progress < m.goal) return p;
+      const next: GameState = {
+        ...p,
+        resources: { ...p.resources, gold: p.resources.gold + m.rewardGold },
+        totalGoldEarned: p.totalGoldEarned + m.rewardGold,
+        dailyMissions: p.dailyMissions.map((x) => (x.id === missionId ? { ...x, claimed: true } : x)),
+      };
+      // small XP bonus
+      let xp = next.xp + m.rewardXp;
+      let level = next.level;
+      while (xp >= xpForLevel(level)) {
+        xp -= xpForLevel(level);
+        level++;
+      }
+      return { ...next, xp, level };
     });
   }, []);
+
+  // Legacy alias so existing callers still work.
+  const claimDaily = claimDailyReward;
 
   const resetOfflineNotice = useCallback(() => {
     offlineEarnings.current = null;
@@ -459,6 +571,9 @@ export function useGameStore() {
     buyCosmetic,
     claimAchievement,
     claimDaily,
+    claimDailyReward,
+    claimSpin,
+    claimMission,
     offlineEarnings: offlineEarnings.current,
     resetOfflineNotice,
   };
