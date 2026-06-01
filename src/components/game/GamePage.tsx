@@ -41,8 +41,12 @@ export default function GamePage() {
         : a.metric === "level"
           ? game.state.level
           : a.metric === "buildings"
-            ? game.state.buildings.reduce((s, b) => s + b.level, 0)
-            : game.state.unlockedIslands.length;
+            ? game.state.buildings.reduce((s, b) => s + (b?.level ?? 0), 0)
+            : a.metric === "plots"
+              ? game.state.plots
+              : a.metric === "streak"
+                ? game.state.dailyStreak
+                : game.state.unlockedIslands.length;
     return p >= a.goal;
   }).length;
 
