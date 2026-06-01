@@ -29,6 +29,8 @@ export default function GamePage() {
   const [plotIndex, setPlotIndex] = useState(0);
   const [offlineSeen, setOfflineSeen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [moveMode, setMoveMode] = useState(false);
+  const [movingFrom, setMovingFrom] = useState<number | null>(null);
   useEffect(() => setMounted(true), []);
   if (!mounted) return <div className="fixed inset-0 bg-gradient-sky" />;
 
