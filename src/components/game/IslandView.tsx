@@ -1370,7 +1370,7 @@ function Plot({
 const dayNight = { night: 0, warmth: 0 }; // night: 0 day → 1 deep night, warmth: 0..1 sunset/sunrise glow
 
 function DayNightSystem({ speed = 0.012 }: { speed?: number }) {
-  const skyRef = useRef<THREE.Object3D & { material: THREE.ShaderMaterial }>(null!);
+  const skyRef = useRef<THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>>(null!);
   const sunRef = useRef<THREE.DirectionalLight>(null!);
   const ambRef = useRef<THREE.AmbientLight>(null!);
   const hemiRef = useRef<THREE.HemisphereLight>(null!);
