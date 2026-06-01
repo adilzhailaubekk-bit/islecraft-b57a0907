@@ -2031,6 +2031,8 @@ function IslandScene({ state, onPlotClick }: IslandViewProps) {
         />
       ))}
 
+      <WindowGlows slots={slots} buildings={state.buildings.slice(0, slots.length)} />
+
       {/* Sky life */}
       <Clouds material={THREE.MeshBasicMaterial}>
         <Cloud seed={1} bounds={[10, 2, 10]} position={[-8, 12, -6]} color="#ffffff" opacity={0.8} />
