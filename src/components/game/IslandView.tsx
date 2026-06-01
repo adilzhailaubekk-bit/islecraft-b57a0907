@@ -2122,11 +2122,6 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
     }
   }, [island.id]);
 
-  const slots = useMemo(
-    () => PLOT_POSITIONS.slice(0, Math.max(state.plots, state.buildings.length)),
-    [state.plots, state.buildings.length],
-  );
-
   const palms = useMemo(
     () =>
       [
@@ -2154,7 +2149,7 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
   const decor = useMemo(() => {
     const rng = mulberry32(42);
     const flowerColors = [PALETTE.flowerPink, PALETTE.flowerOrange, PALETTE.flowerPurple, PALETTE.flowerYellow, PALETTE.flowerWhite];
-    const flowers = Array.from({ length: 22 }).map((_, i) => {
+    const flowers = Array.from({ length: 22 }).map(() => {
       const a = rng() * Math.PI * 2;
       const r = 2.5 + rng() * 4.2;
       return {
@@ -2190,6 +2185,25 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
     ] as [number, number, number][];
     return { flowers, rocks, bushes, mushrooms, lanterns };
   }, []);
+
+  // Build a grid of legal plot positions that avoids every plant/decor footprint.
+  const slots = useMemo<[number, number][]>(() => {
+    const forbidden: { x: number; z: number; r: number }[] = [];
+    for (const p of palms) forbidden.push({ x: p[0], z: p[2], r: 1.7 });
+    for (const t of trees) forbidden.push({ x: t[0], z: t[2], r: 1.6 });
+    for (const r of decor.rocks) forbidden.push({ x: r.pos[0], z: r.pos[2], r: 0.9 + r.scale * 0.4 });
+    for (const b of decor.bushes) forbidden.push({ x: b[0], z: b[2], r: 1.1 });
+    for (const m of decor.mushrooms) forbidden.push({ x: m[0], z: m[2], r: 0.85 });
+    for (const f of decor.flowers) forbidden.push({ x: f.pos[0], z: f.pos[2], r: 0.7 });
+    for (const l of decor.lanterns) forbidden.push({ x: l[0], z: l[2], r: 0.9 });
+    // Centerpieces
+    forbidden.push({ x: 0, z: 0, r: 1.5 });   // Fountain
+    forbidden.push({ x: -6, z: -1, r: 1.0 }); // FlagPole
+    forbidden.push({ x: 7.2, z: 0, r: 1.5 }); // Bridge
+    forbidden.push({ x: -6.5, z: 4, r: 1.3 }); // Lighthouse cosmetic
+    forbidden.push({ x: 6, z: -4, r: 1.2 });   // Statue cosmetic
+    return generatePlotGrid(forbidden);
+  }, [palms, trees, decor]);
 
   return (
     <>
