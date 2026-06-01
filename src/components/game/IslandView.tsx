@@ -313,161 +313,190 @@ function Fish({ radius, depth, speed, color }: { radius: number; depth: number; 
 
 /* ---------------- Buildings (procedural 3D) ---------------- */
 
+function HutBuilding({ stages }: { stages: number }) {
+  return (
+    <>
+      <mesh castShadow position={[0, 0.35, 0]}>
+        <boxGeometry args={[0.9, 0.7, 0.9]} />
+        <meshStandardMaterial color="#c69a6b" />
+      </mesh>
+      <mesh castShadow position={[0, 0.9, 0]}>
+        <coneGeometry args={[0.75, 0.6, 4]} />
+        <meshStandardMaterial color="#7a3a1a" />
+      </mesh>
+      <mesh position={[0, 0.35, 0.46]}>
+        <boxGeometry args={[0.25, 0.4, 0.02]} />
+        <meshStandardMaterial color="#3a2010" />
+      </mesh>
+      {stages >= 2 && (
+        <mesh castShadow position={[0.5, 0.25, 0.5]}>
+          <boxGeometry args={[0.3, 0.5, 0.3]} />
+          <meshStandardMaterial color="#d4a874" />
+        </mesh>
+      )}
+    </>
+  );
+}
+
+function LumberBuilding({ stages }: { stages: number }) {
+  const saw = useRef<THREE.Mesh>(null!);
+  useFrame((_, dt) => {
+    if (saw.current) saw.current.rotation.z += dt * 4;
+  });
+  return (
+    <>
+      <mesh castShadow position={[0, 0.3, 0]}>
+        <boxGeometry args={[1, 0.6, 0.8]} />
+        <meshStandardMaterial color="#a06030" />
+      </mesh>
+      <mesh castShadow position={[0, 0.75, 0]}>
+        <boxGeometry args={[1.1, 0.3, 0.9]} />
+        <meshStandardMaterial color="#5a2a10" />
+      </mesh>
+      <mesh ref={saw} position={[0.55, 0.4, 0]}>
+        <torusGeometry args={[0.2, 0.04, 8, 16]} />
+        <meshStandardMaterial color="#cccccc" metalness={0.9} roughness={0.2} />
+      </mesh>
+      {stages >= 2 && (
+        <mesh position={[-0.5, 0.4, 0]} castShadow>
+          <cylinderGeometry args={[0.12, 0.12, 0.6, 8]} />
+          <meshStandardMaterial color="#6a3a1a" />
+        </mesh>
+      )}
+    </>
+  );
+}
+
+function QuarryBuilding({ stages }: { stages: number }) {
+  return (
+    <>
+      <mesh castShadow position={[0, 0.15, 0]}>
+        <cylinderGeometry args={[0.6, 0.7, 0.3, 8]} />
+        <meshStandardMaterial color="#6a6a70" />
+      </mesh>
+      <mesh castShadow position={[0.2, 0.45, 0.1]}>
+        <dodecahedronGeometry args={[0.35]} />
+        <meshStandardMaterial color="#8a8a90" />
+      </mesh>
+      <mesh castShadow position={[-0.3, 0.4, -0.1]}>
+        <dodecahedronGeometry args={[0.3]} />
+        <meshStandardMaterial color="#7a7a80" />
+      </mesh>
+      {stages >= 2 && (
+        <mesh castShadow position={[0, 0.7, -0.2]}>
+          <dodecahedronGeometry args={[0.22]} />
+          <meshStandardMaterial color="#9a9aa0" />
+        </mesh>
+      )}
+    </>
+  );
+}
+
+function WindmillBuilding() {
+  const blades = useRef<THREE.Group>(null!);
+  useFrame((_, dt) => {
+    if (blades.current) blades.current.rotation.z += dt * 1.2;
+  });
+  return (
+    <>
+      <mesh castShadow position={[0, 0.5, 0]}>
+        <cylinderGeometry args={[0.18, 0.3, 1.1, 12]} />
+        <meshStandardMaterial color="#e8e8e8" />
+      </mesh>
+      <mesh castShadow position={[0, 1.05, 0]}>
+        <coneGeometry args={[0.22, 0.3, 12]} />
+        <meshStandardMaterial color="#c83030" />
+      </mesh>
+      <group ref={blades} position={[0, 0.95, 0.2]}>
+        {[0, 1, 2, 3].map((i) => (
+          <mesh key={i} rotation={[0, 0, (i * Math.PI) / 2]} castShadow>
+            <boxGeometry args={[0.08, 0.7, 0.04]} />
+            <meshStandardMaterial color="#ffffff" />
+          </mesh>
+        ))}
+      </group>
+    </>
+  );
+}
+
+function MarketBuilding({ stages }: { stages: number }) {
+  return (
+    <>
+      <mesh castShadow position={[0, 0.3, 0]}>
+        <boxGeometry args={[1.2, 0.6, 1]} />
+        <meshStandardMaterial color="#e8d090" />
+      </mesh>
+      <mesh castShadow position={[0, 0.85, 0]}>
+        <coneGeometry args={[1, 0.5, 4]} />
+        <meshStandardMaterial color="#d04040" />
+      </mesh>
+      <mesh position={[0, 0.3, 0.51]}>
+        <boxGeometry args={[0.4, 0.4, 0.02]} />
+        <meshStandardMaterial color="#3a2010" />
+      </mesh>
+      {stages >= 2 && (
+        <>
+          <mesh position={[0.7, 0.15, 0.7]}>
+            <boxGeometry args={[0.2, 0.3, 0.2]} />
+            <meshStandardMaterial color="#a06030" />
+          </mesh>
+          <mesh position={[-0.7, 0.15, 0.7]}>
+            <boxGeometry args={[0.2, 0.3, 0.2]} />
+            <meshStandardMaterial color="#a06030" />
+          </mesh>
+        </>
+      )}
+    </>
+  );
+}
+
+function RefineryBuilding() {
+  return (
+    <>
+      <mesh castShadow position={[0, 0.4, 0]}>
+        <boxGeometry args={[0.9, 0.8, 0.9]} />
+        <meshStandardMaterial color="#5a4a8a" />
+      </mesh>
+      <mesh castShadow position={[0, 1.2, 0]}>
+        <cylinderGeometry args={[0.3, 0.4, 0.8, 8]} />
+        <meshStandardMaterial color="#7a5aaa" />
+      </mesh>
+      <mesh position={[0, 1.7, 0]}>
+        <sphereGeometry args={[0.3, 16, 12]} />
+        <meshStandardMaterial color="#b080ff" emissive="#9050ff" emissiveIntensity={1.2} />
+      </mesh>
+      <pointLight position={[0, 1.7, 0]} color="#b070ff" intensity={2} distance={4} />
+    </>
+  );
+}
+
 function Building({ id, level }: { id: string; level: number }) {
   const stages = Math.min(level, 3);
   const scale = 0.85 + stages * 0.12;
+  let content: React.ReactNode = null;
   switch (id) {
     case "hut":
-      return (
-        <group scale={scale}>
-          <mesh castShadow position={[0, 0.35, 0]}>
-            <boxGeometry args={[0.9, 0.7, 0.9]} />
-            <meshStandardMaterial color="#c69a6b" />
-          </mesh>
-          <mesh castShadow position={[0, 0.9, 0]}>
-            <coneGeometry args={[0.75, 0.6, 4]} />
-            <meshStandardMaterial color="#7a3a1a" />
-          </mesh>
-          <mesh position={[0, 0.35, 0.46]}>
-            <boxGeometry args={[0.25, 0.4, 0.02]} />
-            <meshStandardMaterial color="#3a2010" />
-          </mesh>
-          {stages >= 2 && (
-            <mesh castShadow position={[0.5, 0.25, 0.5]}>
-              <boxGeometry args={[0.3, 0.5, 0.3]} />
-              <meshStandardMaterial color="#d4a874" />
-            </mesh>
-          )}
-        </group>
-      );
-    case "lumber": {
-      const saw = useRef<THREE.Mesh>(null!);
-      useFrame((_, dt) => {
-        if (saw.current) saw.current.rotation.z += dt * 4;
-      });
-      return (
-        <group scale={scale}>
-          <mesh castShadow position={[0, 0.3, 0]}>
-            <boxGeometry args={[1, 0.6, 0.8]} />
-            <meshStandardMaterial color="#a06030" />
-          </mesh>
-          <mesh castShadow position={[0, 0.75, 0]}>
-            <boxGeometry args={[1.1, 0.3, 0.9]} />
-            <meshStandardMaterial color="#5a2a10" />
-          </mesh>
-          <mesh ref={saw} position={[0.55, 0.4, 0]} rotation={[0, 0, 0]}>
-            <torusGeometry args={[0.2, 0.04, 8, 16]} />
-            <meshStandardMaterial color="#cccccc" metalness={0.9} roughness={0.2} />
-          </mesh>
-          {stages >= 2 && (
-            <mesh position={[-0.5, 0.4, 0]} castShadow>
-              <cylinderGeometry args={[0.12, 0.12, 0.6, 8]} />
-              <meshStandardMaterial color="#6a3a1a" />
-            </mesh>
-          )}
-        </group>
-      );
-    }
+      content = <HutBuilding stages={stages} />;
+      break;
+    case "lumber":
+      content = <LumberBuilding stages={stages} />;
+      break;
     case "quarry":
-      return (
-        <group scale={scale}>
-          <mesh castShadow position={[0, 0.15, 0]}>
-            <cylinderGeometry args={[0.6, 0.7, 0.3, 8]} />
-            <meshStandardMaterial color="#6a6a70" />
-          </mesh>
-          <mesh castShadow position={[0.2, 0.45, 0.1]}>
-            <dodecahedronGeometry args={[0.35]} />
-            <meshStandardMaterial color="#8a8a90" />
-          </mesh>
-          <mesh castShadow position={[-0.3, 0.4, -0.1]}>
-            <dodecahedronGeometry args={[0.3]} />
-            <meshStandardMaterial color="#7a7a80" />
-          </mesh>
-          {stages >= 2 && (
-            <mesh castShadow position={[0, 0.7, -0.2]}>
-              <dodecahedronGeometry args={[0.22]} />
-              <meshStandardMaterial color="#9a9aa0" />
-            </mesh>
-          )}
-        </group>
-      );
-    case "windmill": {
-      const blades = useRef<THREE.Group>(null!);
-      useFrame((_, dt) => {
-        if (blades.current) blades.current.rotation.z += dt * 1.2;
-      });
-      return (
-        <group scale={scale}>
-          <mesh castShadow position={[0, 0.5, 0]}>
-            <cylinderGeometry args={[0.18, 0.3, 1.1, 12]} />
-            <meshStandardMaterial color="#e8e8e8" />
-          </mesh>
-          <mesh castShadow position={[0, 1.05, 0]}>
-            <coneGeometry args={[0.22, 0.3, 12]} />
-            <meshStandardMaterial color="#c83030" />
-          </mesh>
-          <group ref={blades} position={[0, 0.95, 0.2]}>
-            {[0, 1, 2, 3].map((i) => (
-              <mesh key={i} rotation={[0, 0, (i * Math.PI) / 2]} castShadow>
-                <boxGeometry args={[0.08, 0.7, 0.04]} />
-                <meshStandardMaterial color="#ffffff" />
-              </mesh>
-            ))}
-          </group>
-        </group>
-      );
-    }
+      content = <QuarryBuilding stages={stages} />;
+      break;
+    case "windmill":
+      content = <WindmillBuilding />;
+      break;
     case "market":
-      return (
-        <group scale={scale}>
-          <mesh castShadow position={[0, 0.3, 0]}>
-            <boxGeometry args={[1.2, 0.6, 1]} />
-            <meshStandardMaterial color="#e8d090" />
-          </mesh>
-          <mesh castShadow position={[0, 0.85, 0]}>
-            <coneGeometry args={[1, 0.5, 4]} />
-            <meshStandardMaterial color="#d04040" />
-          </mesh>
-          <mesh position={[0, 0.3, 0.51]}>
-            <boxGeometry args={[0.4, 0.4, 0.02]} />
-            <meshStandardMaterial color="#3a2010" />
-          </mesh>
-          {stages >= 2 && (
-            <>
-              <mesh position={[0.7, 0.15, 0.7]}>
-                <boxGeometry args={[0.2, 0.3, 0.2]} />
-                <meshStandardMaterial color="#a06030" />
-              </mesh>
-              <mesh position={[-0.7, 0.15, 0.7]}>
-                <boxGeometry args={[0.2, 0.3, 0.2]} />
-                <meshStandardMaterial color="#a06030" />
-              </mesh>
-            </>
-          )}
-        </group>
-      );
+      content = <MarketBuilding stages={stages} />;
+      break;
     case "refinery":
-      return (
-        <group scale={scale}>
-          <mesh castShadow position={[0, 0.4, 0]}>
-            <boxGeometry args={[0.9, 0.8, 0.9]} />
-            <meshStandardMaterial color="#5a4a8a" />
-          </mesh>
-          <mesh castShadow position={[0, 1.2, 0]}>
-            <cylinderGeometry args={[0.3, 0.4, 0.8, 8]} />
-            <meshStandardMaterial color="#7a5aaa" />
-          </mesh>
-          <mesh position={[0, 1.7, 0]}>
-            <sphereGeometry args={[0.3, 16, 12]} />
-            <meshStandardMaterial color="#b080ff" emissive="#9050ff" emissiveIntensity={1.2} />
-          </mesh>
-          <pointLight position={[0, 1.7, 0]} color="#b070ff" intensity={2} distance={4} />
-        </group>
-      );
-    default:
-      return null;
+      content = <RefineryBuilding />;
+      break;
   }
+  return <group scale={scale}>{content}</group>;
 }
+
 
 /* ---------------- Plot ---------------- */
 
