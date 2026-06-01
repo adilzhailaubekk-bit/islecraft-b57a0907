@@ -35,6 +35,9 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
   if (!mounted) return <div className="fixed inset-0 bg-gradient-sky" />;
 
   const dailyReady = Date.now() - game.state.lastDailyClaim >= 22 * 3600 * 1000;
+  const spinReady = Date.now() - (game.state.lastSpinAt ?? 0) >= 22 * 3600 * 1000;
+  const claimableMissions = game.state.dailyMissions?.filter((m) => !m.claimed && m.progress >= m.goal).length ?? 0;
+  const dailyTotalBadge = (dailyReady ? 1 : 0) + (spinReady ? 1 : 0) + claimableMissions;
   const claimableAchievements = ACHIEVEMENTS.filter((a) => {
     if (game.state.achievements.includes(a.id)) return false;
     const p =
