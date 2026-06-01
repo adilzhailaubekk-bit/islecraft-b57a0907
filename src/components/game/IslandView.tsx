@@ -1483,7 +1483,7 @@ function IslandScene({ state, onPlotClick }: IslandViewProps) {
       <Environment preset="park" />
 
       <Ocean />
-      <Sparkles count={120} scale={[60, 1, 60]} position={[0, -0.15, 0]} size={3} speed={0.3} color="#ffffff" />
+      <Sparkles count={60} scale={[60, 1, 60]} position={[0, -0.15, 0]} size={3} speed={0.3} color="#ffffff" />
 
       <IslandBase grassTint={tint} />
       <ContactShadows position={[0, 0.52, 0]} opacity={0.35} scale={20} blur={2.4} far={6} />
