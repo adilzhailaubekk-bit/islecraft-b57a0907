@@ -859,8 +859,9 @@ function HutBuilding({ stages }: { stages: number }) {
         </mesh>
       ))}
 
-      {/* Roof — flipped upside-down (inverted V) */}
-      <group position={[0, 2.4, 0]} scale={[1, -1, 1]}>
+      {/* Roof */}
+      <group>
+
         {/* Gable triangular ends (front + back) */}
         <mesh castShadow position={[0, 1.05, 0.48]} rotation={[Math.PI / 2, 0, 0]}>
           <coneGeometry args={[0.55, 0.45, 3]} />
