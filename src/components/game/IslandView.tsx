@@ -62,7 +62,7 @@ const PALETTE = {
 /* ============================================================
    Plot layout
    ============================================================ */
-const ISLAND_SCALE = 1.4;
+const ISLAND_SCALE = 1.75;
 
 const PLOT_POSITIONS: [number, number][] = [
   [0, 0],
