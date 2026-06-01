@@ -86,14 +86,15 @@ export function useGameStore() {
   useEffect(() => {
     const s = stateRef.current;
     const now = Date.now();
-    const elapsed = Math.min((now - s.lastTick) / 1000, 60 * 60 * 8);
+    const elapsed = Math.min((now - s.lastTick) / 1000, 60 * 60 * 4);
     if (elapsed > 30 && s.buildings.some(Boolean)) {
       const rates = computeRates(s);
+      const offlineMult = 0.25; // offline earns 25% of online rate
       const earned: Resources = {
-        gold: rates.gold * elapsed * 0.5,
-        wood: rates.wood * elapsed * 0.5,
-        stone: rates.stone * elapsed * 0.5,
-        energy: rates.energy * elapsed * 0.5,
+        gold: rates.gold * elapsed * offlineMult,
+        wood: rates.wood * elapsed * offlineMult,
+        stone: rates.stone * elapsed * offlineMult,
+        energy: rates.energy * elapsed * offlineMult,
       };
       offlineEarnings.current = { gold: earned.gold, seconds: elapsed };
       setState((p) => ({
