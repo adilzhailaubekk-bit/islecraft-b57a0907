@@ -204,18 +204,34 @@ export function useGameStore() {
 
   useEffect(() => {
     const id = setInterval(() => {
-      setState((p) => {
+      setState((prev) => {
+        const p = ensureDaily(prev);
         const rates = computeRates(p);
         const dt = 0.5;
+        const dg = rates.gold * dt;
+        const dw = rates.wood * dt;
+        const ds = rates.stone * dt;
+        const de = rates.energy * dt;
+        let missions = p.dailyMissions;
+        if (dg > 0) missions = bumpMissions(missions, "earnGold", dg);
+        if (dw > 0) missions = bumpMissions(missions, "earnWood", dw);
+        if (ds > 0) missions = bumpMissions(missions, "earnStone", ds);
         return {
           ...p,
           resources: {
-            gold: p.resources.gold + rates.gold * dt,
-            wood: p.resources.wood + rates.wood * dt,
-            stone: p.resources.stone + rates.stone * dt,
-            energy: p.resources.energy + rates.energy * dt,
+            gold: p.resources.gold + dg,
+            wood: p.resources.wood + dw,
+            stone: p.resources.stone + ds,
+            energy: p.resources.energy + de,
           },
-          totalGoldEarned: p.totalGoldEarned + rates.gold * dt,
+          totalGoldEarned: p.totalGoldEarned + dg,
+          dailyCounters: {
+            ...p.dailyCounters,
+            goldEarned: p.dailyCounters.goldEarned + dg,
+            woodEarned: p.dailyCounters.woodEarned + dw,
+            stoneEarned: p.dailyCounters.stoneEarned + ds,
+          },
+          dailyMissions: missions,
           lastTick: Date.now(),
         };
       });
