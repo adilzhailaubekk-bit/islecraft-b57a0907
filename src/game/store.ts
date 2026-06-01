@@ -194,7 +194,7 @@ export function useGameStore() {
       }
       return { ...p, resources: newRes, buildings };
     });
-    addXp(15);
+    addXp(5);
   }, [addXp]);
 
   // Build at a specific plot (used when player taps an empty plot directly)
@@ -215,7 +215,7 @@ export function useGameStore() {
       buildings[plotIdx] = { id: buildingId, level: 1 };
       return { ...p, resources: newRes, buildings };
     });
-    addXp(15);
+    addXp(5);
   }, [addXp]);
 
   const upgradeAtPlot = useCallback((plotIdx: number) => {
@@ -234,7 +234,7 @@ export function useGameStore() {
       buildings[plotIdx] = { ...existing, level: existing.level + 1 };
       return { ...p, resources: newRes, buildings };
     });
-    addXp(15);
+    addXp(5);
   }, [addXp]);
 
   // Swap (or move into empty) two plot slots. Moving costs nothing and
@@ -258,7 +258,7 @@ export function useGameStore() {
       if (p.resources.gold < cost) return p;
       return { ...p, resources: { ...p.resources, gold: p.resources.gold - cost }, plots: p.plots + 1 };
     });
-    addXp(25);
+    addXp(10);
   }, [addXp]);
 
   const unlockIsland = useCallback((islandId: string) => {
@@ -272,7 +272,7 @@ export function useGameStore() {
         unlockedIslands: [...p.unlockedIslands, islandId],
       };
     });
-    addXp(200);
+    addXp(80);
   }, [addXp]);
 
   const switchIsland = useCallback((islandId: string) => {
