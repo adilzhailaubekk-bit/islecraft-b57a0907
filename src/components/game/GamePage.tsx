@@ -100,10 +100,36 @@ export default function GamePage() {
         <IslandView
           state={game.state}
           onPlotClick={(i) => {
+            if (moveMode) {
+              if (movingFrom === null) {
+                if (game.state.buildings[i]) setMovingFrom(i);
+              } else {
+                if (movingFrom !== i) game.moveBuilding(movingFrom, i);
+                setMovingFrom(null);
+              }
+              return;
+            }
             setPlotIndex(i);
             setModal("build");
           }}
         />
+        {moveMode && (
+          <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-violet-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-pop border-2 border-white pointer-events-none">
+            {movingFrom === null ? "Выберите здание для переноса" : "Выберите участок назначения"}
+          </div>
+        )}
+        <button
+          onClick={() => {
+            setMoveMode((v) => !v);
+            setMovingFrom(null);
+          }}
+          className={`absolute top-3 right-3 btn-3d rounded-full w-12 h-12 flex items-center justify-center text-xl font-bold shadow-pop border-2 border-white ${
+            moveMode ? "bg-violet-500 text-white" : "bg-white text-violet-600"
+          }`}
+          title="Переместить здания"
+        >
+          🔀
+        </button>
       </div>
 
       {/* BOTTOM ACTION DOCK */}
