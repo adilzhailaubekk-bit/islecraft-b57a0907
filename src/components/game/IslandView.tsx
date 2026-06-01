@@ -1374,8 +1374,8 @@ function Lighting() {
         intensity={2.2}
         color="#fff0c8"
         castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
         shadow-camera-left={-18}
         shadow-camera-right={18}
         shadow-camera-top={18}
