@@ -2209,40 +2209,62 @@ function PathSegment({
   position,
   rotation = 0,
   length = 1,
-  width = 0.9,
+  width = 0.95,
+  index = 0,
 }: {
   position: [number, number, number];
   rotation?: number;
   length?: number;
   width?: number;
+  index?: number;
 }) {
+  // Slightly lifted above grass so it never z-fights or sinks under terrain.
   return (
     <group position={position} rotation={[0, rotation, 0]}>
-      {/* Dark border / shadow base */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.005, 0]} receiveShadow>
-        <planeGeometry args={[length + 0.18, width + 0.18]} />
-        <meshStandardMaterial color="#8a6a3d" roughness={1} />
+      {/* Soft dirt halo */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.002, 0]} receiveShadow>
+        <planeGeometry args={[length + 0.32, width + 0.32]} />
+        <meshStandardMaterial color="#7a5a32" roughness={1} transparent opacity={0.55} />
+      </mesh>
+      {/* Dark border */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.006, 0]} receiveShadow>
+        <planeGeometry args={[length + 0.16, width + 0.16]} />
+        <meshStandardMaterial color="#6b4a24" roughness={1} />
       </mesh>
       {/* Sand surface */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, 0]} receiveShadow>
         <planeGeometry args={[length, width]} />
         <meshStandardMaterial color={PALETTE.sandLight} roughness={1} />
       </mesh>
-      {/* Stepping stones */}
-      {Array.from({ length: Math.max(1, Math.round(length / 0.55)) }).map((_, i, arr) => {
+      {/* Raised stone curbs along both sides */}
+      {[-1, 1].map((s) => (
+        <mesh key={s} position={[0, 0.05, s * (width / 2 + 0.02)]} castShadow receiveShadow>
+          <boxGeometry args={[length + 0.04, 0.1, 0.09]} />
+          <meshStandardMaterial color="#a89878" roughness={0.85} />
+        </mesh>
+      ))}
+      {/* Repeating premium tile pattern */}
+      {Array.from({ length: Math.max(2, Math.round(length / 0.42)) }).map((_, i, arr) => {
         const t = (i + 0.5) / arr.length;
         const x = (t - 0.5) * length;
-        const off = ((i % 2) - 0.5) * 0.18;
+        const tileLen = (length / arr.length) * 0.82;
+        const tileWid = width * 0.78;
+        const dark = (i + index) % 2 === 0;
         return (
-          <mesh
-            key={i}
-            position={[x, 0.012, off]}
-            rotation={[-Math.PI / 2, 0, (i * 0.7) % Math.PI]}
-            receiveShadow
-          >
-            <circleGeometry args={[0.18 + (i % 3) * 0.02, 10]} />
-            <meshStandardMaterial color={PALETTE.pathStone} roughness={0.95} />
-          </mesh>
+          <group key={i} position={[x, 0.022, 0]}>
+            <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+              <planeGeometry args={[tileLen, tileWid]} />
+              <meshStandardMaterial
+                color={dark ? PALETTE.pathStone : "#ece3c8"}
+                roughness={0.9}
+              />
+            </mesh>
+            {/* Grout line accent */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[tileLen / 2 + 0.01, 0.001, 0]}>
+              <planeGeometry args={[0.025, tileWid + 0.02]} />
+              <meshStandardMaterial color="#8a7654" roughness={1} />
+            </mesh>
+          </group>
         );
       })}
     </group>
@@ -2527,36 +2549,56 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
         </NoHit>
       )}
 
-      {/* Sand road from the central fountain to every built plot */}
+      {/* Sand road from the central fountain to every built plot — gentle bezier curve */}
       <NoHit>
         {slots.map((pos, i) => {
           if (!state.buildings[i]) return null;
-          const dx = pos[0];
-          const dz = pos[1];
-          const dist = Math.hypot(dx, dz);
+          const ex = pos[0];
+          const ez = pos[1];
+          const dist = Math.hypot(ex, ez);
           if (dist < 0.4) return null;
-          const angle = Math.atan2(dz, dx);
-          // Stop short of building footprint
-          const usable = Math.max(0.5, dist - 0.9);
-          const segLen = 1.6;
-          const segCount = Math.max(1, Math.ceil(usable / segLen));
-          const actualLen = usable / segCount;
-          return Array.from({ length: segCount }).map((_, t) => {
-            const center = (t + 0.5) * actualLen;
-            const x = Math.cos(angle) * center;
-            const z = Math.sin(angle) * center;
+          const baseAngle = Math.atan2(ez, ex);
+          // Curve control point: perpendicular offset from straight line midpoint.
+          const perp = { x: -Math.sin(baseAngle), z: Math.cos(baseAngle) };
+          // Deterministic curl direction per plot
+          const curl = ((i * 73) % 7) / 7 - 0.5; // -0.5..0.5
+          const bend = dist * 0.22 * (curl >= 0 ? 1 : -1) * (0.4 + Math.abs(curl));
+          const cx = (ex / 2) + perp.x * bend;
+          const cz = (ez / 2) + perp.z * bend;
+          // Trim near building
+          const trim = 0.85 / dist;
+          const tEnd = 1 - trim;
+          const segCount = Math.max(4, Math.round(dist / 0.7));
+          const points: { x: number; z: number }[] = [];
+          for (let k = 0; k <= segCount; k++) {
+            const t = (k / segCount) * tEnd;
+            const omt = 1 - t;
+            const x = omt * omt * 0 + 2 * omt * t * cx + t * t * ex;
+            const z = omt * omt * 0 + 2 * omt * t * cz + t * t * ez;
+            points.push({ x, z });
+          }
+          return points.slice(0, -1).map((p, idx) => {
+            const next = points[idx + 1];
+            const mx = (p.x + next.x) / 2;
+            const mz = (p.z + next.z) / 2;
+            const segDx = next.x - p.x;
+            const segDz = next.z - p.z;
+            const segLen = Math.hypot(segDx, segDz);
+            const segAngle = Math.atan2(segDz, segDx);
             return (
               <PathSegment
-                key={`pth-${i}-${t}`}
-                position={[x, 0.515, z]}
-                rotation={-angle}
-                length={actualLen + 0.02}
-                width={0.85}
+                key={`pth-${i}-${idx}`}
+                position={[mx, 0.54, mz]}
+                rotation={-segAngle}
+                length={segLen + 0.04}
+                width={0.9}
+                index={idx}
               />
             );
           });
         })}
       </NoHit>
+
 
 
       {/* Plots / buildings */}
