@@ -635,7 +635,7 @@ function ShadowlessClouds(props: React.ComponentProps<typeof Clouds>) {
       }
     });
   }, []);
-  return <Clouds ref={ref} {...props} />;
+  return <Clouds ref={ref} material={THREE.MeshBasicMaterial} {...props} />;
 }
 
 /* ============================================================
