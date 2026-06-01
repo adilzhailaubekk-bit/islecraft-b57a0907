@@ -94,10 +94,15 @@ function mulberry32(seed: number) {
    ============================================================ */
 function Ocean() {
   const ref = useRef<THREE.Mesh>(null!);
-  const geom = useMemo(() => new THREE.PlaneGeometry(180, 180, 96, 96), []);
+  // Lower segment count for perf; still smooth-looking waves
+  const geom = useMemo(() => new THREE.PlaneGeometry(180, 180, 56, 56), []);
   const original = useMemo(() => Float32Array.from(geom.attributes.position.array), [geom]);
+  const tick = useRef(0);
 
   useFrame(({ clock }) => {
+    // Update waves every other frame to halve cost on weak devices
+    tick.current++;
+    if (tick.current % 2 !== 0) return;
     const t = clock.elapsedTime;
     const pos = geom.attributes.position.array as Float32Array;
     for (let i = 0; i < pos.length; i += 3) {
@@ -105,37 +110,44 @@ function Ocean() {
       const y = original[i + 1];
       pos[i + 2] =
         Math.sin(x * 0.22 + t * 1.1) * 0.22 +
-        Math.cos(y * 0.28 + t * 0.85) * 0.18 +
-        Math.sin((x + y) * 0.12 + t * 0.6) * 0.1;
+        Math.cos(y * 0.28 + t * 0.85) * 0.18;
     }
     geom.attributes.position.needsUpdate = true;
-    geom.computeVertexNormals();
+    // Skip expensive per-frame normal recompute — flat normals + light fakes it
   });
 
   return (
     <group>
+      {/* Deep base layer adds rich blue depth under the surface */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.1, 0]}>
+        <circleGeometry args={[90, 64]} />
+        <meshBasicMaterial color={PALETTE.oceanDeep} />
+      </mesh>
+      {/* Mid gradient ring */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.7, 0]}>
+        <ringGeometry args={[10, 40, 64]} />
+        <meshBasicMaterial color={PALETTE.oceanMid} transparent opacity={0.7} />
+      </mesh>
+      {/* Animated transparent surface */}
       <mesh ref={ref} geometry={geom} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.4, 0]} receiveShadow>
-        <meshPhysicalMaterial
+        <meshStandardMaterial
           color={PALETTE.oceanShallow}
-          roughness={0.1}
-          metalness={0.05}
-          transmission={0.6}
-          thickness={1.4}
+          roughness={0.2}
+          metalness={0.15}
           transparent
-          opacity={0.94}
-          clearcoat={1}
-          clearcoatRoughness={0.15}
-          ior={1.33}
+          opacity={0.78}
+          emissive={PALETTE.oceanShallow}
+          emissiveIntensity={0.08}
         />
       </mesh>
-      {/* Foam ring around the island */}
+      {/* Foam rings around the island */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.22, 0]}>
-        <ringGeometry args={[8.7, 9.9, 96]} />
-        <meshBasicMaterial color={PALETTE.oceanFoam} transparent opacity={0.55} />
+        <ringGeometry args={[8.7, 9.9, 64]} />
+        <meshBasicMaterial color={PALETTE.oceanFoam} transparent opacity={0.6} />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.21, 0]}>
-        <ringGeometry args={[9.9, 11.2, 96]} />
-        <meshBasicMaterial color={PALETTE.oceanFoam} transparent opacity={0.25} />
+        <ringGeometry args={[9.9, 11.4, 64]} />
+        <meshBasicMaterial color={PALETTE.oceanFoam} transparent opacity={0.28} />
       </mesh>
     </group>
   );
