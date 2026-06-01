@@ -675,74 +675,286 @@ function ChimneySmoke({ position }: { position: [number, number, number] }) {
 }
 
 function HutBuilding({ stages }: { stages: number }) {
+  /* Realistic log-cabin hut with thatched roof, stone chimney,
+     porch with overhang, shutters and flower box. */
+  const logColors = ["#a06b3a", "#8a5a30", "#9a6535", "#7d4f2c"];
   return (
     <>
-      {/* Stone foundation */}
-      <mesh castShadow receiveShadow position={[0, 0.08, 0]}>
-        <cylinderGeometry args={[0.6, 0.65, 0.16, 16]} />
-        <meshStandardMaterial color={PALETTE.rockLight} />
+      {/* Stone foundation with visible blocks */}
+      <mesh castShadow receiveShadow position={[0, 0.06, 0]}>
+        <boxGeometry args={[1.15, 0.14, 1.05]} />
+        <meshStandardMaterial color="#9aa3b2" roughness={1} />
       </mesh>
-      {/* Body */}
-      <mesh castShadow position={[0, 0.45, 0]}>
-        <boxGeometry args={[1, 0.7, 1]} />
-        <meshStandardMaterial color={PALETTE.woodLight} roughness={0.7} />
-      </mesh>
-      {/* Wood beams */}
-      {[-0.5, 0.5].map((x, i) => (
-        <mesh key={i} castShadow position={[x, 0.45, 0]}>
-          <boxGeometry args={[0.06, 0.7, 1.02]} />
-          <meshStandardMaterial color={PALETTE.woodDark} />
+      {[-0.45, -0.15, 0.15, 0.45].map((x, i) => (
+        <mesh key={`fs-${i}`} position={[x, 0.06, 0.53]}>
+          <boxGeometry args={[0.26, 0.13, 0.02]} />
+          <meshStandardMaterial color="#6c7383" roughness={1} />
         </mesh>
       ))}
-      {/* Roof */}
-      <mesh castShadow position={[0, 0.95, 0]} rotation={[0, Math.PI / 4, 0]}>
-        <coneGeometry args={[0.85, 0.7, 4]} />
-        <meshStandardMaterial color={PALETTE.roofRed} roughness={0.6} />
+
+      {/* Stacked horizontal logs as walls (back + sides) */}
+      {Array.from({ length: 6 }).map((_, i) => {
+        const y = 0.2 + i * 0.11;
+        const c = logColors[i % logColors.length];
+        return (
+          <group key={`log-${i}`}>
+            {/* back wall */}
+            <mesh castShadow position={[0, y, -0.5]} rotation={[0, 0, Math.PI / 2]}>
+              <cylinderGeometry args={[0.06, 0.06, 1.0, 10]} />
+              <meshStandardMaterial color={c} roughness={0.9} />
+            </mesh>
+            {/* left wall */}
+            <mesh castShadow position={[-0.5, y, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.06, 0.06, 1.0, 10]} />
+              <meshStandardMaterial color={c} roughness={0.9} />
+            </mesh>
+            {/* right wall */}
+            <mesh castShadow position={[0.5, y, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.06, 0.06, 1.0, 10]} />
+              <meshStandardMaterial color={c} roughness={0.9} />
+            </mesh>
+            {/* front partial logs (left of door) */}
+            <mesh castShadow position={[-0.35, y, 0.5]} rotation={[0, 0, Math.PI / 2]}>
+              <cylinderGeometry args={[0.06, 0.06, 0.3, 10]} />
+              <meshStandardMaterial color={c} roughness={0.9} />
+            </mesh>
+            {/* front partial logs (right of door) */}
+            <mesh castShadow position={[0.35, y, 0.5]} rotation={[0, 0, Math.PI / 2]}>
+              <cylinderGeometry args={[0.06, 0.06, 0.3, 10]} />
+              <meshStandardMaterial color={c} roughness={0.9} />
+            </mesh>
+          </group>
+        );
+      })}
+
+      {/* Top trim above logs (front, where door is) */}
+      <mesh castShadow position={[0, 0.86, 0.5]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.06, 0.06, 1.0, 10]} />
+        <meshStandardMaterial color={logColors[0]} roughness={0.9} />
       </mesh>
-      {/* Roof topper */}
-      <mesh position={[0, 1.35, 0]}>
-        <sphereGeometry args={[0.08, 10, 8]} />
-        <meshStandardMaterial color={PALETTE.gold} metalness={0.6} roughness={0.3} />
-      </mesh>
-      {/* Door */}
-      <mesh position={[0, 0.4, 0.51]}>
-        <boxGeometry args={[0.28, 0.5, 0.02]} />
-        <meshStandardMaterial color={PALETTE.woodDark} />
-      </mesh>
-      <mesh position={[0.08, 0.4, 0.525]}>
-        <sphereGeometry args={[0.025, 8, 6]} />
-        <meshStandardMaterial color={PALETTE.gold} metalness={0.7} />
-      </mesh>
-      {/* Windows glowing */}
-      {[-0.35, 0.35].map((x, i) => (
-        <mesh key={i} position={[x, 0.55, 0.51]}>
-          <boxGeometry args={[0.18, 0.18, 0.02]} />
-          <meshStandardMaterial color={PALETTE.flowerYellow} emissive="#ffae34" emissiveIntensity={0.6} />
+
+      {/* Corner posts */}
+      {[
+        [-0.5, 0.5],
+        [0.5, 0.5],
+        [-0.5, -0.5],
+        [0.5, -0.5],
+      ].map(([x, z], i) => (
+        <mesh key={`corner-${i}`} castShadow position={[x, 0.5, z]}>
+          <cylinderGeometry args={[0.08, 0.08, 0.7, 10]} />
+          <meshStandardMaterial color="#5a3818" roughness={0.95} />
         </mesh>
       ))}
-      {/* Chimney */}
-      <mesh castShadow position={[0.3, 1.05, -0.3]}>
-        <boxGeometry args={[0.16, 0.4, 0.16]} />
-        <meshStandardMaterial color={PALETTE.rockDark} />
+
+      {/* Gable triangular ends (front + back) */}
+      <mesh castShadow position={[0, 1.05, 0.48]} rotation={[Math.PI / 2, 0, 0]}>
+        <coneGeometry args={[0.55, 0.45, 3]} />
+        <meshStandardMaterial color="#caa370" roughness={0.9} />
       </mesh>
-      <ChimneySmoke position={[0.3, 1.3, -0.3]} />
-      {stages >= 2 && (
-        <mesh castShadow position={[0.55, 0.3, 0.55]}>
-          <boxGeometry args={[0.3, 0.6, 0.3]} />
-          <meshStandardMaterial color={PALETTE.woodLight} />
+      <mesh castShadow position={[0, 1.05, -0.48]} rotation={[Math.PI / 2, 0, 0]}>
+        <coneGeometry args={[0.55, 0.45, 3]} />
+        <meshStandardMaterial color="#caa370" roughness={0.9} />
+      </mesh>
+
+      {/* Pitched thatched roof — multiple layered slabs for straw look */}
+      {[0, 1, 2].map((i) => {
+        const y = 1.0 + i * 0.08;
+        const w = 1.3 - i * 0.18;
+        const d = 1.25 - i * 0.18;
+        const col = i === 0 ? "#b8853c" : i === 1 ? "#caa050" : "#dcbb68";
+        return (
+          <group key={`thatch-${i}`}>
+            <mesh castShadow position={[-0.18, y + 0.08, 0]} rotation={[0, 0, 0.7]}>
+              <boxGeometry args={[0.08, w, d]} />
+              <meshStandardMaterial color={col} roughness={1} />
+            </mesh>
+            <mesh castShadow position={[0.18, y + 0.08, 0]} rotation={[0, 0, -0.7]}>
+              <boxGeometry args={[0.08, w, d]} />
+              <meshStandardMaterial color={col} roughness={1} />
+            </mesh>
+          </group>
+        );
+      })}
+      {/* Ridge cap */}
+      <mesh castShadow position={[0, 1.35, 0]}>
+        <boxGeometry args={[0.12, 0.08, 1.3]} />
+        <meshStandardMaterial color="#7a4e1e" roughness={0.95} />
+      </mesh>
+      {/* Roof beam ends sticking out */}
+      {[-0.5, 0.5].map((z, i) => (
+        <mesh key={`beam-${i}`} castShadow position={[0, 1.32, z * 1.05]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.04, 0.04, 0.1, 8]} />
+          <meshStandardMaterial color="#5a3818" />
         </mesh>
-      )}
-      {stages >= 3 && (
-        <group position={[-0.6, 0.5, 0.4]}>
-          <mesh castShadow>
-            <boxGeometry args={[0.25, 0.25, 0.25]} />
-            <meshStandardMaterial color={PALETTE.roofBlue} />
+      ))}
+
+      {/* Door frame + door with planks */}
+      <mesh position={[0, 0.45, 0.515]}>
+        <boxGeometry args={[0.36, 0.62, 0.04]} />
+        <meshStandardMaterial color="#3d2510" />
+      </mesh>
+      {[-0.08, 0, 0.08].map((x, i) => (
+        <mesh key={`plank-${i}`} position={[x, 0.45, 0.535]}>
+          <boxGeometry args={[0.07, 0.58, 0.01]} />
+          <meshStandardMaterial color="#6b3e1c" roughness={0.95} />
+        </mesh>
+      ))}
+      {/* Door hinges + handle */}
+      {[0.6, 0.3].map((y, i) => (
+        <mesh key={`hinge-${i}`} position={[-0.13, y, 0.545]}>
+          <boxGeometry args={[0.07, 0.025, 0.005]} />
+          <meshStandardMaterial color="#2a2a2a" metalness={0.8} roughness={0.4} />
+        </mesh>
+      ))}
+      <mesh position={[0.11, 0.45, 0.55]}>
+        <sphereGeometry args={[0.025, 10, 8]} />
+        <meshStandardMaterial color={PALETTE.gold} metalness={0.8} roughness={0.25} />
+      </mesh>
+
+      {/* Step in front of door */}
+      <mesh castShadow receiveShadow position={[0, 0.16, 0.6]}>
+        <boxGeometry args={[0.42, 0.06, 0.16]} />
+        <meshStandardMaterial color="#8a8a92" roughness={1} />
+      </mesh>
+
+      {/* Porch overhang with two posts */}
+      <mesh castShadow position={[0, 0.95, 0.7]}>
+        <boxGeometry args={[0.8, 0.05, 0.35]} />
+        <meshStandardMaterial color="#7a4e1e" />
+      </mesh>
+      {[-0.32, 0.32].map((x, i) => (
+        <mesh key={`post-${i}`} castShadow position={[x, 0.55, 0.78]}>
+          <cylinderGeometry args={[0.04, 0.04, 0.82, 8]} />
+          <meshStandardMaterial color="#5a3818" />
+        </mesh>
+      ))}
+
+      {/* Windows with shutters and crossbars — left side */}
+      <group position={[-0.51, 0.55, 0]}>
+        <mesh rotation={[0, -Math.PI / 2, 0]}>
+          <boxGeometry args={[0.26, 0.22, 0.02]} />
+          <meshStandardMaterial color="#fff0a8" emissive="#ffb734" emissiveIntensity={0.7} />
+        </mesh>
+        {/* cross bars */}
+        <mesh position={[0, 0, 0]} rotation={[0, -Math.PI / 2, 0]}>
+          <boxGeometry args={[0.26, 0.02, 0.03]} />
+          <meshStandardMaterial color="#3a2410" />
+        </mesh>
+        <mesh position={[0, 0, 0]} rotation={[0, -Math.PI / 2, 0]}>
+          <boxGeometry args={[0.02, 0.22, 0.03]} />
+          <meshStandardMaterial color="#3a2410" />
+        </mesh>
+        {/* shutters */}
+        {[-0.18, 0.18].map((z, i) => (
+          <mesh key={`sh-${i}`} position={[0, 0, z]} rotation={[0, -Math.PI / 2, 0]}>
+            <boxGeometry args={[0.04, 0.24, 0.08]} />
+            <meshStandardMaterial color={PALETTE.roofRed} />
           </mesh>
+        ))}
+      </group>
+
+      {/* Right side window (mirror) */}
+      <group position={[0.51, 0.55, 0]}>
+        <mesh rotation={[0, Math.PI / 2, 0]}>
+          <boxGeometry args={[0.26, 0.22, 0.02]} />
+          <meshStandardMaterial color="#fff0a8" emissive="#ffb734" emissiveIntensity={0.7} />
+        </mesh>
+        <mesh rotation={[0, Math.PI / 2, 0]}>
+          <boxGeometry args={[0.26, 0.02, 0.03]} />
+          <meshStandardMaterial color="#3a2410" />
+        </mesh>
+        <mesh rotation={[0, Math.PI / 2, 0]}>
+          <boxGeometry args={[0.02, 0.22, 0.03]} />
+          <meshStandardMaterial color="#3a2410" />
+        </mesh>
+        {[-0.18, 0.18].map((z, i) => (
+          <mesh key={`shr-${i}`} position={[0, 0, z]} rotation={[0, Math.PI / 2, 0]}>
+            <boxGeometry args={[0.04, 0.24, 0.08]} />
+            <meshStandardMaterial color={PALETTE.roofRed} />
+          </mesh>
+        ))}
+        {/* flower box under window */}
+        <mesh position={[0.05, -0.18, 0]} rotation={[0, Math.PI / 2, 0]}>
+          <boxGeometry args={[0.34, 0.08, 0.08]} />
+          <meshStandardMaterial color="#6b3e1c" />
+        </mesh>
+        {[-0.12, 0, 0.12].map((z, i) => (
+          <mesh key={`fb-${i}`} position={[0.05, -0.12, z]}>
+            <sphereGeometry args={[0.045, 10, 8]} />
+            <meshStandardMaterial color={i === 1 ? PALETTE.flowerPink : PALETTE.flowerOrange} emissive={PALETTE.flowerPink} emissiveIntensity={0.2} />
+          </mesh>
+        ))}
+      </group>
+
+      {/* Stone chimney with brick pattern */}
+      <group position={[0.38, 0, -0.35]}>
+        <mesh castShadow position={[0, 0.45, 0]}>
+          <boxGeometry args={[0.2, 0.9, 0.2]} />
+          <meshStandardMaterial color="#7c7c84" roughness={1} />
+        </mesh>
+        {[0, 1, 2, 3].map((i) => (
+          <mesh key={`brick-${i}`} position={[0, 0.15 + i * 0.18, 0.101]}>
+            <boxGeometry args={[0.18, 0.02, 0.005]} />
+            <meshStandardMaterial color="#54545a" />
+          </mesh>
+        ))}
+        {/* chimney cap */}
+        <mesh castShadow position={[0, 0.93, 0]}>
+          <boxGeometry args={[0.24, 0.05, 0.24]} />
+          <meshStandardMaterial color="#3a3a40" />
+        </mesh>
+      </group>
+      <ChimneySmoke position={[0.38, 1.05, -0.35]} />
+
+      {/* Hanging lantern beside door */}
+      <group position={[0.26, 0.78, 0.72]}>
+        <mesh>
+          <cylinderGeometry args={[0.005, 0.005, 0.15, 6]} />
+          <meshStandardMaterial color="#2a2a2a" />
+        </mesh>
+        <mesh position={[0, -0.12, 0]}>
+          <boxGeometry args={[0.1, 0.1, 0.1]} />
+          <meshStandardMaterial color={PALETTE.flowerYellow} emissive="#ffb734" emissiveIntensity={1.3} />
+        </mesh>
+        <pointLight position={[0, -0.12, 0]} color="#ffd58a" intensity={0.6} distance={1.6} />
+      </group>
+
+      {/* Barrel decoration */}
+      {stages >= 2 && (
+        <group position={[0.55, 0.18, 0.45]}>
+          <mesh castShadow>
+            <cylinderGeometry args={[0.13, 0.13, 0.32, 14]} />
+            <meshStandardMaterial color="#7a4e1e" />
+          </mesh>
+          {[-0.1, 0.1].map((y, i) => (
+            <mesh key={i} position={[0, y, 0]}>
+              <torusGeometry args={[0.135, 0.012, 6, 16]} />
+              <meshStandardMaterial color="#2a2a2a" metalness={0.6} />
+            </mesh>
+          ))}
+        </group>
+      )}
+
+      {/* Crate */}
+      {stages >= 3 && (
+        <group position={[-0.55, 0.18, 0.45]}>
+          <mesh castShadow>
+            <boxGeometry args={[0.28, 0.28, 0.28]} />
+            <meshStandardMaterial color="#a06b3a" />
+          </mesh>
+          {[-0.1, 0.1].map((y, i) => (
+            <mesh key={i} position={[0, y, 0.141]}>
+              <boxGeometry args={[0.3, 0.025, 0.005]} />
+              <meshStandardMaterial color="#5a3818" />
+            </mesh>
+          ))}
         </group>
       )}
     </>
   );
 }
+
+
 
 function LumberBuilding({ stages }: { stages: number }) {
   const saw = useRef<THREE.Mesh>(null!);
