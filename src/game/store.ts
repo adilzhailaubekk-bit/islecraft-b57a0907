@@ -107,6 +107,58 @@ export const computeRates = (state: GameState): Resources => {
   };
 };
 
+// ============ DAILY HELPERS ============
+
+const ensureDaily = (s: GameState): GameState => {
+  const today = todayKey();
+  let out = s;
+  if (!s.dailyCounters || s.dailyCounters.date !== today) {
+    out = { ...out, dailyCounters: emptyCounters(today) };
+  }
+  if (!s.dailyMissions || s.dailyMissions.length === 0 || s.dailyMissionsDate !== today) {
+    out = {
+      ...out,
+      dailyMissions: generateDailyMissions(s.level, today),
+      dailyMissionsDate: today,
+    };
+  }
+  return out;
+};
+
+const bumpMissions = (missions: DailyMission[], type: DailyMission["type"], amount: number) => {
+  let changed = false;
+  const out = missions.map((m) => {
+    if (m.type !== type || m.claimed) return m;
+    const next = Math.min(m.goal, m.progress + amount);
+    if (next === m.progress) return m;
+    changed = true;
+    return { ...m, progress: next };
+  });
+  return changed ? out : missions;
+};
+
+const applyGoldSpent = (s: GameState, amount: number): GameState => {
+  if (amount <= 0) return s;
+  return {
+    ...s,
+    dailyCounters: { ...s.dailyCounters, goldSpent: s.dailyCounters.goldSpent + amount },
+    dailyMissions: bumpMissions(s.dailyMissions, "spend", amount),
+  };
+};
+
+const applyBuild = (s: GameState): GameState => ({
+  ...s,
+  dailyCounters: { ...s.dailyCounters, builds: s.dailyCounters.builds + 1 },
+  dailyMissions: bumpMissions(s.dailyMissions, "build", 1),
+});
+
+const applyUpgrade = (s: GameState): GameState => ({
+  ...s,
+  dailyCounters: { ...s.dailyCounters, upgrades: s.dailyCounters.upgrades + 1 },
+  dailyMissions: bumpMissions(s.dailyMissions, "upgrade", 1),
+});
+
+
 export function useGameStore() {
   const [state, setState] = useState<GameState>(() => {
     if (typeof window === "undefined") return initialState();
