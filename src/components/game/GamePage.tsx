@@ -35,6 +35,9 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
   if (!mounted) return <div className="fixed inset-0 bg-gradient-sky" />;
 
   const dailyReady = Date.now() - game.state.lastDailyClaim >= 22 * 3600 * 1000;
+  const spinReady = Date.now() - (game.state.lastSpinAt ?? 0) >= 22 * 3600 * 1000;
+  const claimableMissions = game.state.dailyMissions?.filter((m) => !m.claimed && m.progress >= m.goal).length ?? 0;
+  const dailyTotalBadge = (dailyReady ? 1 : 0) + (spinReady ? 1 : 0) + claimableMissions;
   const claimableAchievements = ACHIEVEMENTS.filter((a) => {
     if (game.state.achievements.includes(a.id)) return false;
     const p =
@@ -139,7 +142,7 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
         <div className="bg-white/80 backdrop-blur-xl rounded-3xl border-2 border-white shadow-pop p-2 sm:p-3 flex gap-1 sm:gap-2 max-w-3xl mx-auto">
           {ACTIONS.map((a) => {
             const notif =
-              a.id === "daily" ? (dailyReady ? "•" : null) :
+              a.id === "daily" ? (dailyTotalBadge > 0 ? String(dailyTotalBadge) : null) :
               a.id === "achievements" ? (claimableAchievements > 0 ? String(claimableAchievements) : null) :
               null;
             return (
@@ -204,7 +207,9 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
         open={modal === "daily"}
         onClose={() => setModal(null)}
         state={game.state}
-        onClaim={game.claimDaily}
+        onClaimDaily={game.claimDailyReward}
+        onSpin={game.claimSpin}
+        onClaimMission={game.claimMission}
       />
       <AchievementsModal
         open={modal === "achievements"}
