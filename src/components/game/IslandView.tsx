@@ -7,7 +7,7 @@ import {
   Sparkles,
   Html,
   Environment,
-  ContactShadows,
+  
   MeshWobbleMaterial,
 } from "@react-three/drei";
 import * as THREE from "three";
