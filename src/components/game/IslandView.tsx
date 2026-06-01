@@ -2254,60 +2254,68 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
         <Bridge position={[7.2, -0.05, 0]} rotation={Math.PI / 2} />
       </NoHit>
 
-      {/* Cosmetics */}
+      {/* Cosmetics — also non-interactive */}
       {state.cosmetics.includes("lighthouse") && (
-        <group position={[-6.5, 0.4, 4]}>
-          <mesh castShadow position={[0, 0.6, 0]}>
-            <cylinderGeometry args={[0.45, 0.6, 0.4, 16]} />
-            <meshStandardMaterial color={PALETTE.rockLight} />
-          </mesh>
-          <mesh castShadow position={[0, 1.5, 0]}>
-            <cylinderGeometry args={[0.32, 0.45, 1.6, 16]} />
-            <meshStandardMaterial color="#ffffff" />
-          </mesh>
-          {[0.9, 1.6, 2.2].map((y, i) => (
-            <mesh key={i} position={[0, y, 0]}>
-              <cylinderGeometry args={[0.34, 0.34, 0.18, 16]} />
+        <NoHit>
+          <group position={[-6.5, 0.4, 4]}>
+            <mesh castShadow position={[0, 0.6, 0]}>
+              <cylinderGeometry args={[0.45, 0.6, 0.4, 16]} />
+              <meshStandardMaterial color={PALETTE.rockLight} />
+            </mesh>
+            <mesh castShadow position={[0, 1.5, 0]}>
+              <cylinderGeometry args={[0.32, 0.45, 1.6, 16]} />
+              <meshStandardMaterial color="#ffffff" />
+            </mesh>
+            {[0.9, 1.6, 2.2].map((y, i) => (
+              <mesh key={i} position={[0, y, 0]}>
+                <cylinderGeometry args={[0.34, 0.34, 0.18, 16]} />
+                <meshStandardMaterial color={PALETTE.roofRed} />
+              </mesh>
+            ))}
+            <mesh position={[0, 2.65, 0]}>
+              <cylinderGeometry args={[0.4, 0.4, 0.35, 12]} />
+              <meshStandardMaterial color={PALETTE.flowerYellow} emissive="#ffaa00" emissiveIntensity={1.5} />
+            </mesh>
+            <mesh castShadow position={[0, 2.95, 0]}>
+              <coneGeometry args={[0.4, 0.4, 12]} />
               <meshStandardMaterial color={PALETTE.roofRed} />
             </mesh>
-          ))}
-          <mesh position={[0, 2.65, 0]}>
-            <cylinderGeometry args={[0.4, 0.4, 0.35, 12]} />
-            <meshStandardMaterial color={PALETTE.flowerYellow} emissive="#ffaa00" emissiveIntensity={1.5} />
-          </mesh>
-          <mesh castShadow position={[0, 2.95, 0]}>
-            <coneGeometry args={[0.4, 0.4, 12]} />
-            <meshStandardMaterial color={PALETTE.roofRed} />
-          </mesh>
-          <pointLight position={[0, 2.65, 0]} color="#ffcc66" intensity={2.5} distance={10} />
-        </group>
+            <pointLight position={[0, 2.65, 0]} color="#ffcc66" intensity={2.5} distance={10} />
+          </group>
+        </NoHit>
       )}
       {state.cosmetics.includes("statue") && (
-        <group position={[6, 0.4, -4]}>
-          <mesh castShadow position={[0, 0.25, 0]}>
-            <cylinderGeometry args={[0.5, 0.55, 0.5, 12]} />
-            <meshStandardMaterial color={PALETTE.rockLight} />
-          </mesh>
-          <mesh castShadow position={[0, 0.85, 0]}>
-            <cylinderGeometry args={[0.18, 0.3, 0.6, 12]} />
-            <meshStandardMaterial color={PALETTE.gold} metalness={0.7} roughness={0.3} />
-          </mesh>
-          <mesh castShadow position={[0, 1.35, 0]}>
-            <sphereGeometry args={[0.28, 16, 14]} />
-            <meshStandardMaterial color={PALETTE.gold} metalness={0.8} roughness={0.2} emissive="#ffae00" emissiveIntensity={0.2} />
-          </mesh>
-          <pointLight position={[0, 1.4, 0]} color="#ffd060" intensity={0.8} distance={3} />
-        </group>
+        <NoHit>
+          <group position={[6, 0.4, -4]}>
+            <mesh castShadow position={[0, 0.25, 0]}>
+              <cylinderGeometry args={[0.5, 0.55, 0.5, 12]} />
+              <meshStandardMaterial color={PALETTE.rockLight} />
+            </mesh>
+            <mesh castShadow position={[0, 0.85, 0]}>
+              <cylinderGeometry args={[0.18, 0.3, 0.6, 12]} />
+              <meshStandardMaterial color={PALETTE.gold} metalness={0.7} roughness={0.3} />
+            </mesh>
+            <mesh castShadow position={[0, 1.35, 0]}>
+              <sphereGeometry args={[0.28, 16, 14]} />
+              <meshStandardMaterial color={PALETTE.gold} metalness={0.8} roughness={0.2} emissive="#ffae00" emissiveIntensity={0.2} />
+            </mesh>
+            <pointLight position={[0, 1.4, 0]} color="#ffd060" intensity={0.8} distance={3} />
+          </group>
+        </NoHit>
       )}
 
       {/* Plots / buildings */}
       {slots.map((pos, i) => {
         const hasBuilding = !!state.buildings[i];
+        const ownedPlot = i < state.plots;
+        // In normal mode: show only owned plots or plots that contain a building.
+        // In move mode: show every legal cell so the user can place anywhere free of plants.
+        if (!moveMode && !ownedPlot && !hasBuilding) return null;
         const isSource = movingFrom === i;
         const isHighlighted = !!moveMode && (
           isSource ||
           (movingFrom === null && hasBuilding) ||
-          (movingFrom !== null && movingFrom !== undefined && movingFrom !== i)
+          (movingFrom !== null && movingFrom !== undefined && movingFrom !== i && !hasBuilding)
         );
         return (
           <Plot
