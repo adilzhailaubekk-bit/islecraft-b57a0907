@@ -64,26 +64,36 @@ const PALETTE = {
    ============================================================ */
 const ISLAND_SCALE = 1.75;
 
-const PLOT_POSITIONS: [number, number][] = [
+// Static fallback positions (used only if grid generation yields nothing)
+const FALLBACK_PLOT_POSITIONS: [number, number][] = [
   [0, 0],
   [-3.2, -1.2],
   [3.2, -1.2],
-  [-4.4, 1.8],
-  [4.4, 1.8],
-  [0, -3.6],
-  [-2.2, 3.3],
-  [2.2, 3.3],
-  [-5.4, -2.6],
-  [5.4, -2.6],
-  [0, 4.6],
-  [0, -5.2],
-  [-6.2, 0.4],
-  [6.2, 0.4],
-  [-3.8, -4.6],
-  [3.8, -4.6],
-  [-4.6, 4.6],
-  [4.6, 4.6],
 ];
+
+/** Generate a hex-like grid of placement positions across the island,
+ *  removing any cell that overlaps a forbidden footprint (plants/decor). */
+function generatePlotGrid(forbidden: { x: number; z: number; r: number }[]): [number, number][] {
+  const positions: { p: [number, number]; d: number }[] = [];
+  const spacing = 1.65;
+  const maxR = 6.4;
+  const rows = Math.ceil((maxR * 2) / spacing);
+  for (let row = -rows; row <= rows; row++) {
+    const z = row * spacing * 0.88;
+    const offset = (row & 1) ? spacing / 2 : 0;
+    for (let col = -rows; col <= rows; col++) {
+      const x = col * spacing + offset;
+      const d = Math.hypot(x, z);
+      if (d > maxR) continue;
+      const blocked = forbidden.some((f) => Math.hypot(x - f.x, z - f.z) < f.r);
+      if (blocked) continue;
+      positions.push({ p: [x, z], d });
+    }
+  }
+  // Stable order: closer to center first
+  positions.sort((a, b) => a.d - b.d);
+  return positions.length > 0 ? positions.map((q) => q.p) : FALLBACK_PLOT_POSITIONS;
+}
 
 /* ============================================================
    Deterministic RNG so SSR/CSR/refresh match
