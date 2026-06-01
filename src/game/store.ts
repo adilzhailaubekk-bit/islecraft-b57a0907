@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { BuildingDef, BuildingState, GameState, Resources } from "./types";
-import { BUILDINGS, ISLANDS, xpForLevel, plotCost } from "./data";
+import { BUILDINGS, ISLANDS, xpForLevel, plotCost, applySoftCap } from "./data";
 
-const STORAGE_KEY = "island-tycoon-save-v1";
+const STORAGE_KEY = "island-tycoon-save-v2";
 
 const initialState = (): GameState => ({
-  resources: { gold: 50, wood: 10, stone: 0, energy: 0 },
+  resources: { gold: 75, wood: 0, stone: 0, energy: 0 },
   buildings: [],
   unlockedIslands: ["paradise"],
   activeIsland: "paradise",
@@ -48,19 +48,25 @@ export const computeRates = (state: GameState): Resources => {
   const island = ISLANDS.find((i) => i.id === state.activeIsland)!;
   const islandMult = island.rateBonus;
   const speed = state.boosters.speedBoostUntil > Date.now() ? 2 : 1;
-  const workerMult = 1 + state.boosters.extraWorkers * 0.1;
+  const workerMult = 1 + state.boosters.extraWorkers * 0.05;
   const goldDouble = state.boosters.doubleIncomeUntil > Date.now() ? 2 : 1;
 
-  const rates: Resources = { gold: 0, wood: 0, stone: 0, energy: 0 };
+  const raw: Resources = { gold: 0, wood: 0, stone: 0, energy: 0 };
   for (const b of state.buildings) {
     if (!b) continue;
     const def = BUILDINGS.find((d) => d.id === b.id);
     if (!def) continue;
     let r = buildingRate(def, b.level) * islandMult * speed * workerMult;
     if (def.produces === "gold") r *= goldDouble;
-    rates[def.produces] += r;
+    raw[def.produces] += r;
   }
-  return rates;
+  // Apply soft cap per resource to prevent early-game wealth explosions.
+  return {
+    gold: applySoftCap(raw.gold, state.level),
+    wood: applySoftCap(raw.wood, state.level),
+    stone: applySoftCap(raw.stone, state.level),
+    energy: applySoftCap(raw.energy, state.level),
+  };
 };
 
 export function useGameStore() {
@@ -80,14 +86,15 @@ export function useGameStore() {
   useEffect(() => {
     const s = stateRef.current;
     const now = Date.now();
-    const elapsed = Math.min((now - s.lastTick) / 1000, 60 * 60 * 8);
+    const elapsed = Math.min((now - s.lastTick) / 1000, 60 * 60 * 4);
     if (elapsed > 30 && s.buildings.some(Boolean)) {
       const rates = computeRates(s);
+      const offlineMult = 0.25; // offline earns 25% of online rate
       const earned: Resources = {
-        gold: rates.gold * elapsed * 0.5,
-        wood: rates.wood * elapsed * 0.5,
-        stone: rates.stone * elapsed * 0.5,
-        energy: rates.energy * elapsed * 0.5,
+        gold: rates.gold * elapsed * offlineMult,
+        wood: rates.wood * elapsed * offlineMult,
+        stone: rates.stone * elapsed * offlineMult,
+        energy: rates.energy * elapsed * offlineMult,
       };
       offlineEarnings.current = { gold: earned.gold, seconds: elapsed };
       setState((p) => ({
@@ -187,7 +194,7 @@ export function useGameStore() {
       }
       return { ...p, resources: newRes, buildings };
     });
-    addXp(15);
+    addXp(5);
   }, [addXp]);
 
   // Build at a specific plot (used when player taps an empty plot directly)
@@ -208,7 +215,7 @@ export function useGameStore() {
       buildings[plotIdx] = { id: buildingId, level: 1 };
       return { ...p, resources: newRes, buildings };
     });
-    addXp(15);
+    addXp(5);
   }, [addXp]);
 
   const upgradeAtPlot = useCallback((plotIdx: number) => {
@@ -227,7 +234,7 @@ export function useGameStore() {
       buildings[plotIdx] = { ...existing, level: existing.level + 1 };
       return { ...p, resources: newRes, buildings };
     });
-    addXp(15);
+    addXp(5);
   }, [addXp]);
 
   // Swap (or move into empty) two plot slots. Moving costs nothing and
@@ -251,7 +258,7 @@ export function useGameStore() {
       if (p.resources.gold < cost) return p;
       return { ...p, resources: { ...p.resources, gold: p.resources.gold - cost }, plots: p.plots + 1 };
     });
-    addXp(25);
+    addXp(10);
   }, [addXp]);
 
   const unlockIsland = useCallback((islandId: string) => {
@@ -265,7 +272,7 @@ export function useGameStore() {
         unlockedIslands: [...p.unlockedIslands, islandId],
       };
     });
-    addXp(200);
+    addXp(80);
   }, [addXp]);
 
   const switchIsland = useCallback((islandId: string) => {
@@ -315,8 +322,9 @@ export function useGameStore() {
       // streak continues if claimed within 48h, otherwise resets
       const within = p.lastDailyClaim > 0 && now - p.lastDailyClaim < 48 * 3600 * 1000;
       const streak = within ? p.dailyStreak + 1 : 1;
-      const base = 500 + p.level * 100;
-      const streakBonus = Math.min(streak - 1, 14) * 0.15; // up to +210% at streak 15
+      // Smaller flat base early, but grows quadratically with level so it scales late
+      const base = 150 + p.level * p.level * 25;
+      const streakBonus = Math.min(streak - 1, 14) * 0.12; // up to +168% at streak 15
       const reward = Math.floor(base * (1 + streakBonus));
       return {
         ...p,
