@@ -204,7 +204,9 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
         open={modal === "daily"}
         onClose={() => setModal(null)}
         state={game.state}
-        onClaim={game.claimDaily}
+        onClaimDaily={game.claimDailyReward}
+        onSpin={game.claimSpin}
+        onClaimMission={game.claimMission}
       />
       <AchievementsModal
         open={modal === "achievements"}
