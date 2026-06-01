@@ -1389,6 +1389,270 @@ function Lighting() {
 }
 
 /* ============================================================
+   Instanced grass field — wind-animated via shader patch
+   ============================================================ */
+function GrassField({ count = 900, tint = "#6fd16a" }: { count?: number; tint?: string }) {
+  const meshRef = useRef<THREE.InstancedMesh>(null!);
+  const matRef = useRef<THREE.MeshStandardMaterial>(null!);
+  const shaderRef = useRef<{ uniforms: { uTime: { value: number } } } | null>(null);
+
+  const geom = useMemo(() => {
+    const g = new THREE.PlaneGeometry(0.08, 0.35, 1, 2);
+    g.translate(0, 0.175, 0);
+    return g;
+  }, []);
+
+  const { matrices, colors } = useMemo(() => {
+    const rng = mulberry32(2025);
+    const mats: THREE.Matrix4[] = [];
+    const cols: THREE.Color[] = [];
+    const tmp = new THREE.Object3D();
+    const palette = [
+      new THREE.Color("#6fd16a"),
+      new THREE.Color("#4ab84a"),
+      new THREE.Color("#8de07a"),
+      new THREE.Color("#2d8c3e"),
+      new THREE.Color("#a8e890"),
+    ];
+    for (let i = 0; i < count; i++) {
+      const a = rng() * Math.PI * 2;
+      const r = 0.5 + Math.sqrt(rng()) * 6.4;
+      const x = Math.cos(a) * r;
+      const z = Math.sin(a) * r;
+      if (Math.abs(x) < 1.2 && Math.abs(z) < 1.2) continue;
+      tmp.position.set(x, 0.5, z);
+      tmp.rotation.set(0, rng() * Math.PI * 2, 0);
+      const s = 0.7 + rng() * 1.1;
+      tmp.scale.set(1, s, 1);
+      tmp.updateMatrix();
+      mats.push(tmp.matrix.clone());
+      cols.push(palette[Math.floor(rng() * palette.length)]);
+    }
+    return { matrices: mats, colors: cols };
+  }, [count]);
+
+  useEffect(() => {
+    if (!meshRef.current) return;
+    const m = meshRef.current;
+    const col = new THREE.Color();
+    matrices.forEach((mat, i) => {
+      m.setMatrixAt(i, mat);
+      col.copy(colors[i]);
+      m.setColorAt(i, col);
+    });
+    m.instanceMatrix.needsUpdate = true;
+    if (m.instanceColor) m.instanceColor.needsUpdate = true;
+  }, [matrices, colors]);
+
+  useEffect(() => {
+    const mat = matRef.current;
+    if (!mat) return;
+    mat.onBeforeCompile = (shader) => {
+      shader.uniforms.uTime = { value: 0 };
+      shader.vertexShader =
+        "uniform float uTime;\n" +
+        shader.vertexShader.replace(
+          "#include <begin_vertex>",
+          `#include <begin_vertex>
+          float ix = instanceMatrix[3][0];
+          float iz = instanceMatrix[3][2];
+          float sway = sin(uTime * 1.6 + ix * 0.7 + iz * 0.5) * 0.12;
+          transformed.x += sway * position.y;
+          transformed.z += sway * 0.5 * position.y;`,
+        );
+      shaderRef.current = shader as unknown as { uniforms: { uTime: { value: number } } };
+    };
+    mat.needsUpdate = true;
+  }, []);
+
+  useFrame(({ clock }) => {
+    if (shaderRef.current) shaderRef.current.uniforms.uTime.value = clock.elapsedTime;
+  });
+
+  return (
+    <instancedMesh ref={meshRef} args={[geom, undefined, matrices.length]} receiveShadow>
+      <meshStandardMaterial ref={matRef} color={tint} side={THREE.DoubleSide} roughness={0.9} />
+    </instancedMesh>
+  );
+}
+
+/* ============================================================
+   Animated foam ring around the island
+   ============================================================ */
+function FoamRing() {
+  const ref = useRef<THREE.Mesh>(null!);
+  useFrame(({ clock }) => {
+    if (!ref.current) return;
+    const t = clock.elapsedTime;
+    const s = 1 + Math.sin(t * 1.4) * 0.012;
+    ref.current.scale.set(s, 1, s);
+    const m = ref.current.material as THREE.MeshBasicMaterial;
+    m.opacity = 0.55 + Math.sin(t * 1.8) * 0.15;
+  });
+  return (
+    <mesh ref={ref} position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <ringGeometry args={[8.4, 9.2, 64]} />
+      <meshBasicMaterial color="#f0fbff" transparent opacity={0.6} depthWrite={false} />
+    </mesh>
+  );
+}
+
+/* ============================================================
+   Beach decor — shells, starfish, driftwood
+   ============================================================ */
+function BeachDecor() {
+  const items = useMemo(() => {
+    const rng = mulberry32(99);
+    return Array.from({ length: 14 }).map((_, i) => {
+      const a = rng() * Math.PI * 2;
+      const r = 7.2 + rng() * 0.9;
+      const type = i % 3;
+      return {
+        pos: [Math.cos(a) * r, 0.42, Math.sin(a) * r] as [number, number, number],
+        rot: rng() * Math.PI * 2,
+        type,
+      };
+    });
+  }, []);
+  return (
+    <group>
+      {items.map((it, i) => {
+        if (it.type === 0) {
+          return (
+            <mesh key={i} position={it.pos} rotation={[Math.PI / 2.4, 0, it.rot]} castShadow>
+              <sphereGeometry args={[0.13, 10, 8, 0, Math.PI]} />
+              <meshStandardMaterial color="#ffd9c2" roughness={0.5} />
+            </mesh>
+          );
+        }
+        if (it.type === 1) {
+          return (
+            <group key={i} position={it.pos} rotation={[0, it.rot, 0]}>
+              {[0, 1, 2, 3, 4].map((j) => (
+                <mesh
+                  key={j}
+                  position={[Math.cos((j * Math.PI * 2) / 5) * 0.14, 0, Math.sin((j * Math.PI * 2) / 5) * 0.14]}
+                  rotation={[0, (j * Math.PI * 2) / 5, 0]}
+                >
+                  <coneGeometry args={[0.07, 0.22, 6]} />
+                  <meshStandardMaterial color="#ff7e5a" roughness={0.6} />
+                </mesh>
+              ))}
+              <mesh>
+                <sphereGeometry args={[0.09, 10, 8]} />
+                <meshStandardMaterial color="#ff9a78" />
+              </mesh>
+            </group>
+          );
+        }
+        return (
+          <mesh key={i} position={it.pos} rotation={[0, it.rot, Math.PI / 2]} castShadow>
+            <cylinderGeometry args={[0.08, 0.1, 0.55, 8]} />
+            <meshStandardMaterial color="#8a5a30" roughness={0.95} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+/* ============================================================
+   Crab — walks sideways along the beach
+   ============================================================ */
+function Crab({ seed = 0 }: { seed?: number }) {
+  const ref = useRef<THREE.Group>(null!);
+  const legL = useRef<THREE.Group>(null!);
+  const legR = useRef<THREE.Group>(null!);
+  const phase = seed * 1.7;
+  useFrame(({ clock }) => {
+    if (!ref.current) return;
+    const t = clock.elapsedTime * 0.3 + phase;
+    const r = 7.4;
+    ref.current.position.x = Math.cos(t) * r;
+    ref.current.position.z = Math.sin(t) * r;
+    ref.current.position.y = 0.46;
+    ref.current.rotation.y = -t + Math.PI / 2;
+    const wig = Math.sin(clock.elapsedTime * 8 + phase) * 0.4;
+    if (legL.current) legL.current.rotation.z = wig;
+    if (legR.current) legR.current.rotation.z = -wig;
+  });
+  return (
+    <group ref={ref}>
+      <mesh castShadow>
+        <sphereGeometry args={[0.15, 12, 10]} />
+        <meshStandardMaterial color="#e54a3a" roughness={0.5} />
+      </mesh>
+      <mesh position={[0.06, 0.1, 0]}>
+        <sphereGeometry args={[0.025, 8, 8]} />
+        <meshStandardMaterial color="#111" />
+      </mesh>
+      <mesh position={[-0.06, 0.1, 0]}>
+        <sphereGeometry args={[0.025, 8, 8]} />
+        <meshStandardMaterial color="#111" />
+      </mesh>
+      <group ref={legL} position={[0.1, 0, 0]}>
+        <mesh position={[0.22, 0, 0.08]}>
+          <boxGeometry args={[0.14, 0.05, 0.08]} />
+          <meshStandardMaterial color="#e54a3a" />
+        </mesh>
+      </group>
+      <group ref={legR} position={[-0.1, 0, 0]}>
+        <mesh position={[-0.22, 0, 0.08]}>
+          <boxGeometry args={[0.14, 0.05, 0.08]} />
+          <meshStandardMaterial color="#e54a3a" />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
+/* ============================================================
+   Dolphin — occasional jump arc far from shore
+   ============================================================ */
+function Dolphin({ radius = 18, speed = 0.18, phase = 0 }: { radius?: number; speed?: number; phase?: number }) {
+  const ref = useRef<THREE.Group>(null!);
+  useFrame(({ clock }) => {
+    if (!ref.current) return;
+    const t = clock.elapsedTime * speed + phase;
+    const cycle = (clock.elapsedTime * 0.35 + phase) % 6;
+    let y = -0.8;
+    let pitch = 0;
+    if (cycle < 1.2) {
+      const k = cycle / 1.2;
+      y = -0.8 + Math.sin(k * Math.PI) * 1.6;
+      pitch = Math.cos(k * Math.PI) * 0.9;
+    }
+    ref.current.position.set(Math.cos(t) * radius, y, Math.sin(t) * radius);
+    ref.current.rotation.set(pitch, -t + Math.PI / 2, 0);
+    ref.current.visible = cycle < 1.4;
+  });
+  return (
+    <group ref={ref}>
+      <mesh castShadow>
+        <sphereGeometry args={[0.4, 16, 12]} />
+        <meshStandardMaterial color="#5a7d96" roughness={0.4} />
+      </mesh>
+      <mesh position={[0, 0, -0.4]} scale={[0.7, 0.7, 1.2]}>
+        <sphereGeometry args={[0.3, 14, 10]} />
+        <meshStandardMaterial color="#5a7d96" roughness={0.4} />
+      </mesh>
+      <mesh position={[0, -0.05, 0.35]} scale={[0.7, 0.55, 1]}>
+        <sphereGeometry args={[0.3, 14, 10]} />
+        <meshStandardMaterial color="#dfe9ee" roughness={0.5} />
+      </mesh>
+      <mesh position={[0, 0.3, -0.05]} rotation={[0.3, 0, 0]}>
+        <coneGeometry args={[0.1, 0.3, 4]} />
+        <meshStandardMaterial color="#46647a" />
+      </mesh>
+      <mesh position={[0, -0.05, -0.55]} rotation={[0, 0, Math.PI / 2]}>
+        <coneGeometry args={[0.18, 0.25, 4]} />
+        <meshStandardMaterial color="#46647a" />
+      </mesh>
+    </group>
+  );
+}
+
+/* ============================================================
    Scene
    ============================================================ */
 function IslandScene({ state, onPlotClick }: IslandViewProps) {
