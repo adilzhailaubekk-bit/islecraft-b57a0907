@@ -1745,14 +1745,6 @@ function DayNightSystem({ speed = 0.012 }: { speed?: number }) {
         position={[18, 25, 14]}
         intensity={2.2}
         color="#fff0c8"
-        castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-        shadow-camera-left={-18}
-        shadow-camera-right={18}
-        shadow-camera-top={18}
-        shadow-camera-bottom={-18}
-        shadow-bias={-0.0005}
       />
       <directionalLight ref={fillRef} position={[-12, 8, -8]} intensity={0.5} color="#a8d8ff" />
       <directionalLight ref={moonRef} position={[-18, -25, -14]} intensity={0} color="#9bb8ff" />
