@@ -2224,33 +2224,35 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
       <StonePath />
       <FenceRing />
 
-      {/* Vegetation */}
-      {palms.map((p, i) => (
-        <Palm key={`palm-${i}`} position={[p[0], p[1], p[2]]} scale={p[3]} delay={p[4]} />
-      ))}
-      {trees.map((t, i) => (
-        <Tree key={`tree-${i}`} position={[t[0], t[1], t[2]]} scale={t[3]} />
-      ))}
-      {decor.flowers.map((f, i) => (
-        <Flower key={`f-${i}`} position={f.pos} color={f.color} delay={f.delay} />
-      ))}
-      {decor.rocks.map((r, i) => (
-        <Rock key={`r-${i}`} position={r.pos} scale={r.scale} seed={r.seed} />
-      ))}
-      {decor.bushes.map((p, i) => (
-        <Bush key={`b-${i}`} position={p} />
-      ))}
-      {decor.mushrooms.map((p, i) => (
-        <Mushroom key={`m-${i}`} position={p} />
-      ))}
-      {decor.lanterns.map((p, i) => (
-        <Lantern key={`l-${i}`} position={p} />
-      ))}
+      {/* Vegetation — wrapped in NoHit so it never blocks plot clicks */}
+      <NoHit>
+        {palms.map((p, i) => (
+          <Palm key={`palm-${i}`} position={[p[0], p[1], p[2]]} scale={p[3]} delay={p[4]} />
+        ))}
+        {trees.map((t, i) => (
+          <Tree key={`tree-${i}`} position={[t[0], t[1], t[2]]} scale={t[3]} />
+        ))}
+        {decor.flowers.map((f, i) => (
+          <Flower key={`f-${i}`} position={f.pos} color={f.color} delay={f.delay} />
+        ))}
+        {decor.rocks.map((r, i) => (
+          <Rock key={`r-${i}`} position={r.pos} scale={r.scale} seed={r.seed} />
+        ))}
+        {decor.bushes.map((p, i) => (
+          <Bush key={`b-${i}`} position={p} />
+        ))}
+        {decor.mushrooms.map((p, i) => (
+          <Mushroom key={`m-${i}`} position={p} />
+        ))}
+        {decor.lanterns.map((p, i) => (
+          <Lantern key={`l-${i}`} position={p} />
+        ))}
 
-      {/* Centerpiece decor */}
-      <Fountain position={[0, 0.45, 0]} />
-      <FlagPole position={[-6, 0.45, -1]} />
-      <Bridge position={[7.2, -0.05, 0]} rotation={Math.PI / 2} />
+        {/* Centerpiece decor */}
+        <Fountain position={[0, 0.45, 0]} />
+        <FlagPole position={[-6, 0.45, -1]} />
+        <Bridge position={[7.2, -0.05, 0]} rotation={Math.PI / 2} />
+      </NoHit>
 
       {/* Cosmetics */}
       {state.cosmetics.includes("lighthouse") && (
