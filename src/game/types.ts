@@ -49,6 +49,36 @@ export interface Achievement {
   reward: number;
 }
 
+export type MissionType =
+  | "earnGold"
+  | "earnWood"
+  | "earnStone"
+  | "upgrade"
+  | "build"
+  | "spend";
+
+export interface DailyMission {
+  id: string;
+  type: MissionType;
+  goal: number;
+  progress: number;
+  claimed: boolean;
+  rewardGold: number;
+  rewardXp: number;
+  title: string;
+  emoji: string;
+}
+
+export interface DailyCounters {
+  date: string; // YYYY-MM-DD (local)
+  goldEarned: number;
+  woodEarned: number;
+  stoneEarned: number;
+  upgrades: number;
+  builds: number;
+  goldSpent: number;
+}
+
 export interface GameState {
   resources: Resources;
   buildings: (BuildingState | null)[]; // sparse, indexed by plot slot
@@ -64,4 +94,10 @@ export interface GameState {
   dailyStreak: number;
   cosmetics: string[];
   totalGoldEarned: number;
+  // Daily retention
+  dailyCycleDay: number; // next day index to claim (1..7)
+  lastSpinAt: number;
+  dailyMissions: DailyMission[];
+  dailyMissionsDate: string;
+  dailyCounters: DailyCounters;
 }
