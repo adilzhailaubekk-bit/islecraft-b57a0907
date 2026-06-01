@@ -99,6 +99,8 @@ export default function GamePage() {
       <div className="flex-1 relative px-2 sm:px-4 min-h-0">
         <IslandView
           state={game.state}
+          moveMode={moveMode}
+          movingFrom={movingFrom}
           onPlotClick={(i) => {
             if (moveMode) {
               if (movingFrom === null) {
