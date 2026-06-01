@@ -2136,6 +2136,7 @@ function IslandScene({ state, onPlotClick }: IslandViewProps) {
       <Ocean />
       <Sparkles count={60} scale={[60, 1, 60]} position={[0, -0.15, 0]} size={3} speed={0.3} color="#ffffff" />
 
+      <group scale={ISLAND_SCALE}>
       <IslandBase grassTint={tint} />
       
       <FoamRing />
@@ -2184,7 +2185,6 @@ function IslandScene({ state, onPlotClick }: IslandViewProps) {
             <cylinderGeometry args={[0.32, 0.45, 1.6, 16]} />
             <meshStandardMaterial color="#ffffff" />
           </mesh>
-          {/* Red stripes */}
           {[0.9, 1.6, 2.2].map((y, i) => (
             <mesh key={i} position={[0, y, 0]}>
               <cylinderGeometry args={[0.34, 0.34, 0.18, 16]} />
@@ -2227,11 +2227,13 @@ function IslandScene({ state, onPlotClick }: IslandViewProps) {
           position={[pos[0], 0.51, pos[1]]}
           building={state.buildings[i] ?? undefined}
           empty={!state.buildings[i]}
+          highlighted={selectedPlot === i}
           onClick={() => onPlotClick(i)}
         />
       ))}
 
       <WindowGlows slots={slots} buildings={state.buildings.slice(0, slots.length)} />
+      </group>
 
       {/* Sky life */}
       <Clouds material={THREE.MeshBasicMaterial}>
