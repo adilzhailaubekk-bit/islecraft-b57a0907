@@ -252,7 +252,7 @@ export function MainMenu({
       </div>
 
       {/* Birds */}
-      {birds.map((b) => (
+      {mounted && birds.map((b) => (
         <motion.div
           key={`b-${b.id}`}
           className="absolute"
@@ -277,7 +277,7 @@ export function MainMenu({
       ))}
 
       {/* Butterflies */}
-      {butterflies.map((b) => (
+      {mounted && butterflies.map((b) => (
         <motion.div
           key={`bf-${b.id}`}
           className="absolute"
@@ -303,7 +303,7 @@ export function MainMenu({
       ))}
 
       {/* Sparkles */}
-      {Array.from({ length: 12 }).map((_, i) => (
+      {mounted && Array.from({ length: 12 }).map((_, i) => (
         <motion.div
           key={`sp-${i}`}
           className="absolute w-1.5 h-1.5 rounded-full bg-white"
