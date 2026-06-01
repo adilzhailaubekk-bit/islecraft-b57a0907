@@ -859,18 +859,19 @@ function HutBuilding({ stages }: { stages: number }) {
         </mesh>
       ))}
 
-      {/* Roof */}
-      <group>
+      {/* Roof — flipped (inverted V) with volumetric triangular gables */}
+      <group position={[0, 2.4, 0]} scale={[1, -1, 1]}>
 
-        {/* Gable triangular ends (front + back) */}
-        <mesh castShadow position={[0, 1.05, 0.48]} rotation={[Math.PI / 2, 0, 0]}>
-          <coneGeometry args={[0.55, 0.45, 3]} />
+        {/* Volumetric triangular gable prisms (front + back) */}
+        <mesh castShadow position={[0, 1.05, 0.45]}>
+          <cylinderGeometry args={[0.62, 0.62, 0.16, 3]} />
           <meshStandardMaterial color="#caa370" roughness={0.9} />
         </mesh>
-        <mesh castShadow position={[0, 1.05, -0.48]} rotation={[Math.PI / 2, 0, 0]}>
-          <coneGeometry args={[0.55, 0.45, 3]} />
+        <mesh castShadow position={[0, 1.05, -0.45]}>
+          <cylinderGeometry args={[0.62, 0.62, 0.16, 3]} />
           <meshStandardMaterial color="#caa370" roughness={0.9} />
         </mesh>
+
 
         {/* Pitched thatched roof — multiple layered slabs for straw look */}
         {[0, 1, 2].map((i) => {
