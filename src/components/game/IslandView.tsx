@@ -19,7 +19,8 @@ import type { GameState } from "@/game/types";
 interface IslandViewProps {
   state: GameState;
   onPlotClick: (index: number) => void;
-  selectedPlot?: number | null;
+  moveMode?: boolean;
+  movingFrom?: number | null;
 }
 
 /* ============================================================
@@ -61,7 +62,7 @@ const PALETTE = {
 /* ============================================================
    Plot layout
    ============================================================ */
-const ISLAND_SCALE = 1.4;
+const ISLAND_SCALE = 1.75;
 
 const PLOT_POSITIONS: [number, number][] = [
   [0, 0],
@@ -1497,13 +1498,19 @@ function Plot({
   building,
   onClick,
   empty,
+  highlight,
+  selected,
 }: {
   position: [number, number, number];
   building?: { id: string; level: number };
   onClick: () => void;
   empty: boolean;
+  highlight?: boolean;
+  selected?: boolean;
 }) {
   const ring = useRef<THREE.Mesh>(null!);
+  const moveRing = useRef<THREE.Mesh>(null!);
+  const moveDisc = useRef<THREE.Mesh>(null!);
   const [hovered, setHovered] = useState(false);
   useFrame(({ clock }) => {
     if (ring.current && empty) {
@@ -1511,7 +1518,20 @@ function Plot({
       const s = 1 + Math.sin(clock.elapsedTime * 3) * 0.07;
       ring.current.scale.set(s, s, 1);
     }
+    if (moveRing.current && highlight) {
+      moveRing.current.rotation.z = -clock.elapsedTime * 0.8;
+      const s = 1 + Math.sin(clock.elapsedTime * 4 + position[0]) * 0.1;
+      moveRing.current.scale.set(s, s, 1);
+      const mat = moveRing.current.material as THREE.MeshBasicMaterial;
+      mat.opacity = 0.55 + Math.sin(clock.elapsedTime * 4) * 0.25;
+    }
+    if (moveDisc.current && highlight) {
+      const mat = moveDisc.current.material as THREE.MeshBasicMaterial;
+      mat.opacity = 0.25 + Math.sin(clock.elapsedTime * 3) * 0.1;
+    }
   });
+
+  const highlightColor = selected ? "#ff5ea0" : empty ? "#7ee06a" : "#79f7e6";
 
   return (
     <group
@@ -1530,6 +1550,24 @@ function Plot({
         document.body.style.cursor = "default";
       }}
     >
+      {highlight && (
+        <>
+          <mesh ref={moveDisc} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, 0]}>
+            <circleGeometry args={[0.95, 32]} />
+            <meshBasicMaterial color={highlightColor} transparent opacity={0.3} side={THREE.DoubleSide} />
+          </mesh>
+          <mesh ref={moveRing} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.08, 0]}>
+            <ringGeometry args={[0.95, 1.15, 36]} />
+            <meshBasicMaterial color={highlightColor} transparent opacity={0.8} side={THREE.DoubleSide} />
+          </mesh>
+          <Sparkles count={12} scale={[1.4, 0.8, 1.4]} position={[0, 0.6, 0]} size={3} speed={0.8} color={highlightColor} />
+          <Html center position={[0, selected ? 2.6 : 1.4, 0]} distanceFactor={9} style={{ pointerEvents: "none" }}>
+            <div className={`${selected ? "bg-pink-500" : "bg-violet-600"} text-white text-[10px] font-bold rounded-full px-2 py-1 border-2 border-white shadow whitespace-nowrap`}>
+              {selected ? "ВЫБРАНО" : empty ? "СЮДА" : "ПЕРЕНЕСТИ"}
+            </div>
+          </Html>
+        </>
+      )}
       {empty ? (
         <>
           {/* Soil patch */}
@@ -2037,7 +2075,7 @@ function Dolphin({ radius = 18, speed = 0.18, phase = 0 }: { radius?: number; sp
 /* ============================================================
    Scene
    ============================================================ */
-function IslandScene({ state, onPlotClick }: IslandViewProps) {
+function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewProps) {
   const lowPower = useMemo(() => {
     if (typeof navigator === "undefined") return false;
     const cores = (navigator as Navigator & { hardwareConcurrency?: number }).hardwareConcurrency ?? 8;
@@ -2222,16 +2260,26 @@ function IslandScene({ state, onPlotClick }: IslandViewProps) {
       )}
 
       {/* Plots / buildings */}
-      {slots.map((pos, i) => (
-        <Plot
-          key={i}
-          position={[pos[0], 0.51, pos[1]]}
-          building={state.buildings[i] ?? undefined}
-          empty={!state.buildings[i]}
-          
-          onClick={() => onPlotClick(i)}
-        />
-      ))}
+      {slots.map((pos, i) => {
+        const hasBuilding = !!state.buildings[i];
+        const isSource = movingFrom === i;
+        const isHighlighted = !!moveMode && (
+          isSource ||
+          (movingFrom === null && hasBuilding) ||
+          (movingFrom !== null && movingFrom !== undefined && movingFrom !== i)
+        );
+        return (
+          <Plot
+            key={i}
+            position={[pos[0], 0.51, pos[1]]}
+            building={state.buildings[i] ?? undefined}
+            empty={!hasBuilding}
+            highlight={isHighlighted}
+            selected={isSource}
+            onClick={() => onPlotClick(i)}
+          />
+        );
+      })}
 
       <WindowGlows slots={slots} buildings={state.buildings.slice(0, slots.length)} />
       </group>
@@ -2274,8 +2322,8 @@ function CameraRig() {
       enablePan={false}
       enableDamping
       dampingFactor={0.1}
-      minDistance={14}
-      maxDistance={40}
+      minDistance={18}
+      maxDistance={55}
       minPolarAngle={Math.PI / 6}
       maxPolarAngle={Math.PI / 2.4}
       target={[0, 0.5, 0]}
@@ -2287,7 +2335,7 @@ function CameraRig() {
 /* ============================================================
    Public component
    ============================================================ */
-export function IslandView({ state, onPlotClick }: IslandViewProps) {
+export function IslandView({ state, onPlotClick, moveMode, movingFrom }: IslandViewProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const island = ISLANDS.find((i) => i.id === state.activeIsland)!;
@@ -2307,12 +2355,12 @@ export function IslandView({ state, onPlotClick }: IslandViewProps) {
         <Canvas
           shadows={!lowPower}
           dpr={lowPower ? [1, 1.25] : [1, 1.75]}
-          camera={{ position: [20, 17, 20], fov: 45 }}
+          camera={{ position: [26, 22, 26], fov: 45 }}
           gl={{ antialias: !lowPower, alpha: false, powerPreference: "high-performance", toneMappingExposure: 1.15 }}
           frameloop="always"
         >
           <Suspense fallback={null}>
-            <IslandScene state={state} onPlotClick={onPlotClick} />
+            <IslandScene state={state} onPlotClick={onPlotClick} moveMode={moveMode} movingFrom={movingFrom} />
             <CameraRig />
           </Suspense>
         </Canvas>
