@@ -2300,32 +2300,32 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
   const decor = useMemo(() => {
     const rng = mulberry32(42);
     const flowerColors = [PALETTE.flowerPink, PALETTE.flowerOrange, PALETTE.flowerPurple, PALETTE.flowerYellow, PALETTE.flowerWhite];
-    const flowers = Array.from({ length: 22 }).map(() => {
+    const flowers = Array.from({ length: 40 }).map(() => {
       const a = rng() * Math.PI * 2;
-      const r = 2.5 + rng() * 4.2;
+      const r = 2.2 + rng() * 4.8;
       return {
         pos: [Math.cos(a) * r, 0.5, Math.sin(a) * r] as [number, number, number],
         color: flowerColors[Math.floor(rng() * flowerColors.length)],
         delay: rng() * 6,
       };
     });
-    const rocks = Array.from({ length: 8 }).map((_, i) => {
+    const rocks = Array.from({ length: 14 }).map((_, i) => {
       const a = rng() * Math.PI * 2;
-      const r = 5.2 + rng() * 2.5;
+      const r = 4.8 + rng() * 2.8;
       return {
         pos: [Math.cos(a) * r, 0.25, Math.sin(a) * r] as [number, number, number],
-        scale: 0.5 + rng() * 0.8,
+        scale: 0.4 + rng() * 0.9,
         seed: i,
       };
     });
-    const bushes = Array.from({ length: 7 }).map(() => {
+    const bushes = Array.from({ length: 16 }).map(() => {
       const a = rng() * Math.PI * 2;
-      const r = 3 + rng() * 3.5;
+      const r = 2.6 + rng() * 4.2;
       return [Math.cos(a) * r, 0.5, Math.sin(a) * r] as [number, number, number];
     });
-    const mushrooms = Array.from({ length: 6 }).map(() => {
+    const mushrooms = Array.from({ length: 12 }).map(() => {
       const a = rng() * Math.PI * 2;
-      const r = 3.5 + rng() * 3.2;
+      const r = 3 + rng() * 3.8;
       return [Math.cos(a) * r, 0.5, Math.sin(a) * r] as [number, number, number];
     });
     const lanterns = [
@@ -2334,8 +2334,38 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
       [-2.3, 0.5, 2.1],
       [2.3, 0.5, 2.1],
     ] as [number, number, number][];
-    return { flowers, rocks, bushes, mushrooms, lanterns };
+    const grassTufts = Array.from({ length: 30 }).map(() => {
+      const a = rng() * Math.PI * 2;
+      const r = 1.5 + rng() * 5.5;
+      return [Math.cos(a) * r, 0.5, Math.sin(a) * r] as [number, number, number];
+    });
+    // Shells & driftwood scattered on the sandy beach ring
+    const shells = Array.from({ length: 12 }).map(() => {
+      const a = rng() * Math.PI * 2;
+      const r = 8.0 + rng() * 0.7;
+      return {
+        pos: [Math.cos(a) * r, 0.22, Math.sin(a) * r] as [number, number, number],
+        color: (["#ffd8c2", "#ffeed0", "#f8c0d0", "#fff4d8"] as const)[Math.floor(rng() * 4)],
+      };
+    });
+    const driftwood = Array.from({ length: 4 }).map(() => {
+      const a = rng() * Math.PI * 2;
+      const r = 7.8 + rng() * 0.9;
+      return {
+        pos: [Math.cos(a) * r, 0.22, Math.sin(a) * r] as [number, number, number],
+        rot: rng() * Math.PI,
+      };
+    });
+    // Low hills/mounds on the grass for terrain variation
+    const hills: { pos: [number, number, number]; scale: number }[] = [
+      { pos: [-4.5, 0.45, -2.5], scale: 2.6 },
+      { pos: [4.2, 0.45, 3.2], scale: 2.3 },
+      { pos: [-2, 0.45, 5.5], scale: 1.8 },
+      { pos: [5.5, 0.45, -4], scale: 2.0 },
+    ];
+    return { flowers, rocks, bushes, mushrooms, lanterns, grassTufts, shells, driftwood, hills };
   }, []);
+
 
   // Build a grid of legal plot positions that avoids every plant/decor footprint.
   const slots = useMemo<[number, number][]>(() => {
