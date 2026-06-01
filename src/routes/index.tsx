@@ -1,29 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
+import GamePage from "@/components/game/GamePage";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Your App" },
-      { name: "description", content: "Replace this with a one-sentence description of your app." },
-      { property: "og:title", content: "Your App" },
-      { property: "og:description", content: "Replace this with a one-sentence description of your app." },
+      { title: "Island Tycoon — Построй свою империю островов" },
+      { name: "description", content: "Современный тропический тайкун: добывайте ресурсы, стройте здания и открывайте новые острова." },
+      { property: "og:title", content: "Island Tycoon" },
+      { property: "og:description", content: "Тропический тайкун с автоматической добычей, апгрейдами и архипелагом островов." },
     ],
   }),
-  component: Index,
+  component: GamePage,
 });
-
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
-  return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
-  );
-}
