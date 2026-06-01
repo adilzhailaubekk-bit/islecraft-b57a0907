@@ -2355,7 +2355,7 @@ export function IslandView({ state, onPlotClick, moveMode, movingFrom }: IslandV
         <Canvas
           shadows={!lowPower}
           dpr={lowPower ? [1, 1.25] : [1, 1.75]}
-          camera={{ position: [20, 17, 20], fov: 45 }}
+          camera={{ position: [26, 22, 26], fov: 45 }}
           gl={{ antialias: !lowPower, alpha: false, powerPreference: "high-performance", toneMappingExposure: 1.15 }}
           frameloop="always"
         >
