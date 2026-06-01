@@ -2502,12 +2502,24 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
         </NoHit>
       )}
 
+      {/* Sand paths from the central fountain to every built plot */}
+      <NoHit>
+        {slots.map((pos, i) => {
+          if (!state.buildings[i]) return null;
+          const tiles = 6;
+          return Array.from({ length: tiles }).map((_, t) => {
+            const k = (t + 1) / (tiles + 1);
+            const x = pos[0] * k;
+            const z = pos[1] * k;
+            return <SandPathTile key={`pth-${i}-${t}`} position={[x, 0.515, z]} />;
+          });
+        })}
+      </NoHit>
+
       {/* Plots / buildings */}
       {slots.map((pos, i) => {
         const hasBuilding = !!state.buildings[i];
         const ownedPlot = i < state.plots;
-        // In normal mode: show only owned plots or plots that contain a building.
-        // In move mode: show every legal cell so the user can place anywhere free of plants.
         if (!moveMode && !ownedPlot && !hasBuilding) return null;
         const isSource = movingFrom === i;
         const isHighlighted = !!moveMode && (
@@ -2528,7 +2540,16 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
         );
       })}
 
+      {/* Decorative surroundings around every built plot */}
+      <NoHit>
+        {slots.map((pos, i) => {
+          if (!state.buildings[i]) return null;
+          return <BuildingSurround key={`bs-${i}`} position={[pos[0], 0.52, pos[1]]} seed={i + 1} />;
+        })}
+      </NoHit>
+
       <WindowGlows slots={slots} buildings={state.buildings.slice(0, slots.length)} />
+
       </group>
 
       {/* Sky life — heavy volumetric clouds skipped on low-power */}
