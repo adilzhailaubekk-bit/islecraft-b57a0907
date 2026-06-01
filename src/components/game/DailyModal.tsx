@@ -271,15 +271,15 @@ function Wheel() {
 // =================== MISSIONS TAB ===================
 
 function MissionsTab({ state, onClaim }: { state: GameState; onClaim: (id: string) => void }) {
-  if (!state.dailyMissions || state.dailyMissions.length === 0) {
-    return <div className="text-center py-8 text-muted-foreground">Задания обновляются... вернитесь через секунду.</div>;
-  }
   const nextResetMs = useMemo(() => {
     const now = new Date();
     const reset = new Date(now);
     reset.setHours(24, 0, 0, 0);
     return reset.getTime() - now.getTime();
   }, []);
+  if (!state.dailyMissions || state.dailyMissions.length === 0) {
+    return <div className="text-center py-8 text-muted-foreground">Задания обновляются... вернитесь через секунду.</div>;
+  }
   return (
     <div className="space-y-2">
       <div className="text-xs text-center text-muted-foreground mb-2">
