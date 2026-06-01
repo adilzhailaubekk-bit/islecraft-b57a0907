@@ -84,7 +84,9 @@ export function MainMenu({
   );
 
   const [showHint, setShowHint] = useState(true);
+  const [mounted, setMounted] = useState(false);
   useEffect(() => {
+    setMounted(true);
     const t = setTimeout(() => setShowHint(false), 4000);
     return () => clearTimeout(t);
   }, []);
