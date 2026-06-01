@@ -2260,16 +2260,26 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
       )}
 
       {/* Plots / buildings */}
-      {slots.map((pos, i) => (
-        <Plot
-          key={i}
-          position={[pos[0], 0.51, pos[1]]}
-          building={state.buildings[i] ?? undefined}
-          empty={!state.buildings[i]}
-          
-          onClick={() => onPlotClick(i)}
-        />
-      ))}
+      {slots.map((pos, i) => {
+        const hasBuilding = !!state.buildings[i];
+        const isSource = movingFrom === i;
+        const isHighlighted = !!moveMode && (
+          isSource ||
+          (movingFrom === null && hasBuilding) ||
+          (movingFrom !== null && movingFrom !== undefined && movingFrom !== i)
+        );
+        return (
+          <Plot
+            key={i}
+            position={[pos[0], 0.51, pos[1]]}
+            building={state.buildings[i] ?? undefined}
+            empty={!hasBuilding}
+            highlight={isHighlighted}
+            selected={isSource}
+            onClick={() => onPlotClick(i)}
+          />
+        );
+      })}
 
       <WindowGlows slots={slots} buildings={state.buildings.slice(0, slots.length)} />
       </group>
