@@ -2207,19 +2207,23 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
 
   return (
     <>
-      <fog attach="fog" args={["#bfe6f5", 35, 95]} />
+      <fog attach="fog" args={["#bfe6f5", 30, 75]} />
       <DayNightSystem />
-      <Environment preset="park" />
+      {!lowPower && <Environment preset="park" />}
 
       <Ocean />
-      <Sparkles count={60} scale={[60, 1, 60]} position={[0, -0.15, 0]} size={3} speed={0.3} color="#ffffff" />
+      {!lowPower && (
+        <Sparkles count={30} scale={[60, 1, 60]} position={[0, -0.15, 0]} size={3} speed={0.3} color="#ffffff" />
+      )}
 
       <group scale={ISLAND_SCALE}>
       <IslandBase grassTint={tint} />
       
       <FoamRing />
       <BeachDecor />
-      <ContactShadows position={[0, 0.52, 0]} opacity={0.35} scale={20} blur={2.4} far={6} />
+      {!lowPower && (
+        <ContactShadows position={[0, 0.52, 0]} opacity={0.3} scale={18} blur={2.4} far={5} resolution={256} />
+      )}
 
       <StonePath />
       <FenceRing />
