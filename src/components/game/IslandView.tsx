@@ -1647,7 +1647,7 @@ function DayNightSystem({ speed = 0.012 }: { speed?: number }) {
   // Procedural starfield (cheap)
   const starsGeom = useMemo(() => {
     const g = new THREE.BufferGeometry();
-    const N = 350;
+    const N = 180;
     const arr = new Float32Array(N * 3);
     for (let i = 0; i < N; i++) {
       const u = Math.random();
