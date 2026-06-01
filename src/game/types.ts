@@ -45,22 +45,23 @@ export interface Achievement {
   name: string;
   description: string;
   goal: number;
-  metric: "gold" | "level" | "buildings" | "islands";
+  metric: "gold" | "level" | "buildings" | "islands" | "plots" | "streak";
   reward: number;
 }
 
 export interface GameState {
   resources: Resources;
-  buildings: BuildingState[];
+  buildings: (BuildingState | null)[]; // sparse, indexed by plot slot
   unlockedIslands: string[];
   activeIsland: string;
-  plots: number; // owned plots on active island
+  plots: number;
   level: number;
   xp: number;
   boosters: BoosterState;
-  achievements: string[]; // claimed ids
+  achievements: string[];
   lastTick: number;
   lastDailyClaim: number;
+  dailyStreak: number;
   cosmetics: string[];
   totalGoldEarned: number;
 }
