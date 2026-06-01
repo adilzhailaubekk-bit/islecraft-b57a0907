@@ -2694,7 +2694,7 @@ export function IslandView({ state, onPlotClick, moveMode, movingFrom }: IslandV
     <div className="relative w-full h-full overflow-hidden rounded-3xl bg-gradient-sky">
       {mounted && (
         <Canvas
-          shadows={!lowPower ? { type: THREE.PCFSoftShadowMap } : false}
+          shadows={false}
           dpr={lowPower ? [1, 1] : [1, 1.5]}
           camera={{ position: [26, 22, 26], fov: 45 }}
           gl={{ antialias: !lowPower, alpha: false, powerPreference: "high-performance", toneMappingExposure: 1.1, stencil: false, depth: true }}
