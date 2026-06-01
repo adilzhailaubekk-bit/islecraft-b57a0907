@@ -859,47 +859,50 @@ function HutBuilding({ stages }: { stages: number }) {
         </mesh>
       ))}
 
-      {/* Gable triangular ends (front + back) */}
-      <mesh castShadow position={[0, 1.05, 0.48]} rotation={[Math.PI / 2, 0, 0]}>
-        <coneGeometry args={[0.55, 0.45, 3]} />
-        <meshStandardMaterial color="#caa370" roughness={0.9} />
-      </mesh>
-      <mesh castShadow position={[0, 1.05, -0.48]} rotation={[Math.PI / 2, 0, 0]}>
-        <coneGeometry args={[0.55, 0.45, 3]} />
-        <meshStandardMaterial color="#caa370" roughness={0.9} />
-      </mesh>
-
-      {/* Pitched thatched roof — multiple layered slabs for straw look */}
-      {[0, 1, 2].map((i) => {
-        const y = 1.0 + i * 0.08;
-        const w = 1.3 - i * 0.18;
-        const d = 1.25 - i * 0.18;
-        const col = i === 0 ? "#b8853c" : i === 1 ? "#caa050" : "#dcbb68";
-        return (
-          <group key={`thatch-${i}`}>
-            <mesh castShadow position={[-0.18, y + 0.08, 0]} rotation={[0, 0, 0.7]}>
-              <boxGeometry args={[0.08, w, d]} />
-              <meshStandardMaterial color={col} roughness={1} />
-            </mesh>
-            <mesh castShadow position={[0.18, y + 0.08, 0]} rotation={[0, 0, -0.7]}>
-              <boxGeometry args={[0.08, w, d]} />
-              <meshStandardMaterial color={col} roughness={1} />
-            </mesh>
-          </group>
-        );
-      })}
-      {/* Ridge cap */}
-      <mesh castShadow position={[0, 1.35, 0]}>
-        <boxGeometry args={[0.12, 0.08, 1.3]} />
-        <meshStandardMaterial color="#7a4e1e" roughness={0.95} />
-      </mesh>
-      {/* Roof beam ends sticking out */}
-      {[-0.5, 0.5].map((z, i) => (
-        <mesh key={`beam-${i}`} castShadow position={[0, 1.32, z * 1.05]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.04, 0.04, 0.1, 8]} />
-          <meshStandardMaterial color="#5a3818" />
+      {/* Roof — flipped upside-down (inverted V) */}
+      <group position={[0, 2.4, 0]} scale={[1, -1, 1]}>
+        {/* Gable triangular ends (front + back) */}
+        <mesh castShadow position={[0, 1.05, 0.48]} rotation={[Math.PI / 2, 0, 0]}>
+          <coneGeometry args={[0.55, 0.45, 3]} />
+          <meshStandardMaterial color="#caa370" roughness={0.9} />
         </mesh>
-      ))}
+        <mesh castShadow position={[0, 1.05, -0.48]} rotation={[Math.PI / 2, 0, 0]}>
+          <coneGeometry args={[0.55, 0.45, 3]} />
+          <meshStandardMaterial color="#caa370" roughness={0.9} />
+        </mesh>
+
+        {/* Pitched thatched roof — multiple layered slabs for straw look */}
+        {[0, 1, 2].map((i) => {
+          const y = 1.0 + i * 0.08;
+          const w = 1.3 - i * 0.18;
+          const d = 1.25 - i * 0.18;
+          const col = i === 0 ? "#b8853c" : i === 1 ? "#caa050" : "#dcbb68";
+          return (
+            <group key={`thatch-${i}`}>
+              <mesh castShadow position={[-0.18, y + 0.08, 0]} rotation={[0, 0, 0.7]}>
+                <boxGeometry args={[0.08, w, d]} />
+                <meshStandardMaterial color={col} roughness={1} />
+              </mesh>
+              <mesh castShadow position={[0.18, y + 0.08, 0]} rotation={[0, 0, -0.7]}>
+                <boxGeometry args={[0.08, w, d]} />
+                <meshStandardMaterial color={col} roughness={1} />
+              </mesh>
+            </group>
+          );
+        })}
+        {/* Ridge cap */}
+        <mesh castShadow position={[0, 1.35, 0]}>
+          <boxGeometry args={[0.12, 0.08, 1.3]} />
+          <meshStandardMaterial color="#7a4e1e" roughness={0.95} />
+        </mesh>
+        {/* Roof beam ends sticking out */}
+        {[-0.5, 0.5].map((z, i) => (
+          <mesh key={`beam-${i}`} castShadow position={[0, 1.32, z * 1.05]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.04, 0.04, 0.1, 8]} />
+            <meshStandardMaterial color="#5a3818" />
+          </mesh>
+        ))}
+      </group>
 
       {/* Door frame + door with planks */}
       <mesh position={[0, 0.45, 0.515]}>
