@@ -1263,7 +1263,7 @@ function RefineryBuilding() {
 
 function Building({ id, level }: { id: string; level: number }) {
   const stages = Math.min(level, 3);
-  const scale = 0.85 + stages * 0.12;
+  const scale = 0.82 + Math.min(level, 5) * 0.09;
   let content: React.ReactNode = null;
   switch (id) {
     case "hut":
@@ -1285,7 +1285,204 @@ function Building({ id, level }: { id: string; level: number }) {
       content = <RefineryBuilding />;
       break;
   }
-  return <group scale={scale}>{content}</group>;
+  return (
+    <group scale={scale}>
+      {content}
+      <UpgradeDecor level={level} />
+    </group>
+  );
+}
+
+/* ============================================================
+   UpgradeDecor — beautifies buildings as their level grows.
+   Lv2: flower pots + golden trim
+   Lv3: corner torches (glow stronger at night)
+   Lv4: rooftop banner + hanging lanterns
+   Lv5+: golden star + gem accents + sparkles
+   ============================================================ */
+function UpgradeDecor({ level }: { level: number }) {
+  const torchRefs = useRef<THREE.PointLight[]>([]);
+  const lanternRefs = useRef<THREE.PointLight[]>([]);
+  const bannerRef = useRef<THREE.Mesh>(null!);
+  const starRef = useRef<THREE.Mesh>(null!);
+
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    const nightBoost = 0.4 + dayNight.night * 1.6;
+    torchRefs.current.forEach((l) => {
+      if (l) l.intensity = nightBoost * (0.9 + Math.sin(t * 8 + l.position.x) * 0.12);
+    });
+    lanternRefs.current.forEach((l) => {
+      if (l) l.intensity = nightBoost * 0.8;
+    });
+    if (bannerRef.current) {
+      bannerRef.current.rotation.z = Math.sin(t * 1.8) * 0.08;
+    }
+    if (starRef.current) {
+      starRef.current.rotation.y = t * 0.6;
+      const s = 1 + Math.sin(t * 2.4) * 0.08;
+      starRef.current.scale.set(s, s, s);
+    }
+  });
+
+  // Corner positions (around a 1x1 base)
+  const corners: [number, number, number][] = [
+    [-0.6, 0, -0.6],
+    [0.6, 0, -0.6],
+    [-0.6, 0, 0.6],
+    [0.6, 0, 0.6],
+  ];
+
+  return (
+    <group>
+      {/* Lv2 — golden trim ring + decorative flower pots */}
+      {level >= 2 && (
+        <>
+          <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[0.78, 0.92, 32]} />
+            <meshStandardMaterial
+              color={PALETTE.gold}
+              metalness={0.9}
+              roughness={0.25}
+              emissive="#ffae00"
+              emissiveIntensity={0.35}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+          {[[-0.78, 0.78], [0.78, -0.78]].map(([x, z], i) => (
+            <group key={i} position={[x, 0.1, z]}>
+              <mesh castShadow>
+                <cylinderGeometry args={[0.11, 0.08, 0.16, 12]} />
+                <meshStandardMaterial color="#8a4a26" roughness={0.7} />
+              </mesh>
+              <mesh position={[0, 0.13, 0]}>
+                <sphereGeometry args={[0.13, 12, 10]} />
+                <meshStandardMaterial color={PALETTE.leafLight} roughness={0.7} />
+              </mesh>
+              {[0, 1, 2].map((j) => (
+                <mesh
+                  key={j}
+                  position={[
+                    Math.cos((j * Math.PI * 2) / 3) * 0.09,
+                    0.22,
+                    Math.sin((j * Math.PI * 2) / 3) * 0.09,
+                  ]}
+                >
+                  <sphereGeometry args={[0.045, 8, 6]} />
+                  <meshStandardMaterial
+                    color={j === 0 ? PALETTE.flowerPink : j === 1 ? PALETTE.flowerYellow : PALETTE.flowerPurple}
+                    emissive={j === 0 ? PALETTE.flowerPink : j === 1 ? "#ffaa00" : PALETTE.flowerPurple}
+                    emissiveIntensity={0.4}
+                  />
+                </mesh>
+              ))}
+            </group>
+          ))}
+        </>
+      )}
+
+      {/* Lv3 — corner torches with night glow */}
+      {level >= 3 &&
+        corners.map((c, i) => (
+          <group key={`torch-${i}`} position={[c[0] * 1.05, 0, c[2] * 1.05]}>
+            <mesh castShadow>
+              <cylinderGeometry args={[0.035, 0.05, 0.6, 8]} />
+              <meshStandardMaterial color="#5a3a1a" roughness={0.9} />
+            </mesh>
+            <mesh position={[0, 0.36, 0]}>
+              <sphereGeometry args={[0.08, 10, 8]} />
+              <meshStandardMaterial color="#ffb734" emissive="#ff7a1a" emissiveIntensity={1.6} />
+            </mesh>
+            <pointLight
+              ref={(el) => {
+                if (el) torchRefs.current[i] = el;
+              }}
+              position={[0, 0.4, 0]}
+              color="#ffa550"
+              intensity={0.4}
+              distance={3.5}
+              decay={2}
+            />
+            <Sparkles count={5} scale={[0.25, 0.5, 0.25]} position={[0, 0.55, 0]} size={1.6} speed={1.4} color="#ffd070" />
+          </group>
+        ))}
+
+      {/* Lv4 — rooftop banner + hanging lanterns */}
+      {level >= 4 && (
+        <>
+          <group position={[0, 1.55, 0]}>
+            <mesh castShadow>
+              <cylinderGeometry args={[0.025, 0.025, 0.7, 8]} />
+              <meshStandardMaterial color={PALETTE.gold} metalness={0.9} roughness={0.2} />
+            </mesh>
+            <mesh ref={bannerRef} position={[0.18, 0.05, 0]}>
+              <planeGeometry args={[0.36, 0.22]} />
+              <meshStandardMaterial color={PALETTE.flagRed} side={THREE.DoubleSide} roughness={0.6} />
+            </mesh>
+            <mesh position={[0, 0.4, 0]}>
+              <sphereGeometry args={[0.06, 12, 10]} />
+              <meshStandardMaterial color={PALETTE.gold} metalness={0.95} roughness={0.15} emissive="#ffae00" emissiveIntensity={0.4} />
+            </mesh>
+          </group>
+          {[[-0.5, 0.95, 0.7], [0.5, 0.95, 0.7]].map(([x, y, z], i) => (
+            <group key={`lant-${i}`} position={[x, y, z]}>
+              <mesh position={[0, 0.06, 0]}>
+                <cylinderGeometry args={[0.005, 0.005, 0.12, 6]} />
+                <meshStandardMaterial color="#3a2a1a" />
+              </mesh>
+              <mesh position={[0, -0.04, 0]}>
+                <boxGeometry args={[0.11, 0.14, 0.11]} />
+                <meshStandardMaterial color="#ffd070" emissive="#ff9a3c" emissiveIntensity={1.4} transparent opacity={0.95} />
+              </mesh>
+              <pointLight
+                ref={(el) => {
+                  if (el) lanternRefs.current[i] = el;
+                }}
+                position={[0, -0.04, 0]}
+                color="#ffb070"
+                intensity={0.3}
+                distance={2.2}
+                decay={2}
+              />
+            </group>
+          ))}
+        </>
+      )}
+
+      {/* Lv5+ — golden star crown + gem accents */}
+      {level >= 5 && (
+        <group position={[0, 1.9, 0]}>
+          <mesh ref={starRef} castShadow>
+            <octahedronGeometry args={[0.18, 0]} />
+            <meshStandardMaterial
+              color={PALETTE.gold}
+              metalness={1}
+              roughness={0.1}
+              emissive="#ffd24a"
+              emissiveIntensity={0.8}
+            />
+          </mesh>
+          <pointLight position={[0, 0, 0]} color="#ffe080" intensity={0.9} distance={3} decay={2} />
+          <Sparkles count={12} scale={[0.6, 0.6, 0.6]} size={2.2} speed={1.2} color="#fff0a0" />
+          {[0, 1, 2, 3].map((i) => {
+            const a = (i * Math.PI) / 2;
+            return (
+              <mesh key={i} position={[Math.cos(a) * 0.42, -0.6, Math.sin(a) * 0.42]} castShadow>
+                <octahedronGeometry args={[0.07, 0]} />
+                <meshStandardMaterial
+                  color={i % 2 === 0 ? PALETTE.crystal : PALETTE.flowerPurple}
+                  metalness={0.6}
+                  roughness={0.15}
+                  emissive={i % 2 === 0 ? PALETTE.crystal : PALETTE.flowerPurple}
+                  emissiveIntensity={0.9}
+                />
+              </mesh>
+            );
+          })}
+        </group>
+      )}
+    </group>
+  );
 }
 
 /* ============================================================
