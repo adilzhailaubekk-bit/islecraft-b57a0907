@@ -7,7 +7,7 @@ import {
   Sparkles,
   Html,
   Environment,
-  ContactShadows,
+  
   MeshWobbleMaterial,
 } from "@react-three/drei";
 import * as THREE from "three";
@@ -1745,14 +1745,6 @@ function DayNightSystem({ speed = 0.012 }: { speed?: number }) {
         position={[18, 25, 14]}
         intensity={2.2}
         color="#fff0c8"
-        castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-        shadow-camera-left={-18}
-        shadow-camera-right={18}
-        shadow-camera-top={18}
-        shadow-camera-bottom={-18}
-        shadow-bias={-0.0005}
       />
       <directionalLight ref={fillRef} position={[-12, 8, -8]} intensity={0.5} color="#a8d8ff" />
       <directionalLight ref={moonRef} position={[-18, -25, -14]} intensity={0} color="#9bb8ff" />
@@ -2452,9 +2444,6 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
       
       <FoamRing />
       <BeachDecor />
-      {!lowPower && (
-        <ContactShadows position={[0, 0.52, 0]} opacity={0.3} scale={18} blur={2.4} far={5} resolution={256} />
-      )}
 
       <StonePath />
       <FenceRing />
@@ -2705,7 +2694,7 @@ export function IslandView({ state, onPlotClick, moveMode, movingFrom }: IslandV
     <div className="relative w-full h-full overflow-hidden rounded-3xl bg-gradient-sky">
       {mounted && (
         <Canvas
-          shadows={!lowPower ? { type: THREE.PCFSoftShadowMap } : false}
+          shadows={false}
           dpr={lowPower ? [1, 1] : [1, 1.5]}
           camera={{ position: [26, 22, 26], fov: 45 }}
           gl={{ antialias: !lowPower, alpha: false, powerPreference: "high-performance", toneMappingExposure: 1.1, stencil: false, depth: true }}
