@@ -1285,12 +1285,7 @@ function Building({ id, level }: { id: string; level: number }) {
       content = <RefineryBuilding />;
       break;
   }
-  return (
-    <group scale={scale}>
-      {content}
-      <UpgradeDecor level={level} />
-    </group>
-  );
+  return <group scale={scale}>{content}</group>;
 }
 
 /* ============================================================
