@@ -2098,8 +2098,159 @@ function Dolphin({ radius = 18, speed = 0.18, phase = 0 }: { radius?: number; sp
 }
 
 /* ============================================================
+   Ambient details: hills, shells, driftwood, grass tufts,
+   barrels, crates, sand path tiles
+   ============================================================ */
+function Hill({ position, scale = 1, tint }: { position: [number, number, number]; scale?: number; tint: string }) {
+  return (
+    <mesh position={position} scale={[scale, scale * 0.45, scale]} receiveShadow castShadow>
+      <sphereGeometry args={[1, 14, 10]} />
+      <meshStandardMaterial color={tint} roughness={0.95} />
+    </mesh>
+  );
+}
+
+function Shell({ position, color = "#ffd8c2" }: { position: [number, number, number]; color?: string }) {
+  const ref = useRef<THREE.Group>(null);
+  useFrame((s) => {
+    if (ref.current) ref.current.rotation.y = Math.sin(s.clock.elapsedTime * 0.4 + position[0]) * 0.1;
+  });
+  return (
+    <group ref={ref} position={position} scale={0.18}>
+      <mesh castShadow>
+        <sphereGeometry args={[1, 12, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color={color} roughness={0.5} side={THREE.DoubleSide} />
+      </mesh>
+      {[0, 1, 2, 3, 4].map((i) => (
+        <mesh key={i} rotation={[0, (i / 5) * Math.PI - Math.PI / 2, 0]} position={[0, 0.02, 0]}>
+          <boxGeometry args={[0.04, 0.02, 1]} />
+          <meshStandardMaterial color="#e8a890" roughness={0.7} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function Driftwood({ position, rotation = 0 }: { position: [number, number, number]; rotation?: number }) {
+  return (
+    <group position={position} rotation={[0, rotation, 0]}>
+      <mesh castShadow rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.12, 0.16, 1.4, 8]} />
+        <meshStandardMaterial color="#a47148" roughness={0.95} />
+      </mesh>
+      <mesh castShadow position={[0.55, 0.05, 0.1]} rotation={[0, 0.3, Math.PI / 2.2]}>
+        <cylinderGeometry args={[0.07, 0.1, 0.5, 6]} />
+        <meshStandardMaterial color="#8a5a36" roughness={0.95} />
+      </mesh>
+    </group>
+  );
+}
+
+function GrassTuft({ position, tint }: { position: [number, number, number]; tint: string }) {
+  return (
+    <group position={position}>
+      {[0, 1, 2, 3].map((i) => {
+        const a = (i / 4) * Math.PI * 2;
+        return (
+          <mesh key={i} position={[Math.cos(a) * 0.06, 0.08, Math.sin(a) * 0.06]} rotation={[0, a, 0.15]}>
+            <coneGeometry args={[0.03, 0.22, 4]} />
+            <meshStandardMaterial color={tint} roughness={0.9} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+function Barrel({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position}>
+      <mesh castShadow position={[0, 0.18, 0]}>
+        <cylinderGeometry args={[0.18, 0.18, 0.36, 14]} />
+        <meshStandardMaterial color="#8a5a30" roughness={0.85} />
+      </mesh>
+      {[0.05, 0.18, 0.31].map((y, i) => (
+        <mesh key={i} position={[0, y, 0]}>
+          <torusGeometry args={[0.185, 0.018, 6, 18]} />
+          <meshStandardMaterial color="#3a2a18" roughness={0.6} metalness={0.4} />
+        </mesh>
+      ))}
+      <mesh position={[0, 0.37, 0]}>
+        <cylinderGeometry args={[0.16, 0.16, 0.02, 14]} />
+        <meshStandardMaterial color="#6b3a1c" roughness={0.9} />
+      </mesh>
+    </group>
+  );
+}
+
+function Crate({ position, rotation = 0 }: { position: [number, number, number]; rotation?: number }) {
+  return (
+    <group position={position} rotation={[0, rotation, 0]}>
+      <mesh castShadow position={[0, 0.17, 0]}>
+        <boxGeometry args={[0.36, 0.34, 0.36]} />
+        <meshStandardMaterial color="#c98a4a" roughness={0.9} />
+      </mesh>
+      {[
+        [0.18, 0.17, 0, 0.36, 0.34, 0.05],
+        [-0.18, 0.17, 0, 0.36, 0.34, 0.05],
+        [0, 0.17, 0.18, 0.05, 0.34, 0.36],
+        [0, 0.17, -0.18, 0.05, 0.34, 0.36],
+      ].map((b, i) => (
+        <mesh key={i} position={[b[0], b[1], b[2]]}>
+          <boxGeometry args={[b[3], 0.05, b[5]]} />
+          <meshStandardMaterial color="#6b3a1c" roughness={0.85} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function SandPathTile({ position, rotation = 0 }: { position: [number, number, number]; rotation?: number }) {
+  return (
+    <mesh position={position} rotation={[-Math.PI / 2, 0, rotation]} receiveShadow>
+      <circleGeometry args={[0.35, 16]} />
+      <meshStandardMaterial color={PALETTE.sandLight} roughness={1} />
+    </mesh>
+  );
+}
+
+function BuildingSurround({ position, seed }: { position: [number, number, number]; seed: number }) {
+  const rng = useMemo(() => mulberry32(seed * 97 + 13), [seed]);
+  const props = useMemo(() => {
+    const items: { kind: "barrel" | "crate" | "tuft" | "flower"; offset: [number, number]; rot: number }[] = [];
+    const n = 3 + Math.floor(rng() * 2);
+    for (let i = 0; i < n; i++) {
+      const a = rng() * Math.PI * 2;
+      const r = 0.85 + rng() * 0.35;
+      const kind = (["barrel", "crate", "tuft", "flower"] as const)[Math.floor(rng() * 4)];
+      items.push({ kind, offset: [Math.cos(a) * r, Math.sin(a) * r], rot: rng() * Math.PI });
+    }
+    return items;
+  }, [rng]);
+  return (
+    <group position={position}>
+      {props.map((p, i) => {
+        const pos: [number, number, number] = [p.offset[0], 0, p.offset[1]];
+        if (p.kind === "barrel") return <Barrel key={i} position={pos} />;
+        if (p.kind === "crate") return <Crate key={i} position={pos} rotation={p.rot} />;
+        if (p.kind === "tuft") return <GrassTuft key={i} position={pos} tint={PALETTE.grassMid} />;
+        return (
+          <Flower
+            key={i}
+            position={[pos[0], 0, pos[2]]}
+            color={[PALETTE.flowerPink, PALETTE.flowerYellow, PALETTE.flowerOrange][i % 3]}
+            delay={i * 0.7}
+          />
+        );
+      })}
+    </group>
+  );
+}
+
+/* ============================================================
    Scene
    ============================================================ */
+
 function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewProps) {
   const lowPower = useMemo(() => {
     if (typeof navigator === "undefined") return false;
@@ -2149,32 +2300,32 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
   const decor = useMemo(() => {
     const rng = mulberry32(42);
     const flowerColors = [PALETTE.flowerPink, PALETTE.flowerOrange, PALETTE.flowerPurple, PALETTE.flowerYellow, PALETTE.flowerWhite];
-    const flowers = Array.from({ length: 22 }).map(() => {
+    const flowers = Array.from({ length: 40 }).map(() => {
       const a = rng() * Math.PI * 2;
-      const r = 2.5 + rng() * 4.2;
+      const r = 2.2 + rng() * 4.8;
       return {
         pos: [Math.cos(a) * r, 0.5, Math.sin(a) * r] as [number, number, number],
         color: flowerColors[Math.floor(rng() * flowerColors.length)],
         delay: rng() * 6,
       };
     });
-    const rocks = Array.from({ length: 8 }).map((_, i) => {
+    const rocks = Array.from({ length: 14 }).map((_, i) => {
       const a = rng() * Math.PI * 2;
-      const r = 5.2 + rng() * 2.5;
+      const r = 4.8 + rng() * 2.8;
       return {
         pos: [Math.cos(a) * r, 0.25, Math.sin(a) * r] as [number, number, number],
-        scale: 0.5 + rng() * 0.8,
+        scale: 0.4 + rng() * 0.9,
         seed: i,
       };
     });
-    const bushes = Array.from({ length: 7 }).map(() => {
+    const bushes = Array.from({ length: 16 }).map(() => {
       const a = rng() * Math.PI * 2;
-      const r = 3 + rng() * 3.5;
+      const r = 2.6 + rng() * 4.2;
       return [Math.cos(a) * r, 0.5, Math.sin(a) * r] as [number, number, number];
     });
-    const mushrooms = Array.from({ length: 6 }).map(() => {
+    const mushrooms = Array.from({ length: 12 }).map(() => {
       const a = rng() * Math.PI * 2;
-      const r = 3.5 + rng() * 3.2;
+      const r = 3 + rng() * 3.8;
       return [Math.cos(a) * r, 0.5, Math.sin(a) * r] as [number, number, number];
     });
     const lanterns = [
@@ -2183,8 +2334,38 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
       [-2.3, 0.5, 2.1],
       [2.3, 0.5, 2.1],
     ] as [number, number, number][];
-    return { flowers, rocks, bushes, mushrooms, lanterns };
+    const grassTufts = Array.from({ length: 30 }).map(() => {
+      const a = rng() * Math.PI * 2;
+      const r = 1.5 + rng() * 5.5;
+      return [Math.cos(a) * r, 0.5, Math.sin(a) * r] as [number, number, number];
+    });
+    // Shells & driftwood scattered on the sandy beach ring
+    const shells = Array.from({ length: 12 }).map(() => {
+      const a = rng() * Math.PI * 2;
+      const r = 8.0 + rng() * 0.7;
+      return {
+        pos: [Math.cos(a) * r, 0.22, Math.sin(a) * r] as [number, number, number],
+        color: (["#ffd8c2", "#ffeed0", "#f8c0d0", "#fff4d8"] as const)[Math.floor(rng() * 4)],
+      };
+    });
+    const driftwood = Array.from({ length: 4 }).map(() => {
+      const a = rng() * Math.PI * 2;
+      const r = 7.8 + rng() * 0.9;
+      return {
+        pos: [Math.cos(a) * r, 0.22, Math.sin(a) * r] as [number, number, number],
+        rot: rng() * Math.PI,
+      };
+    });
+    // Low hills/mounds on the grass for terrain variation
+    const hills: { pos: [number, number, number]; scale: number }[] = [
+      { pos: [-4.5, 0.45, -2.5], scale: 2.6 },
+      { pos: [4.2, 0.45, 3.2], scale: 2.3 },
+      { pos: [-2, 0.45, 5.5], scale: 1.8 },
+      { pos: [5.5, 0.45, -4], scale: 2.0 },
+    ];
+    return { flowers, rocks, bushes, mushrooms, lanterns, grassTufts, shells, driftwood, hills };
   }, []);
+
 
   // Build a grid of legal plot positions that avoids every plant/decor footprint.
   const slots = useMemo<[number, number][]>(() => {
@@ -2251,12 +2432,25 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
         {decor.lanterns.map((p, i) => (
           <Lantern key={`l-${i}`} position={p} />
         ))}
+        {decor.hills.map((h, i) => (
+          <Hill key={`h-${i}`} position={h.pos} scale={h.scale} tint={tint} />
+        ))}
+        {decor.grassTufts.map((p, i) => (
+          <GrassTuft key={`gt-${i}`} position={p} tint={PALETTE.grassMid} />
+        ))}
+        {decor.shells.map((s, i) => (
+          <Shell key={`sh-${i}`} position={s.pos} color={s.color} />
+        ))}
+        {decor.driftwood.map((d, i) => (
+          <Driftwood key={`dw-${i}`} position={d.pos} rotation={d.rot} />
+        ))}
 
         {/* Centerpiece decor */}
         <Fountain position={[0, 0.45, 0]} />
         <FlagPole position={[-6, 0.45, -1]} />
         <Bridge position={[7.2, -0.05, 0]} rotation={Math.PI / 2} />
       </NoHit>
+
 
       {/* Cosmetics — also non-interactive */}
       {state.cosmetics.includes("lighthouse") && (
@@ -2308,12 +2502,24 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
         </NoHit>
       )}
 
+      {/* Sand paths from the central fountain to every built plot */}
+      <NoHit>
+        {slots.map((pos, i) => {
+          if (!state.buildings[i]) return null;
+          const tiles = 6;
+          return Array.from({ length: tiles }).map((_, t) => {
+            const k = (t + 1) / (tiles + 1);
+            const x = pos[0] * k;
+            const z = pos[1] * k;
+            return <SandPathTile key={`pth-${i}-${t}`} position={[x, 0.515, z]} />;
+          });
+        })}
+      </NoHit>
+
       {/* Plots / buildings */}
       {slots.map((pos, i) => {
         const hasBuilding = !!state.buildings[i];
         const ownedPlot = i < state.plots;
-        // In normal mode: show only owned plots or plots that contain a building.
-        // In move mode: show every legal cell so the user can place anywhere free of plants.
         if (!moveMode && !ownedPlot && !hasBuilding) return null;
         const isSource = movingFrom === i;
         const isHighlighted = !!moveMode && (
@@ -2334,7 +2540,16 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
         );
       })}
 
+      {/* Decorative surroundings around every built plot */}
+      <NoHit>
+        {slots.map((pos, i) => {
+          if (!state.buildings[i]) return null;
+          return <BuildingSurround key={`bs-${i}`} position={[pos[0], 0.52, pos[1]]} seed={i + 1} />;
+        })}
+      </NoHit>
+
       <WindowGlows slots={slots} buildings={state.buildings.slice(0, slots.length)} />
+
       </group>
 
       {/* Sky life — heavy volumetric clouds skipped on low-power */}
@@ -2374,6 +2589,11 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
 
       <Crab seed={1} />
       {!lowPower && <Crab seed={3} />}
+      {!lowPower && <Crab seed={7} />}
+      {/* Floating pollen / pixie dust over the island for atmosphere */}
+      {!lowPower && (
+        <Sparkles count={40} scale={[14, 5, 14]} position={[0, 3, 0]} size={2} speed={0.25} color="#fff4c0" />
+      )}
       <Dolphin radius={20} phase={0} speed={0.18} />
       {!lowPower && <Dolphin radius={22} phase={3} speed={-0.16} />}
     </>
