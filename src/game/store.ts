@@ -1,8 +1,32 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { BuildingDef, BuildingState, GameState, Resources } from "./types";
-import { BUILDINGS, ISLANDS, xpForLevel, plotCost, applySoftCap } from "./data";
+import type { BuildingDef, BuildingState, DailyMission, GameState, Resources } from "./types";
+import {
+  BUILDINGS,
+  ISLANDS,
+  xpForLevel,
+  plotCost,
+  applySoftCap,
+  DAILY_REWARDS,
+  dailyRewardAmount,
+  SPIN_SEGMENTS,
+  pickSpinSegment,
+  generateDailyMissions,
+  todayKey,
+  type DailyRewardKind,
+  type SpinSegment,
+} from "./data";
 
 const STORAGE_KEY = "island-tycoon-save-v2";
+
+const emptyCounters = (date = todayKey()) => ({
+  date,
+  goldEarned: 0,
+  woodEarned: 0,
+  stoneEarned: 0,
+  upgrades: 0,
+  builds: 0,
+  goldSpent: 0,
+});
 
 const initialState = (): GameState => ({
   resources: { gold: 75, wood: 0, stone: 0, energy: 0 },
@@ -19,14 +43,28 @@ const initialState = (): GameState => ({
   dailyStreak: 0,
   cosmetics: [],
   totalGoldEarned: 0,
+  dailyCycleDay: 1,
+  lastSpinAt: 0,
+  dailyMissions: [],
+  dailyMissionsDate: "",
+  dailyCounters: emptyCounters(),
 });
 
-// Normalize older save formats — dense BuildingState[] → sparse (BuildingState | null)[]
+// Normalize older save formats
 const normalize = (s: GameState): GameState => {
   const buildings = Array.isArray(s.buildings)
     ? s.buildings.map((b) => (b && typeof b === "object" && "id" in b ? (b as BuildingState) : null))
     : [];
-  return { ...s, buildings, dailyStreak: s.dailyStreak ?? 0 };
+  return {
+    ...s,
+    buildings,
+    dailyStreak: s.dailyStreak ?? 0,
+    dailyCycleDay: s.dailyCycleDay ?? 1,
+    lastSpinAt: s.lastSpinAt ?? 0,
+    dailyMissions: Array.isArray(s.dailyMissions) ? s.dailyMissions : [],
+    dailyMissionsDate: s.dailyMissionsDate ?? "",
+    dailyCounters: s.dailyCounters ?? emptyCounters(),
+  };
 };
 
 export const buildingCost = (def: BuildingDef, level: number): Partial<Resources> => {
