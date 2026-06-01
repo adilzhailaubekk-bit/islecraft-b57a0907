@@ -2217,7 +2217,7 @@ function IslandScene({ state, onPlotClick }: IslandViewProps) {
         <Plot
           key={i}
           position={[pos[0], 0.51, pos[1]]}
-          building={state.buildings[i]}
+          building={state.buildings[i] ?? undefined}
           empty={!state.buildings[i]}
           onClick={() => onPlotClick(i)}
         />
