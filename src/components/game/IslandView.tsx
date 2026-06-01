@@ -2075,7 +2075,7 @@ function Dolphin({ radius = 18, speed = 0.18, phase = 0 }: { radius?: number; sp
 /* ============================================================
    Scene
    ============================================================ */
-function IslandScene({ state, onPlotClick }: IslandViewProps) {
+function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewProps) {
   const lowPower = useMemo(() => {
     if (typeof navigator === "undefined") return false;
     const cores = (navigator as Navigator & { hardwareConcurrency?: number }).hardwareConcurrency ?? 8;
