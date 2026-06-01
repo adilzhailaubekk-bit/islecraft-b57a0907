@@ -622,6 +622,23 @@ function Fountain({ position }: { position: [number, number, number] }) {
 }
 
 /* ============================================================
+   Shadowless clouds wrapper
+   ============================================================ */
+function ShadowlessClouds(props: React.ComponentProps<typeof Clouds>) {
+  const ref = useRef<THREE.Group>(null!);
+  useEffect(() => {
+    if (!ref.current) return;
+    ref.current.traverse((obj) => {
+      if ((obj as THREE.Mesh).isMesh || (obj as THREE.InstancedMesh).isInstancedMesh) {
+        (obj as THREE.Mesh).castShadow = false;
+        (obj as THREE.Mesh).receiveShadow = false;
+      }
+    });
+  }, []);
+  return <Clouds ref={ref} {...props} />;
+}
+
+/* ============================================================
    Living things
    ============================================================ */
 function Bird({
