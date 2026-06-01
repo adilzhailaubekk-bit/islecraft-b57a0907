@@ -1930,8 +1930,7 @@ function IslandScene({ state, onPlotClick }: IslandViewProps) {
   return (
     <>
       <fog attach="fog" args={["#bfe6f5", 35, 95]} />
-      <Lighting />
-      <Sky sunPosition={[18, 25, 14]} turbidity={3} rayleigh={1.8} mieCoefficient={0.005} mieDirectionalG={0.85} />
+      <DayNightSystem />
       <Environment preset="park" />
 
       <Ocean />
