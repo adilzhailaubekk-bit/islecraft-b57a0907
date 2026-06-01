@@ -2589,6 +2589,11 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
 
       <Crab seed={1} />
       {!lowPower && <Crab seed={3} />}
+      {!lowPower && <Crab seed={7} />}
+      {/* Floating pollen / pixie dust over the island for atmosphere */}
+      {!lowPower && (
+        <Sparkles count={40} scale={[14, 5, 14]} position={[0, 3, 0]} size={2} speed={0.25} color="#fff4c0" />
+      )}
       <Dolphin radius={20} phase={0} speed={0.18} />
       {!lowPower && <Dolphin radius={22} phase={3} speed={-0.16} />}
     </>
