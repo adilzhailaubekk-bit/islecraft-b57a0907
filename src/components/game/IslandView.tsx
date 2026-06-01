@@ -2335,7 +2335,7 @@ function CameraRig() {
 /* ============================================================
    Public component
    ============================================================ */
-export function IslandView({ state, onPlotClick }: IslandViewProps) {
+export function IslandView({ state, onPlotClick, moveMode, movingFrom }: IslandViewProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const island = ISLANDS.find((i) => i.id === state.activeIsland)!;
