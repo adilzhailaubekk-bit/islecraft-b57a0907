@@ -2432,12 +2432,25 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
         {decor.lanterns.map((p, i) => (
           <Lantern key={`l-${i}`} position={p} />
         ))}
+        {decor.hills.map((h, i) => (
+          <Hill key={`h-${i}`} position={h.pos} scale={h.scale} tint={tint} />
+        ))}
+        {decor.grassTufts.map((p, i) => (
+          <GrassTuft key={`gt-${i}`} position={p} tint={PALETTE.grassMid} />
+        ))}
+        {decor.shells.map((s, i) => (
+          <Shell key={`sh-${i}`} position={s.pos} color={s.color} />
+        ))}
+        {decor.driftwood.map((d, i) => (
+          <Driftwood key={`dw-${i}`} position={d.pos} rotation={d.rot} />
+        ))}
 
         {/* Centerpiece decor */}
         <Fountain position={[0, 0.45, 0]} />
         <FlagPole position={[-6, 0.45, -1]} />
         <Bridge position={[7.2, -0.05, 0]} rotation={Math.PI / 2} />
       </NoHit>
+
 
       {/* Cosmetics — also non-interactive */}
       {state.cosmetics.includes("lighthouse") && (
