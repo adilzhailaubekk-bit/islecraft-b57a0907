@@ -2322,8 +2322,8 @@ function CameraRig() {
       enablePan={false}
       enableDamping
       dampingFactor={0.1}
-      minDistance={14}
-      maxDistance={40}
+      minDistance={18}
+      maxDistance={55}
       minPolarAngle={Math.PI / 6}
       maxPolarAngle={Math.PI / 2.4}
       target={[0, 0.5, 0]}
