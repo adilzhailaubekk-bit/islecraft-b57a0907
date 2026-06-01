@@ -1628,14 +1628,24 @@ export function IslandView({ state, onPlotClick }: IslandViewProps) {
   useEffect(() => setMounted(true), []);
   const island = ISLANDS.find((i) => i.id === state.activeIsland)!;
 
+  // Detect low-power devices and tune renderer accordingly
+  const lowPower = useMemo(() => {
+    if (typeof navigator === "undefined") return false;
+    const cores = (navigator as Navigator & { hardwareConcurrency?: number }).hardwareConcurrency ?? 8;
+    const mem = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8;
+    const mobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    return cores <= 4 || mem <= 4 || mobile;
+  }, []);
+
   return (
     <div className="relative w-full h-full overflow-hidden rounded-3xl bg-gradient-sky">
       {mounted && (
         <Canvas
-          shadows
-          dpr={[1, 2]}
+          shadows={!lowPower}
+          dpr={lowPower ? [1, 1.25] : [1, 1.75]}
           camera={{ position: [14, 12, 14], fov: 45 }}
-          gl={{ antialias: true, alpha: false, toneMappingExposure: 1.15 }}
+          gl={{ antialias: !lowPower, alpha: false, powerPreference: "high-performance", toneMappingExposure: 1.15 }}
+          frameloop="always"
         >
           <Suspense fallback={null}>
             <IslandScene state={state} onPlotClick={onPlotClick} />
