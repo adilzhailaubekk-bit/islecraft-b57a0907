@@ -622,6 +622,23 @@ function Fountain({ position }: { position: [number, number, number] }) {
 }
 
 /* ============================================================
+   Shadowless clouds wrapper
+   ============================================================ */
+function ShadowlessClouds(props: React.ComponentProps<typeof Clouds>) {
+  const ref = useRef<THREE.Group>(null!);
+  useEffect(() => {
+    if (!ref.current) return;
+    ref.current.traverse((obj) => {
+      if ((obj as THREE.Mesh).isMesh || (obj as THREE.InstancedMesh).isInstancedMesh) {
+        (obj as THREE.Mesh).castShadow = false;
+        (obj as THREE.Mesh).receiveShadow = false;
+      }
+    });
+  }, []);
+  return <Clouds ref={ref} material={THREE.MeshBasicMaterial} {...props} />;
+}
+
+/* ============================================================
    Living things
    ============================================================ */
 function Bird({
@@ -2639,12 +2656,12 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
 
       {/* Sky life — heavy volumetric clouds skipped on low-power */}
       {!lowPower ? (
-        <Clouds material={THREE.MeshBasicMaterial}>
+        <ShadowlessClouds>
           <Cloud seed={1} bounds={[10, 2, 10]} position={[-8, 12, -6]} color="#ffffff" opacity={0.8} />
           <Cloud seed={2} bounds={[10, 2, 10]} position={[10, 14, 4]} color="#ffffff" opacity={0.7} />
           <Cloud seed={3} bounds={[8, 2, 8]} position={[0, 16, -10]} color="#ffffff" opacity={0.6} />
           <Cloud seed={4} bounds={[9, 2, 9]} position={[-6, 13, 10]} color="#ffffff" opacity={0.65} />
-        </Clouds>
+        </ShadowlessClouds>
       ) : (
         // Cheap static cloud billboards
         <>
