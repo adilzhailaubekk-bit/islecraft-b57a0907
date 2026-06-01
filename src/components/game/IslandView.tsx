@@ -25,9 +25,10 @@ interface IslandViewProps {
    Stylized palette — bright, saturated, cartoon-premium feel
    ============================================================ */
 const PALETTE = {
-  oceanShallow: "#62d4f0",
-  oceanDeep: "#1a7fb8",
-  oceanFoam: "#e7fbff",
+  oceanShallow: "#3ec5f0",
+  oceanMid: "#1ea1e0",
+  oceanDeep: "#0a5a9c",
+  oceanFoam: "#f0fbff",
   sandLight: "#ffe7a8",
   sandDark: "#e6b769",
   grassTop: "#6fd16a",
