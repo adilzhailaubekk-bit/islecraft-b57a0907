@@ -14,7 +14,9 @@ export function AchievementsModal({ open, onClose, state, onClaim }: Props) {
   const progressFor = (metric: string) => {
     if (metric === "gold") return state.totalGoldEarned;
     if (metric === "level") return state.level;
-    if (metric === "buildings") return state.buildings.reduce((s, b) => s + b.level, 0);
+    if (metric === "buildings") return state.buildings.reduce((s, b) => s + (b?.level ?? 0), 0);
+    if (metric === "plots") return state.plots;
+    if (metric === "streak") return state.dailyStreak;
     if (metric === "islands") return state.unlockedIslands.length;
     return 0;
   };
