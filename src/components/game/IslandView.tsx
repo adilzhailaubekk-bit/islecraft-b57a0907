@@ -25,9 +25,10 @@ interface IslandViewProps {
    Stylized palette — bright, saturated, cartoon-premium feel
    ============================================================ */
 const PALETTE = {
-  oceanShallow: "#62d4f0",
-  oceanDeep: "#1a7fb8",
-  oceanFoam: "#e7fbff",
+  oceanShallow: "#3ec5f0",
+  oceanMid: "#1ea1e0",
+  oceanDeep: "#0a5a9c",
+  oceanFoam: "#f0fbff",
   sandLight: "#ffe7a8",
   sandDark: "#e6b769",
   grassTop: "#6fd16a",
@@ -93,10 +94,15 @@ function mulberry32(seed: number) {
    ============================================================ */
 function Ocean() {
   const ref = useRef<THREE.Mesh>(null!);
-  const geom = useMemo(() => new THREE.PlaneGeometry(180, 180, 96, 96), []);
+  // Lower segment count for perf; still smooth-looking waves
+  const geom = useMemo(() => new THREE.PlaneGeometry(180, 180, 56, 56), []);
   const original = useMemo(() => Float32Array.from(geom.attributes.position.array), [geom]);
+  const tick = useRef(0);
 
   useFrame(({ clock }) => {
+    // Update waves every other frame to halve cost on weak devices
+    tick.current++;
+    if (tick.current % 2 !== 0) return;
     const t = clock.elapsedTime;
     const pos = geom.attributes.position.array as Float32Array;
     for (let i = 0; i < pos.length; i += 3) {
@@ -104,37 +110,44 @@ function Ocean() {
       const y = original[i + 1];
       pos[i + 2] =
         Math.sin(x * 0.22 + t * 1.1) * 0.22 +
-        Math.cos(y * 0.28 + t * 0.85) * 0.18 +
-        Math.sin((x + y) * 0.12 + t * 0.6) * 0.1;
+        Math.cos(y * 0.28 + t * 0.85) * 0.18;
     }
     geom.attributes.position.needsUpdate = true;
-    geom.computeVertexNormals();
+    // Skip expensive per-frame normal recompute — flat normals + light fakes it
   });
 
   return (
     <group>
+      {/* Deep base layer adds rich blue depth under the surface */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.1, 0]}>
+        <circleGeometry args={[90, 64]} />
+        <meshBasicMaterial color={PALETTE.oceanDeep} />
+      </mesh>
+      {/* Mid gradient ring */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.7, 0]}>
+        <ringGeometry args={[10, 40, 64]} />
+        <meshBasicMaterial color={PALETTE.oceanMid} transparent opacity={0.7} />
+      </mesh>
+      {/* Animated transparent surface */}
       <mesh ref={ref} geometry={geom} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.4, 0]} receiveShadow>
-        <meshPhysicalMaterial
+        <meshStandardMaterial
           color={PALETTE.oceanShallow}
-          roughness={0.1}
-          metalness={0.05}
-          transmission={0.6}
-          thickness={1.4}
+          roughness={0.2}
+          metalness={0.15}
           transparent
-          opacity={0.94}
-          clearcoat={1}
-          clearcoatRoughness={0.15}
-          ior={1.33}
+          opacity={0.78}
+          emissive={PALETTE.oceanShallow}
+          emissiveIntensity={0.08}
         />
       </mesh>
-      {/* Foam ring around the island */}
+      {/* Foam rings around the island */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.22, 0]}>
-        <ringGeometry args={[8.7, 9.9, 96]} />
-        <meshBasicMaterial color={PALETTE.oceanFoam} transparent opacity={0.55} />
+        <ringGeometry args={[8.7, 9.9, 64]} />
+        <meshBasicMaterial color={PALETTE.oceanFoam} transparent opacity={0.6} />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.21, 0]}>
-        <ringGeometry args={[9.9, 11.2, 96]} />
-        <meshBasicMaterial color={PALETTE.oceanFoam} transparent opacity={0.25} />
+        <ringGeometry args={[9.9, 11.4, 64]} />
+        <meshBasicMaterial color={PALETTE.oceanFoam} transparent opacity={0.28} />
       </mesh>
     </group>
   );
@@ -576,32 +589,97 @@ function Fountain({ position }: { position: [number, number, number] }) {
 /* ============================================================
    Living things
    ============================================================ */
-function Bird({ radius, speed, height, color = "#ffffff" }: { radius: number; speed: number; height: number; color?: string }) {
+function Bird({
+  radius,
+  speed,
+  height,
+  color = "#ffffff",
+  accent = "#f0a070",
+}: {
+  radius: number;
+  speed: number;
+  height: number;
+  color?: string;
+  accent?: string;
+}) {
   const ref = useRef<THREE.Group>(null!);
-  const wingL = useRef<THREE.Mesh>(null!);
-  const wingR = useRef<THREE.Mesh>(null!);
+  const wingL = useRef<THREE.Group>(null!);
+  const wingR = useRef<THREE.Group>(null!);
+  const body = useRef<THREE.Group>(null!);
   useFrame(({ clock }) => {
     const t = clock.elapsedTime * speed;
-    ref.current.position.set(Math.cos(t) * radius, height + Math.sin(t * 2) * 0.4, Math.sin(t) * radius);
+    const x = Math.cos(t) * radius;
+    const z = Math.sin(t) * radius;
+    const y = height + Math.sin(t * 2) * 0.45;
+    ref.current.position.set(x, y, z);
     ref.current.rotation.y = -t + Math.PI / 2;
-    const flap = Math.sin(clock.elapsedTime * 14) * 0.7;
+    // gentle banking
+    body.current.rotation.z = Math.sin(t * 2) * 0.18;
+    body.current.rotation.x = -0.08;
+    // smooth wing flap with two segments
+    const flap = Math.sin(clock.elapsedTime * 10) * 0.55 + 0.1;
     wingL.current.rotation.z = flap;
     wingR.current.rotation.z = -flap;
   });
   return (
     <group ref={ref}>
-      <mesh>
-        <sphereGeometry args={[0.14, 10, 8]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
-      <mesh ref={wingL} position={[0, 0, 0.05]}>
-        <boxGeometry args={[0.55, 0.02, 0.18]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
-      <mesh ref={wingR} position={[0, 0, -0.05]}>
-        <boxGeometry args={[0.55, 0.02, 0.18]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
+      <group ref={body}>
+        {/* Body — elongated egg shape */}
+        <mesh castShadow scale={[1.4, 0.85, 0.9]}>
+          <sphereGeometry args={[0.14, 12, 10]} />
+          <meshStandardMaterial color={color} roughness={0.6} />
+        </mesh>
+        {/* Belly highlight */}
+        <mesh position={[0, -0.04, 0]} scale={[1.1, 0.5, 0.7]}>
+          <sphereGeometry args={[0.13, 12, 10]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.7} />
+        </mesh>
+        {/* Head */}
+        <mesh castShadow position={[0.18, 0.06, 0]}>
+          <sphereGeometry args={[0.1, 12, 10]} />
+          <meshStandardMaterial color={color} roughness={0.6} />
+        </mesh>
+        {/* Beak */}
+        <mesh position={[0.3, 0.04, 0]} rotation={[0, 0, -Math.PI / 2]}>
+          <coneGeometry args={[0.035, 0.12, 8]} />
+          <meshStandardMaterial color={accent} roughness={0.5} />
+        </mesh>
+        {/* Eyes */}
+        <mesh position={[0.24, 0.1, 0.07]}>
+          <sphereGeometry args={[0.018, 8, 6]} />
+          <meshStandardMaterial color="#101010" />
+        </mesh>
+        <mesh position={[0.24, 0.1, -0.07]}>
+          <sphereGeometry args={[0.018, 8, 6]} />
+          <meshStandardMaterial color="#101010" />
+        </mesh>
+        {/* Tail feathers */}
+        <mesh castShadow position={[-0.22, 0.02, 0]} rotation={[0, 0, 0.3]}>
+          <coneGeometry args={[0.09, 0.22, 6]} />
+          <meshStandardMaterial color={color} roughness={0.7} />
+        </mesh>
+        {/* Wings — two-segment for realistic shape */}
+        <group ref={wingL} position={[0, 0.04, 0.08]}>
+          <mesh castShadow position={[0, 0, 0.18]} rotation={[0, 0, 0.05]}>
+            <boxGeometry args={[0.22, 0.015, 0.32]} />
+            <meshStandardMaterial color={color} roughness={0.65} />
+          </mesh>
+          <mesh castShadow position={[-0.02, 0, 0.42]} rotation={[0, 0.2, 0.1]}>
+            <boxGeometry args={[0.18, 0.012, 0.28]} />
+            <meshStandardMaterial color={accent} roughness={0.65} />
+          </mesh>
+        </group>
+        <group ref={wingR} position={[0, 0.04, -0.08]}>
+          <mesh castShadow position={[0, 0, -0.18]} rotation={[0, 0, 0.05]}>
+            <boxGeometry args={[0.22, 0.015, 0.32]} />
+            <meshStandardMaterial color={color} roughness={0.65} />
+          </mesh>
+          <mesh castShadow position={[-0.02, 0, -0.42]} rotation={[0, -0.2, 0.1]}>
+            <boxGeometry args={[0.18, 0.012, 0.28]} />
+            <meshStandardMaterial color={accent} roughness={0.65} />
+          </mesh>
+        </group>
+      </group>
     </group>
   );
 }
@@ -1296,8 +1374,8 @@ function Lighting() {
         intensity={2.2}
         color="#fff0c8"
         castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
         shadow-camera-left={-18}
         shadow-camera-right={18}
         shadow-camera-top={18}
@@ -1405,7 +1483,7 @@ function IslandScene({ state, onPlotClick }: IslandViewProps) {
       <Environment preset="park" />
 
       <Ocean />
-      <Sparkles count={120} scale={[60, 1, 60]} position={[0, -0.15, 0]} size={3} speed={0.3} color="#ffffff" />
+      <Sparkles count={60} scale={[60, 1, 60]} position={[0, -0.15, 0]} size={3} speed={0.3} color="#ffffff" />
 
       <IslandBase grassTint={tint} />
       <ContactShadows position={[0, 0.52, 0]} opacity={0.35} scale={20} blur={2.4} far={6} />
@@ -1507,9 +1585,9 @@ function IslandScene({ state, onPlotClick }: IslandViewProps) {
         <Cloud seed={4} bounds={[9, 2, 9]} position={[-6, 13, 10]} color="#ffffff" opacity={0.65} />
       </Clouds>
 
-      <Bird radius={14} speed={0.4} height={10} />
-      <Bird radius={11} speed={0.55} height={8.5} color="#f8e8d0" />
-      <Bird radius={16} speed={0.3} height={11} color="#ffffff" />
+      <Bird radius={14} speed={0.4} height={10} color="#ffffff" accent="#ff9a3c" />
+      <Bird radius={11} speed={0.55} height={8.5} color="#f8e8d0" accent="#e85a3c" />
+      <Bird radius={16} speed={0.3} height={11} color="#dceefb" accent="#3b8fe6" />
 
       <Butterfly origin={[-2, 1, 2]} color={PALETTE.flowerPink} seed={1} />
       <Butterfly origin={[2.5, 0.9, -2]} color="#80c8ff" seed={2} />
@@ -1550,14 +1628,24 @@ export function IslandView({ state, onPlotClick }: IslandViewProps) {
   useEffect(() => setMounted(true), []);
   const island = ISLANDS.find((i) => i.id === state.activeIsland)!;
 
+  // Detect low-power devices and tune renderer accordingly
+  const lowPower = useMemo(() => {
+    if (typeof navigator === "undefined") return false;
+    const cores = (navigator as Navigator & { hardwareConcurrency?: number }).hardwareConcurrency ?? 8;
+    const mem = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8;
+    const mobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    return cores <= 4 || mem <= 4 || mobile;
+  }, []);
+
   return (
     <div className="relative w-full h-full overflow-hidden rounded-3xl bg-gradient-sky">
       {mounted && (
         <Canvas
-          shadows
-          dpr={[1, 2]}
+          shadows={!lowPower}
+          dpr={lowPower ? [1, 1.25] : [1, 1.75]}
           camera={{ position: [14, 12, 14], fov: 45 }}
-          gl={{ antialias: true, alpha: false, toneMappingExposure: 1.15 }}
+          gl={{ antialias: !lowPower, alpha: false, powerPreference: "high-performance", toneMappingExposure: 1.15 }}
+          frameloop="always"
         >
           <Suspense fallback={null}>
             <IslandScene state={state} onPlotClick={onPlotClick} />
