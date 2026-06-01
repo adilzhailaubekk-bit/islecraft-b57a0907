@@ -2337,26 +2337,40 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom }: IslandViewPro
       <WindowGlows slots={slots} buildings={state.buildings.slice(0, slots.length)} />
       </group>
 
-      {/* Sky life */}
-      <Clouds material={THREE.MeshBasicMaterial}>
-        <Cloud seed={1} bounds={[10, 2, 10]} position={[-8, 12, -6]} color="#ffffff" opacity={0.8} />
-        <Cloud seed={2} bounds={[10, 2, 10]} position={[10, 14, 4]} color="#ffffff" opacity={0.7} />
-        <Cloud seed={3} bounds={[8, 2, 8]} position={[0, 16, -10]} color="#ffffff" opacity={0.6} />
-        <Cloud seed={4} bounds={[9, 2, 9]} position={[-6, 13, 10]} color="#ffffff" opacity={0.65} />
-      </Clouds>
+      {/* Sky life — heavy volumetric clouds skipped on low-power */}
+      {!lowPower ? (
+        <Clouds material={THREE.MeshBasicMaterial}>
+          <Cloud seed={1} bounds={[10, 2, 10]} position={[-8, 12, -6]} color="#ffffff" opacity={0.8} />
+          <Cloud seed={2} bounds={[10, 2, 10]} position={[10, 14, 4]} color="#ffffff" opacity={0.7} />
+          <Cloud seed={3} bounds={[8, 2, 8]} position={[0, 16, -10]} color="#ffffff" opacity={0.6} />
+          <Cloud seed={4} bounds={[9, 2, 9]} position={[-6, 13, 10]} color="#ffffff" opacity={0.65} />
+        </Clouds>
+      ) : (
+        // Cheap static cloud billboards
+        <>
+          <mesh position={[-8, 12, -6]}>
+            <sphereGeometry args={[2.4, 8, 6]} />
+            <meshBasicMaterial color="#ffffff" transparent opacity={0.55} />
+          </mesh>
+          <mesh position={[10, 14, 4]}>
+            <sphereGeometry args={[2.2, 8, 6]} />
+            <meshBasicMaterial color="#ffffff" transparent opacity={0.5} />
+          </mesh>
+        </>
+      )}
 
       <Bird radius={14} speed={0.4} height={10} color="#ffffff" accent="#ff9a3c" />
-      <Bird radius={11} speed={0.55} height={8.5} color="#f8e8d0" accent="#e85a3c" />
-      <Bird radius={16} speed={0.3} height={11} color="#dceefb" accent="#3b8fe6" />
+      {!lowPower && <Bird radius={11} speed={0.55} height={8.5} color="#f8e8d0" accent="#e85a3c" />}
+      {!lowPower && <Bird radius={16} speed={0.3} height={11} color="#dceefb" accent="#3b8fe6" />}
 
       <Butterfly origin={[-2, 1, 2]} color={PALETTE.flowerPink} seed={1} />
-      <Butterfly origin={[2.5, 0.9, -2]} color="#80c8ff" seed={2} />
-      <Butterfly origin={[0, 1.1, 4]} color={PALETTE.flowerYellow} seed={3} />
-      <Butterfly origin={[-3, 1.1, -3]} color={PALETTE.flowerPurple} seed={4} />
+      {!lowPower && <Butterfly origin={[2.5, 0.9, -2]} color="#80c8ff" seed={2} />}
+      {!lowPower && <Butterfly origin={[0, 1.1, 4]} color={PALETTE.flowerYellow} seed={3} />}
+      {!lowPower && <Butterfly origin={[-3, 1.1, -3]} color={PALETTE.flowerPurple} seed={4} />}
 
       <Fish radius={11} depth={-0.7} speed={0.5} color="#ff8040" />
-      <Fish radius={13} depth={-0.9} speed={-0.35} color="#60c0ff" />
-      <Fish radius={9} depth={-0.6} speed={0.65} color="#ff60a0" />
+      {!lowPower && <Fish radius={13} depth={-0.9} speed={-0.35} color="#60c0ff" />}
+      {!lowPower && <Fish radius={9} depth={-0.6} speed={0.65} color="#ff60a0" />}
 
       <Crab seed={1} />
       {!lowPower && <Crab seed={3} />}
