@@ -23,9 +23,9 @@ const ACTIONS = [
 
 type ModalId = (typeof ACTIONS)[number]["id"] | "build" | null;
 
-export default function GamePage() {
+export default function GamePage({ initialModal = null }: { initialModal?: ModalId } = {}) {
   const game = useGameStore();
-  const [modal, setModal] = useState<ModalId>(null);
+  const [modal, setModal] = useState<ModalId>(initialModal);
   const [plotIndex, setPlotIndex] = useState(0);
   const [offlineSeen, setOfflineSeen] = useState(false);
   const [mounted, setMounted] = useState(false);
