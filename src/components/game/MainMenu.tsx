@@ -11,14 +11,22 @@ interface MainMenuProps {
   hasSave: boolean;
 }
 
-const BUTTONS = [
+type MenuButton = {
+  id: "play" | "new" | "shop" | "daily" | "leaderboards" | "settings";
+  label: string;
+  emoji: string;
+  gradient: string;
+  primary?: boolean;
+};
+
+const BUTTONS: MenuButton[] = [
   { id: "play", label: "Play", emoji: "▶", gradient: "from-emerald-400 via-green-500 to-teal-600", primary: true },
   { id: "new", label: "New Game", emoji: "🏝️", gradient: "from-amber-400 via-orange-500 to-rose-500" },
   { id: "shop", label: "Shop", emoji: "💰", gradient: "from-yellow-400 via-amber-500 to-orange-600" },
   { id: "daily", label: "Daily Rewards", emoji: "🎁", gradient: "from-fuchsia-400 via-pink-500 to-rose-500" },
   { id: "leaderboards", label: "Leaderboards", emoji: "🏆", gradient: "from-sky-400 via-indigo-500 to-violet-600" },
   { id: "settings", label: "Settings", emoji: "⚙", gradient: "from-slate-400 via-slate-500 to-slate-700" },
-] as const;
+];
 
 export function MainMenu({
   onPlay,
