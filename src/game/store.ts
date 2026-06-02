@@ -51,6 +51,10 @@ const initialState = (): GameState => ({
   dailyMissionsDate: "",
   dailyCounters: emptyCounters(),
   settings: defaultSettings(),
+  prestigeTokens: 0,
+  prestigeCount: 0,
+  prestigeUpgrades: {},
+  prestigeAchievements: [],
 });
 
 // Normalize older save formats
