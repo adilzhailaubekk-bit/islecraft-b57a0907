@@ -9,7 +9,7 @@ import { Toaster } from "@/components/ui/sonner";
 const STORAGE_KEY = "island-tycoon-save-v1";
 
 type Screen = "menu" | "game";
-type InitialModal = "shop" | "daily" | "achievements" | null;
+type InitialModal = "shop" | "daily" | "achievements" | "prestige" | null;
 
 function IndexPage() {
   const [screen, setScreen] = useState<Screen>("menu");
