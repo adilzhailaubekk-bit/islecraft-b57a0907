@@ -3205,7 +3205,7 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom, lowPower = fals
       {/* Plots / buildings */}
       {slots.map((pos, i) => {
         const hasBuilding = !!state.buildings[i];
-        const ownedPlot = i < state.plots;
+        const ownedPlot = true;
         if (!moveMode && !ownedPlot && !hasBuilding) return null;
         const isSource = movingFrom === i;
         const isHighlighted = !!moveMode && (
