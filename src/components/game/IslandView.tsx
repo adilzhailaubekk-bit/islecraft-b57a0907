@@ -72,6 +72,97 @@ const PALETTE = {
 };
 
 /* ============================================================
+   GableRoof — reusable, correctly-oriented pitched roof.
+   Built from real geometry so normals point OUTWARD, the ridge
+   sits at the top, both slopes face down-and-outward toward the
+   eaves, and triangle gable ends close the prism. No inverted
+   or back-facing surfaces from any camera angle.
+
+   width  = eave-to-eave horizontal span (X)
+   depth  = front-to-back length (Z), parallel to the ridge
+   height = vertical rise from eave to ridge
+   baseY  = world Y of the eave line (where wall top meets roof)
+   ============================================================ */
+function GableRoof({
+  width,
+  depth,
+  height,
+  baseY = 0,
+  color,
+  ridgeColor,
+  gableColor,
+  overhang = 0.08,
+  thickness = 0.05,
+  roughness = 0.85,
+}: {
+  width: number;
+  depth: number;
+  height: number;
+  baseY?: number;
+  color: string;
+  ridgeColor?: string;
+  gableColor?: string;
+  overhang?: number;
+  thickness?: number;
+  roughness?: number;
+}) {
+  const hw = width / 2;
+  const hd = depth / 2;
+  const angle = Math.atan2(height, hw); // pitch above horizontal
+  const slopeLen = Math.hypot(hw, height) + overhang;
+  const slopeDepth = depth + overhang * 2;
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  // Extra overhang extends past the eave only — shift center by half of it
+  const midX = hw / 2 + (overhang / 2) * cos;
+  const midY = height / 2 - (overhang / 2) * sin;
+
+  const tri = useMemo(() => {
+    const s = new THREE.Shape();
+    s.moveTo(-hw, 0);
+    s.lineTo(hw, 0);
+    s.lineTo(0, height);
+    s.closePath();
+    return s;
+  }, [hw, height]);
+
+  const ridge = ridgeColor ?? color;
+  const gable = gableColor ?? "#caa370";
+
+  return (
+    <group position={[0, baseY, 0]}>
+      {/* Right slope — tilts DOWN from ridge to right eave */}
+      <mesh castShadow receiveShadow position={[midX, midY, 0]} rotation={[0, 0, -angle]}>
+        <boxGeometry args={[slopeLen, thickness, slopeDepth]} />
+        <meshStandardMaterial color={color} roughness={roughness} />
+      </mesh>
+      {/* Left slope — mirror of right */}
+      <mesh castShadow receiveShadow position={[-midX, midY, 0]} rotation={[0, 0, angle]}>
+        <boxGeometry args={[slopeLen, thickness, slopeDepth]} />
+        <meshStandardMaterial color={color} roughness={roughness} />
+      </mesh>
+      {/* Front gable triangle (faces +Z) */}
+      <mesh castShadow position={[0, 0, hd]}>
+        <shapeGeometry args={[tri]} />
+        <meshStandardMaterial color={gable} roughness={0.95} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Back gable triangle (faces -Z) */}
+      <mesh castShadow position={[0, 0, -hd]} rotation={[0, Math.PI, 0]}>
+        <shapeGeometry args={[tri]} />
+        <meshStandardMaterial color={gable} roughness={0.95} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Ridge cap along the top */}
+      <mesh castShadow position={[0, height + thickness * 0.4, 0]}>
+        <boxGeometry args={[thickness * 2.4, thickness * 1.1, slopeDepth]} />
+        <meshStandardMaterial color={ridge} roughness={0.9} />
+      </mesh>
+    </group>
+  );
+}
+
+
+
+/* ============================================================
    Plot layout
    ============================================================ */
 const ISLAND_SCALE = 1.75;
@@ -867,34 +958,19 @@ function HutBuilding({ stages }: { stages: number }) {
         </mesh>
       ))}
 
-      {/* Roof — triangular prism (pitched) */}
-      <group position={[0, 1.45, 0]}>
-        {/* Triangular gable ends */}
-        <mesh castShadow position={[0, 0.3, 0.625]} rotation={[Math.PI / 2, Math.PI / 6, 0]}>
-          <cylinderGeometry args={[0.72, 0.72, 0.04, 3]} />
-          <meshStandardMaterial color="#caa370" roughness={0.9} />
-        </mesh>
-        <mesh castShadow position={[0, 0.3, -0.625]} rotation={[Math.PI / 2, Math.PI / 6, 0]}>
-          <cylinderGeometry args={[0.72, 0.72, 0.04, 3]} />
-          <meshStandardMaterial color="#caa370" roughness={0.9} />
-        </mesh>
+      {/* Worker hut roof — simple gabled (двускатная) shape, bright red */}
+      <GableRoof
+        baseY={1.05}
+        width={1.18}
+        depth={1.18}
+        height={0.62}
+        color={PALETTE.roofRed}
+        ridgeColor="#7a2020"
+        gableColor="#e8c08a"
+        overhang={0.1}
+        thickness={0.06}
+      />
 
-        {/* Two pitched thatched slopes */}
-        <mesh castShadow position={[-0.31, 0.3, 0]} rotation={[0, 0, Math.PI / 6]}>
-          <boxGeometry args={[0.08, 0.72, 1.3]} />
-          <meshStandardMaterial color="#caa050" roughness={1} />
-        </mesh>
-        <mesh castShadow position={[0.31, 0.3, 0]} rotation={[0, 0, -Math.PI / 6]}>
-          <boxGeometry args={[0.08, 0.72, 1.3]} />
-          <meshStandardMaterial color="#caa050" roughness={1} />
-        </mesh>
-
-        {/* Ridge cap along the top */}
-        <mesh castShadow position={[0, 0.65, 0]}>
-          <boxGeometry args={[0.1, 0.06, 1.32]} />
-          <meshStandardMaterial color="#7a4e1e" roughness={0.95} />
-        </mesh>
-      </group>
 
 
       {/* Door frame + door with planks */}
@@ -1118,20 +1194,20 @@ function LumberBuilding({ stages }: { stages: number }) {
         </mesh>
       ))}
 
-      {/* Pitched plank roof */}
+      {/* Sawmill roof — wide wooden pitched roof */}
+      <GableRoof
+        baseY={0.95}
+        width={1.35}
+        depth={1.4}
+        height={0.55}
+        color={PALETTE.roofTeal}
+        ridgeColor={PALETTE.woodDark}
+        gableColor="#8a5a2a"
+        overhang={0.14}
+        thickness={0.06}
+      />
       <group position={[0, 0.95, 0]}>
-        <mesh castShadow position={[-0.32, 0.18, 0]} rotation={[0, 0, Math.PI / 6]}>
-          <boxGeometry args={[0.06, 0.78, 1.25]} />
-          <meshStandardMaterial color={PALETTE.roofTeal} roughness={0.85} />
-        </mesh>
-        <mesh castShadow position={[0.32, 0.18, 0]} rotation={[0, 0, -Math.PI / 6]}>
-          <boxGeometry args={[0.06, 0.78, 1.25]} />
-          <meshStandardMaterial color={PALETTE.roofTeal} roughness={0.85} />
-        </mesh>
-        <mesh castShadow position={[0, 0.5, 0]}>
-          <boxGeometry args={[0.08, 0.06, 1.28]} />
-          <meshStandardMaterial color={PALETTE.woodDark} />
-        </mesh>
+
         {/* Sign with axe icon */}
         <mesh castShadow position={[0, 0.05, 0.64]}>
           <boxGeometry args={[0.45, 0.18, 0.04]} />
