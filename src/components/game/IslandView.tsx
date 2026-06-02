@@ -1194,20 +1194,20 @@ function LumberBuilding({ stages }: { stages: number }) {
         </mesh>
       ))}
 
-      {/* Pitched plank roof */}
+      {/* Sawmill roof — wide wooden pitched roof */}
+      <GableRoof
+        baseY={0.95}
+        width={1.35}
+        depth={1.4}
+        height={0.55}
+        color={PALETTE.roofTeal}
+        ridgeColor={PALETTE.woodDark}
+        gableColor="#8a5a2a"
+        overhang={0.14}
+        thickness={0.06}
+      />
       <group position={[0, 0.95, 0]}>
-        <mesh castShadow position={[-0.32, 0.18, 0]} rotation={[0, 0, Math.PI / 6]}>
-          <boxGeometry args={[0.06, 0.78, 1.25]} />
-          <meshStandardMaterial color={PALETTE.roofTeal} roughness={0.85} />
-        </mesh>
-        <mesh castShadow position={[0.32, 0.18, 0]} rotation={[0, 0, -Math.PI / 6]}>
-          <boxGeometry args={[0.06, 0.78, 1.25]} />
-          <meshStandardMaterial color={PALETTE.roofTeal} roughness={0.85} />
-        </mesh>
-        <mesh castShadow position={[0, 0.5, 0]}>
-          <boxGeometry args={[0.08, 0.06, 1.28]} />
-          <meshStandardMaterial color={PALETTE.woodDark} />
-        </mesh>
+
         {/* Sign with axe icon */}
         <mesh castShadow position={[0, 0.05, 0.64]}>
           <boxGeometry args={[0.45, 0.18, 0.04]} />
