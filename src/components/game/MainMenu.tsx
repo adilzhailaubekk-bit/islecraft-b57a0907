@@ -1,5 +1,9 @@
 import { motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface MainMenuProps {
   onPlay: () => void;
