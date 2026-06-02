@@ -1611,10 +1611,6 @@ function MarketBuilding({ stages }: { stages: number }) {
           );
         })}
         {/* Awning ridge pole */}
-        <mesh position={[0, 0.08, -0.22]}>
-          <cylinderGeometry args={[0.025, 0.025, 1.45, 8]} rotation={[0, 0, Math.PI / 2]} />
-          <meshStandardMaterial color={PALETTE.woodDark} />
-        </mesh>
         <mesh position={[0, 0.08, -0.22]} rotation={[0, 0, Math.PI / 2]}>
           <cylinderGeometry args={[0.025, 0.025, 1.45, 8]} />
           <meshStandardMaterial color={PALETTE.woodDark} />
