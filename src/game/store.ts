@@ -17,6 +17,14 @@ import {
   type DailyRewardKind,
   type SpinSegment,
 } from "./data";
+import {
+  PRESTIGE_UPGRADES,
+  PRESTIGE_ACHIEVEMENTS,
+  prestigeUpgradeCost,
+  calcPrestigeTokens,
+  computePrestigeBonuses,
+  canPrestige,
+} from "./prestige";
 
 const STORAGE_KEY = "island-tycoon-save-v2";
 
