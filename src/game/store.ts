@@ -671,6 +671,70 @@ export function useGameStore() {
     }));
   }, []);
 
+  // ============ PRESTIGE / REBIRTH ============
+
+  const performPrestige = useCallback((): { tokens: number; newAchievements: string[] } | null => {
+    const cur = stateRef.current;
+    if (!canPrestige(cur)) return null;
+    const tokens = calcPrestigeTokens(cur);
+    let result: { tokens: number; newAchievements: string[] } = { tokens, newAchievements: [] };
+    setState((p) => {
+      const prestigeCount = p.prestigeCount + 1;
+      // Auto-award prestige achievements
+      const newAch: string[] = [];
+      for (const a of PRESTIGE_ACHIEVEMENTS) {
+        if (!p.prestigeAchievements.includes(a.id) && prestigeCount >= a.goal) {
+          newAch.push(a.id);
+        }
+      }
+      const achievementReward = newAch.reduce((s, id) => {
+        const a = PRESTIGE_ACHIEVEMENTS.find((x) => x.id === id);
+        return s + (a?.reward ?? 0);
+      }, 0);
+      result = { tokens, newAchievements: newAch };
+      const base = initialState();
+      return {
+        ...base,
+        // Permanent meta — preserved across rebirths
+        prestigeTokens: p.prestigeTokens + tokens + achievementReward,
+        prestigeCount,
+        prestigeUpgrades: p.prestigeUpgrades,
+        prestigeAchievements: [...p.prestigeAchievements, ...newAch],
+        unlockedIslands: p.unlockedIslands, // keep discovered islands
+        achievements: p.achievements,       // keep normal achievements
+        cosmetics: p.cosmetics,             // keep cosmetics
+        settings: p.settings,
+        // Track lifetime progress
+        totalGoldEarned: p.totalGoldEarned,
+        // Keep daily streak so retention isn't punished
+        dailyStreak: p.dailyStreak,
+        lastDailyClaim: p.lastDailyClaim,
+        dailyCycleDay: p.dailyCycleDay,
+        lastSpinAt: p.lastSpinAt,
+        dailyMissions: p.dailyMissions,
+        dailyMissionsDate: p.dailyMissionsDate,
+        dailyCounters: p.dailyCounters,
+      };
+    });
+    return result;
+  }, []);
+
+  const buyPrestigeUpgrade = useCallback((upgradeId: string) => {
+    setState((p) => {
+      const def = PRESTIGE_UPGRADES.find((u) => u.id === upgradeId);
+      if (!def) return p;
+      const level = p.prestigeUpgrades[upgradeId] ?? 0;
+      if (level >= def.maxLevel) return p;
+      const cost = prestigeUpgradeCost(def, level);
+      if (p.prestigeTokens < cost) return p;
+      return {
+        ...p,
+        prestigeTokens: p.prestigeTokens - cost,
+        prestigeUpgrades: { ...p.prestigeUpgrades, [upgradeId]: level + 1 },
+      };
+    });
+  }, []);
+
   return {
     state,
     rates: computeRates(state),
@@ -691,5 +755,7 @@ export function useGameStore() {
     offlineEarnings: offlineEarnings.current,
     resetOfflineNotice,
     updateSettings,
+    performPrestige,
+    buyPrestigeUpgrade,
   };
 }
