@@ -1,5 +1,9 @@
 import { motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface MainMenuProps {
   onPlay: () => void;
@@ -323,6 +327,9 @@ export function MainMenu({
         style={{ background: "radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.35) 100%)" }}
       />
 
+      {/* === AUTH CHIP (top-right) === */}
+      <AuthChip />
+
       {/* === FOREGROUND UI === */}
       <div className="relative z-10 h-full w-full flex flex-col items-center justify-between py-6 sm:py-10 px-4">
         {/* Logo */}
@@ -433,6 +440,55 @@ export function MainMenu({
           v1.0 · Made with 🌺
         </motion.div>
       </div>
+    </div>
+  );
+}
+
+function AuthChip() {
+  const { user, loading } = useAuth();
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    toast.success("Вы вышли из аккаунта");
+  };
+
+  if (loading) return null;
+
+  return (
+    <div className="absolute top-3 right-3 sm:top-5 sm:right-5 z-30">
+      {user ? (
+        <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md rounded-full pl-1 pr-3 py-1 shadow-lg border-2 border-white">
+          {user.user_metadata?.avatar_url ? (
+            <img
+              src={user.user_metadata.avatar_url}
+              alt=""
+              className="w-8 h-8 rounded-full border-2 border-emerald-400"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-white font-bold text-sm">
+              {(user.user_metadata?.full_name || user.email || "?").charAt(0).toUpperCase()}
+            </div>
+          )}
+          <span className="text-xs font-bold text-slate-700 max-w-[110px] truncate">
+            {user.user_metadata?.full_name || user.email?.split("@")[0]}
+          </span>
+          <button
+            onClick={handleSignOut}
+            title="Выйти"
+            className="ml-1 w-6 h-6 rounded-full bg-rose-100 hover:bg-rose-200 text-rose-600 flex items-center justify-center text-xs font-bold transition"
+          >
+            ⎋
+          </button>
+        </div>
+      ) : (
+        <Link
+          to="/login"
+          className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-sm font-bold rounded-full px-4 py-2 shadow-lg border-2 border-white transition"
+        >
+          <span>☁️</span>
+          <span>Войти</span>
+        </Link>
+      )}
     </div>
   );
 }

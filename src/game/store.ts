@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import type { BuildingDef, BuildingState, DailyMission, GameState, Resources } from "./types";
 import {
   BUILDINGS,
@@ -253,6 +254,88 @@ export function useGameStore() {
     window.addEventListener("beforeunload", onUnload);
     return () => {
       clearInterval(id);
+      window.removeEventListener("beforeunload", onUnload);
+    };
+  }, []);
+
+  // ====== CLOUD SYNC (profiles.game_state) ======
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let cancelled = false;
+    let saveTimer: number | undefined;
+
+    const pullFromCloud = async (userId: string) => {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("game_state, updated_at")
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (cancelled || error || !data) return;
+        const cloud = data.game_state as Partial<GameState> | null;
+        if (cloud && typeof cloud === "object" && Object.keys(cloud).length > 0) {
+          const cloudTick = (cloud as GameState).lastTick ?? 0;
+          if (cloudTick >= stateRef.current.lastTick) {
+            setState(normalize({ ...initialState(), ...cloud }));
+          }
+        }
+      } catch {}
+    };
+
+    const pushToCloud = async (userId: string) => {
+      try {
+        const s = stateRef.current;
+        await supabase
+          .from("profiles")
+          .update({
+            game_state: s as never,
+            gold: Math.floor(s.resources.gold),
+            level: s.level,
+            xp: Math.floor(s.xp),
+            last_seen_at: new Date().toISOString(),
+          })
+          .eq("user_id", userId);
+      } catch {}
+    };
+
+    const startAutosave = (userId: string) => {
+      if (saveTimer) window.clearInterval(saveTimer);
+      saveTimer = window.setInterval(() => pushToCloud(userId), 15000);
+    };
+
+    let currentUserId: string | null = null;
+
+    supabase.auth.getUser().then(({ data }) => {
+      if (cancelled || !data.user) return;
+      currentUserId = data.user.id;
+      pullFromCloud(currentUserId);
+      startAutosave(currentUserId);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (cancelled) return;
+      if (session?.user) {
+        currentUserId = session.user.id;
+        pullFromCloud(currentUserId);
+        startAutosave(currentUserId);
+      } else {
+        currentUserId = null;
+        if (saveTimer) window.clearInterval(saveTimer);
+      }
+    });
+
+    const onUnload = () => {
+      if (currentUserId) {
+        // Best-effort final save (fire-and-forget)
+        void pushToCloud(currentUserId);
+      }
+    };
+    window.addEventListener("beforeunload", onUnload);
+
+    return () => {
+      cancelled = true;
+      if (saveTimer) window.clearInterval(saveTimer);
+      subscription.unsubscribe();
       window.removeEventListener("beforeunload", onUnload);
     };
   }, []);
