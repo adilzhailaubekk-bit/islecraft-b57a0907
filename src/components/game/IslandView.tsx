@@ -628,7 +628,7 @@ function Fountain({ position }: { position: [number, number, number] }) {
         <sphereGeometry args={[0.16, 14, 12]} />
         <meshStandardMaterial color={PALETTE.oceanShallow} emissive={PALETTE.oceanShallow} emissiveIntensity={0.4} />
       </mesh>
-      <Sparkles count={20} scale={[0.6, 1, 0.6]} position={[0, 0.7, 0]} size={2} speed={1.4} color="#a0f0ff" />
+      <FxSparkles count={20} scale={[0.6, 1, 0.6]} position={[0, 0.7, 0]} size={2} speed={1.4} color="#a0f0ff" />
     </group>
   );
 }
@@ -1292,7 +1292,7 @@ function RefineryBuilding() {
           roughness={0.1}
         />
       </mesh>
-      <Sparkles count={20} scale={[1, 1, 1]} position={[0, 1.55, 0]} size={3} speed={1} color="#c0a0ff" />
+      <FxSparkles count={20} scale={[1, 1, 1]} position={[0, 1.55, 0]} size={3} speed={1} color="#c0a0ff" />
       <pointLight position={[0, 1.55, 0]} color="#b070ff" intensity={2.4} distance={5} />
     </>
   );
@@ -1435,7 +1435,7 @@ function UpgradeDecor({ level }: { level: number }) {
               distance={3.5}
               decay={2}
             />
-            <Sparkles count={5} scale={[0.25, 0.5, 0.25]} position={[0, 0.55, 0]} size={1.6} speed={1.4} color="#ffd070" />
+            <FxSparkles count={5} scale={[0.25, 0.5, 0.25]} position={[0, 0.55, 0]} size={1.6} speed={1.4} color="#ffd070" />
           </group>
         ))}
 
@@ -1495,7 +1495,7 @@ function UpgradeDecor({ level }: { level: number }) {
             />
           </mesh>
           <pointLight position={[0, 0, 0]} color="#ffe080" intensity={0.9} distance={3} decay={2} />
-          <Sparkles count={12} scale={[0.6, 0.6, 0.6]} size={2.2} speed={1.2} color="#fff0a0" />
+          <FxSparkles count={12} scale={[0.6, 0.6, 0.6]} size={2.2} speed={1.2} color="#fff0a0" />
           {[0, 1, 2, 3].map((i) => {
             const a = (i * Math.PI) / 2;
             return (
@@ -1587,7 +1587,7 @@ function Plot({
             <ringGeometry args={[0.95, 1.15, 36]} />
             <meshBasicMaterial color={highlightColor} transparent opacity={0.8} side={THREE.DoubleSide} />
           </mesh>
-          <Sparkles count={12} scale={[1.4, 0.8, 1.4]} position={[0, 0.6, 0]} size={3} speed={0.8} color={highlightColor} />
+          <FxSparkles count={12} scale={[1.4, 0.8, 1.4]} position={[0, 0.6, 0]} size={3} speed={0.8} color={highlightColor} />
           <Html center position={[0, selected ? 2.6 : 1.4, 0]} distanceFactor={9} style={{ pointerEvents: "none" }}>
             <div className={`${selected ? "bg-pink-500" : "bg-violet-600"} text-white text-[10px] font-bold rounded-full px-2 py-1 border-2 border-white shadow whitespace-nowrap`}>
               {selected ? "ВЫБРАНО" : empty ? "СЮДА" : "ПЕРЕНЕСТИ"}
@@ -1606,7 +1606,7 @@ function Plot({
             <ringGeometry args={[0.6, 0.82, 32]} />
             <meshBasicMaterial color={PALETTE.flowerYellow} transparent opacity={0.9} side={THREE.DoubleSide} />
           </mesh>
-          <Sparkles count={8} scale={[1, 0.6, 1]} position={[0, 0.5, 0]} size={2} speed={0.6} color="#ffe066" />
+          <FxSparkles count={8} scale={[1, 0.6, 1]} position={[0, 0.5, 0]} size={2} speed={0.6} color="#ffe066" />
           <Html center position={[0, 0.95, 0]} distanceFactor={10} style={{ pointerEvents: "none" }}>
             <div className="bg-white/95 text-amber-700 font-bold rounded-full w-9 h-9 flex items-center justify-center border-2 border-white shadow-card text-xl">
               +
