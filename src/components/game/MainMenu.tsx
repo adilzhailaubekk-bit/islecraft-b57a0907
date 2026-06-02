@@ -546,7 +546,7 @@ function ProfileChip({ snap }: { snap: SaveSnap | null }) {
           {level}
         </div>
       </div>
-      <div className="hidden xs:flex flex-col min-w-0 sm:flex">
+      <div className="hidden sm:flex flex-col min-w-0">
         <div className="text-xs font-extrabold truncate max-w-[100px] sm:max-w-[120px] leading-tight">{name}</div>
         <div className="flex items-center gap-1.5">
           <div className="w-16 sm:w-24 h-1.5 bg-black/40 rounded-full overflow-hidden">
