@@ -117,8 +117,10 @@ export const computeRates = (state: GameState): Resources => {
     const def = BUILDINGS.find((d) => d.id === b.id);
     if (!def) continue;
     let r = buildingRate(def, b.level) * islandMult * speed * workerMult;
-    if (def.produces === "gold") r *= goldDouble * bonuses.goldMult;
-    else if (def.produces === "wood") r *= bonuses.woodMult;
+    if (def.produces === "gold") {
+      r *= goldDouble * bonuses.goldMult;
+      if (island.goldBonus) r *= island.goldBonus;
+    } else if (def.produces === "wood") r *= bonuses.woodMult;
     else if (def.produces === "stone") r *= bonuses.stoneMult;
     raw[def.produces] += r;
   }
