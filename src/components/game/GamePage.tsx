@@ -11,8 +11,10 @@ import { AchievementsModal } from "@/components/game/AchievementsModal";
 import { DailyModal } from "@/components/game/DailyModal";
 import { OfflineModal } from "@/components/game/OfflineModal";
 import { SettingsModal } from "@/components/game/SettingsModal";
+import { PrestigeModal } from "@/components/game/PrestigeModal";
 import { LevelBadge } from "@/components/game/LevelBadge";
 import { fmt } from "@/game/format";
+import { canPrestige } from "@/game/prestige";
 
 const ACTIONS = [
   { id: "shop", label: "Магазин", emoji: "🛒", gradient: "from-rose-400 to-rose-600" },
@@ -20,6 +22,7 @@ const ACTIONS = [
   { id: "islands", label: "Острова", emoji: "🗺️", gradient: "from-emerald-400 to-teal-600" },
   { id: "daily", label: "Награды", emoji: "🎁", gradient: "from-violet-400 to-fuchsia-600" },
   { id: "achievements", label: "Кубки", emoji: "🏆", gradient: "from-sky-400 to-indigo-600" },
+  { id: "prestige", label: "Перерождение", emoji: "✨", gradient: "from-fuchsia-500 to-violet-700" },
 ] as const;
 
 type ModalId = (typeof ACTIONS)[number]["id"] | "build" | "settings" | null;
