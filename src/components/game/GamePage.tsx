@@ -248,6 +248,13 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
         settings={game.state.settings}
         onUpdate={game.updateSettings}
       />
+      <PrestigeModal
+        open={modal === "prestige"}
+        onClose={() => setModal(null)}
+        state={game.state}
+        onPrestige={game.performPrestige}
+        onBuyUpgrade={game.buyPrestigeUpgrade}
+      />
     </div>
   );
 }
