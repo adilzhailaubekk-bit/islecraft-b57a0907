@@ -375,10 +375,11 @@ export function useGameStore() {
         buildings[existingIdx] = { id: buildingId, level: level + 1 };
       } else {
         let slot = -1;
-        for (let i = 0; i < p.plots; i++) {
+        for (let i = 0; i < buildings.length; i++) {
           if (!buildings[i]) { slot = i; break; }
         }
-        if (slot < 0) return p;
+        if (slot < 0) slot = buildings.length;
+
         while (buildings.length <= slot) buildings.push(null);
         buildings[slot] = { id: buildingId, level: 1 };
       }
