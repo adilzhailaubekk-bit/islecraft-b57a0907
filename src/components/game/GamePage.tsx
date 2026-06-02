@@ -22,7 +22,7 @@ const ACTIONS = [
   { id: "achievements", label: "Кубки", emoji: "🏆", gradient: "from-sky-400 to-indigo-600" },
 ] as const;
 
-type ModalId = (typeof ACTIONS)[number]["id"] | "build" | null;
+type ModalId = (typeof ACTIONS)[number]["id"] | "build" | "settings" | null;
 
 export default function GamePage({ initialModal = null }: { initialModal?: ModalId } = {}) {
   const game = useGameStore();
