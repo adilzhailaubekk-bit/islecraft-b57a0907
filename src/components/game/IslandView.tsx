@@ -2892,7 +2892,130 @@ function Crate({ position, rotation = 0 }: { position: [number, number, number];
   );
 }
 
-function PathSegment({
+/* ============================================================
+   Beautiful minimalist resource models — gold, wood, stone
+   ============================================================ */
+function GoldPile({ position, rotation = 0 }: { position: [number, number, number]; rotation?: number }) {
+  const ref = useRef<THREE.Group>(null!);
+  useFrame(({ clock }) => {
+    if (ref.current) {
+      ref.current.rotation.y = rotation + Math.sin(clock.elapsedTime * 0.8) * 0.15;
+      ref.current.position.y = position[1] + Math.sin(clock.elapsedTime * 1.2) * 0.02;
+    }
+  });
+  return (
+    <group ref={ref} position={position} rotation={[0, rotation, 0]}>
+      {/* Base coin */}
+      <mesh castShadow position={[0, 0.02, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.14, 0.14, 0.025, 24]} />
+        <meshStandardMaterial color={PALETTE.gold} metalness={0.95} roughness={0.15} emissive="#ffae00" emissiveIntensity={0.35} />
+      </mesh>
+      {/* Second coin */}
+      <mesh castShadow position={[0.04, 0.055, 0.02]} rotation={[Math.PI / 2, 0.4, 0]}>
+        <cylinderGeometry args={[0.13, 0.13, 0.022, 24]} />
+        <meshStandardMaterial color="#ffe066" metalness={0.95} roughness={0.15} emissive="#ffae00" emissiveIntensity={0.3} />
+      </mesh>
+      {/* Third coin */}
+      <mesh castShadow position={[-0.03, 0.085, -0.02]} rotation={[Math.PI / 2, -0.3, 0.1]}>
+        <cylinderGeometry args={[0.12, 0.12, 0.02, 24]} />
+        <meshStandardMaterial color="#ffd24a" metalness={0.95} roughness={0.15} emissive="#ffae00" emissiveIntensity={0.25} />
+      </mesh>
+      {/* Gold ingot on top */}
+      <mesh castShadow position={[0, 0.13, 0]}>
+        <boxGeometry args={[0.18, 0.06, 0.1]} />
+        <meshStandardMaterial color={PALETTE.gold} metalness={0.95} roughness={0.12} emissive="#ffae00" emissiveIntensity={0.4} />
+      </mesh>
+      {/* Small sparkle */}
+      <mesh position={[0.08, 0.2, 0.06]}>
+        <octahedronGeometry args={[0.03, 0]} />
+        <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={1.5} />
+      </mesh>
+    </group>
+  );
+}
+
+function WoodStack({ position, rotation = 0 }: { position: [number, number, number]; rotation?: number }) {
+  const ref = useRef<THREE.Group>(null!);
+  useFrame(({ clock }) => {
+    if (ref.current) {
+      ref.current.rotation.y = rotation + Math.sin(clock.elapsedTime * 0.5 + position[0]) * 0.08;
+    }
+  });
+  return (
+    <group ref={ref} position={position} rotation={[0, rotation, 0]}>
+      {/* Bottom log */}
+      <mesh castShadow position={[0, 0.06, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.07, 0.08, 0.5, 12]} />
+        <meshStandardMaterial color={PALETTE.woodLight} roughness={0.75} />
+      </mesh>
+      <mesh position={[0.22, 0.06, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.055, 0.065, 0.04, 8]} />
+        <meshStandardMaterial color="#d4a574" roughness={0.8} />
+      </mesh>
+      <mesh position={[-0.22, 0.06, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.055, 0.065, 0.04, 8]} />
+        <meshStandardMaterial color="#d4a574" roughness={0.8} />
+      </mesh>
+      {/* Middle log */}
+      <mesh castShadow position={[0, 0.17, 0.05]} rotation={[0.15, 0.3, Math.PI / 2]}>
+        <cylinderGeometry args={[0.065, 0.075, 0.45, 12]} />
+        <meshStandardMaterial color="#c98a4a" roughness={0.75} />
+      </mesh>
+      {/* Top log */}
+      <mesh castShadow position={[0, 0.27, 0.02]} rotation={[-0.1, 0.6, Math.PI / 2]}>
+        <cylinderGeometry args={[0.06, 0.07, 0.4, 12]} />
+        <meshStandardMaterial color={PALETTE.woodDark} roughness={0.75} />
+      </mesh>
+      {/* Ring band on top log */}
+      <mesh position={[0.14, 0.27, 0.02]} rotation={[-0.1, 0.6, Math.PI / 2]}>
+        <torusGeometry args={[0.055, 0.012, 6, 12]} />
+        <meshStandardMaterial color="#5a3a1a" roughness={0.6} />
+      </mesh>
+    </group>
+  );
+}
+
+function StonePile({ position, rotation = 0 }: { position: [number, number, number]; rotation?: number }) {
+  const ref = useRef<THREE.Group>(null!);
+  const rotOffsets = useMemo(() => {
+    const rng = mulberry32(Math.floor(position[0] * 100 + position[2] * 10));
+    return [rng() * Math.PI, rng() * Math.PI, rng() * Math.PI];
+  }, [position]);
+  useFrame(({ clock }) => {
+    if (ref.current) {
+      ref.current.rotation.y = rotation + Math.sin(clock.elapsedTime * 0.4) * 0.06;
+    }
+  });
+  return (
+    <group ref={ref} position={position} rotation={[0, rotation, 0]}>
+      {/* Large base stone */}
+      <mesh castShadow position={[0, 0.1, 0]} rotation={rotOffsets}>
+        <dodecahedronGeometry args={[0.16, 0]} />
+        <meshStandardMaterial color="#9aa5b8" roughness={0.9} flatShading />
+      </mesh>
+      {/* Medium stone */}
+      <mesh castShadow position={[0.14, 0.08, 0.08]} rotation={[rotOffsets[1], rotOffsets[0], 0]}>
+        <dodecahedronGeometry args={[0.12, 0]} />
+        <meshStandardMaterial color="#8a95a8" roughness={0.9} flatShading />
+      </mesh>
+      {/* Small stone */}
+      <mesh castShadow position={[-0.1, 0.06, 0.12]} rotation={[rotOffsets[2], rotOffsets[1], 0]}>
+        <dodecahedronGeometry args={[0.09, 0]} />
+        <meshStandardMaterial color="#7a8598" roughness={0.9} flatShading />
+      </mesh>
+      {/* Tiny accent stone */}
+      <mesh castShadow position={[0.06, 0.04, -0.12]} rotation={[0, rotOffsets[2], 0]}>
+        <dodecahedronGeometry args={[0.06, 0]} />
+        <meshStandardMaterial color="#aab5c8" roughness={0.85} flatShading />
+      </mesh>
+      {/* Crystal shard accent */}
+      <mesh position={[-0.04, 0.18, -0.02]} rotation={[0.3, 0.5, 0.2]}>
+        <coneGeometry args={[0.035, 0.14, 5]} />
+        <meshStandardMaterial color="#c0d0e8" roughness={0.3} metalness={0.4} emissive="#a0b8d8" emissiveIntensity={0.15} flatShading />
+      </mesh>
+    </group>
+  );
+}
   position,
   rotation = 0,
   length = 1,
