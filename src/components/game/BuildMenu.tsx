@@ -47,10 +47,11 @@ export function BuildMenu({ open, onClose, plotIndex, state, onBuild, onUpgrade 
             </div>
           </div>
           <button
-            onClick={() => onBuild(existing.id)}
+            onClick={() => onUpgrade(existing.id)}
             disabled={!afford}
             className="btn-3d w-full bg-gradient-primary text-primary-foreground font-display font-bold text-lg py-4 rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed"
           >
+
             Улучшить · {Object.entries(cost).map(([k, v]) => `${RES_EMOJI[k as keyof Resources]} ${fmt(v as number)}`).join(" ")}
           </button>
         </div>
