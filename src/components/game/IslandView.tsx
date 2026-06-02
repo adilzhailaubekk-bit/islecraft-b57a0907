@@ -3372,6 +3372,8 @@ export function IslandView({ state, onPlotClick, moveMode, movingFrom }: IslandV
       <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur px-4 py-1.5 rounded-full shadow-card border-2 border-white pointer-events-none">
         <span className="font-display font-bold text-sm">
           {island.emoji} {island.name} · ×{island.rateBonus}
+          {island.goldBonus && ` · золото ×${island.goldBonus}`}
+          {island.offlineBonus && ` · офлайн ×${island.offlineBonus}`}
         </span>
       </div>
 
