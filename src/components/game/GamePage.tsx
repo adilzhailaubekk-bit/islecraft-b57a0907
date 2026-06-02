@@ -129,7 +129,7 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
             setMoveMode((v) => !v);
             setMovingFrom(null);
           }}
-          className={`absolute top-3 right-3 btn-3d rounded-full w-12 h-12 flex items-center justify-center text-xl font-bold shadow-pop border-2 border-white ${
+          className={`absolute top-3 left-3 btn-3d rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold shadow-pop border-2 border-white ${
             moveMode ? "bg-violet-500 text-white" : "bg-white text-violet-600"
           }`}
           title="Переместить здания"
