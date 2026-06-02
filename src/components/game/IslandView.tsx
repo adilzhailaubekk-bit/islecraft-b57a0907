@@ -72,6 +72,97 @@ const PALETTE = {
 };
 
 /* ============================================================
+   GableRoof — reusable, correctly-oriented pitched roof.
+   Built from real geometry so normals point OUTWARD, the ridge
+   sits at the top, both slopes face down-and-outward toward the
+   eaves, and triangle gable ends close the prism. No inverted
+   or back-facing surfaces from any camera angle.
+
+   width  = eave-to-eave horizontal span (X)
+   depth  = front-to-back length (Z), parallel to the ridge
+   height = vertical rise from eave to ridge
+   baseY  = world Y of the eave line (where wall top meets roof)
+   ============================================================ */
+function GableRoof({
+  width,
+  depth,
+  height,
+  baseY = 0,
+  color,
+  ridgeColor,
+  gableColor,
+  overhang = 0.08,
+  thickness = 0.05,
+  roughness = 0.85,
+}: {
+  width: number;
+  depth: number;
+  height: number;
+  baseY?: number;
+  color: string;
+  ridgeColor?: string;
+  gableColor?: string;
+  overhang?: number;
+  thickness?: number;
+  roughness?: number;
+}) {
+  const hw = width / 2;
+  const hd = depth / 2;
+  const angle = Math.atan2(height, hw); // pitch above horizontal
+  const slopeLen = Math.hypot(hw, height) + overhang;
+  const slopeDepth = depth + overhang * 2;
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  // Extra overhang extends past the eave only — shift center by half of it
+  const midX = hw / 2 + (overhang / 2) * cos;
+  const midY = height / 2 - (overhang / 2) * sin;
+
+  const tri = useMemo(() => {
+    const s = new THREE.Shape();
+    s.moveTo(-hw, 0);
+    s.lineTo(hw, 0);
+    s.lineTo(0, height);
+    s.closePath();
+    return s;
+  }, [hw, height]);
+
+  const ridge = ridgeColor ?? color;
+  const gable = gableColor ?? "#caa370";
+
+  return (
+    <group position={[0, baseY, 0]}>
+      {/* Right slope — tilts DOWN from ridge to right eave */}
+      <mesh castShadow receiveShadow position={[midX, midY, 0]} rotation={[0, 0, -angle]}>
+        <boxGeometry args={[slopeLen, thickness, slopeDepth]} />
+        <meshStandardMaterial color={color} roughness={roughness} />
+      </mesh>
+      {/* Left slope — mirror of right */}
+      <mesh castShadow receiveShadow position={[-midX, midY, 0]} rotation={[0, 0, angle]}>
+        <boxGeometry args={[slopeLen, thickness, slopeDepth]} />
+        <meshStandardMaterial color={color} roughness={roughness} />
+      </mesh>
+      {/* Front gable triangle (faces +Z) */}
+      <mesh castShadow position={[0, 0, hd]}>
+        <shapeGeometry args={[tri]} />
+        <meshStandardMaterial color={gable} roughness={0.95} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Back gable triangle (faces -Z) */}
+      <mesh castShadow position={[0, 0, -hd]} rotation={[0, Math.PI, 0]}>
+        <shapeGeometry args={[tri]} />
+        <meshStandardMaterial color={gable} roughness={0.95} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Ridge cap along the top */}
+      <mesh castShadow position={[0, height + thickness * 0.4, 0]}>
+        <boxGeometry args={[thickness * 2.4, thickness * 1.1, slopeDepth]} />
+        <meshStandardMaterial color={ridge} roughness={0.9} />
+      </mesh>
+    </group>
+  );
+}
+
+
+
+/* ============================================================
    Plot layout
    ============================================================ */
 const ISLAND_SCALE = 1.75;
