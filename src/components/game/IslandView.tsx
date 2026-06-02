@@ -1196,7 +1196,7 @@ function LumberBuilding({ stages }: { stages: number }) {
 
       {/* Sawmill roof — wide wooden pitched roof */}
       <GableRoof
-        baseY={0.95}
+        baseY={0.80}
         width={1.35}
         depth={1.4}
         height={0.55}
