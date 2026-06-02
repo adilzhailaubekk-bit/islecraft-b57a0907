@@ -1,6 +1,10 @@
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import {
+  Play, Plus, Settings, Bell, Gift, Trophy, ShoppingBag, Sparkles,
+  Swords, CalendarDays, BarChart3, LogOut, ChevronRight, Coins, TreePine, Mountain,
+} from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -12,240 +16,250 @@ interface MainMenuProps {
   onLeaderboards: () => void;
   onDaily: () => void;
   onShop: () => void;
+  onPrestige?: () => void;
+  onAchievements?: () => void;
+  onQuests?: () => void;
+  onEvents?: () => void;
   hasSave: boolean;
 }
 
-type MenuButton = {
-  id: "play" | "new" | "shop" | "daily" | "leaderboards" | "settings";
-  label: string;
-  emoji: string;
-  gradient: string;
-  primary?: boolean;
+const STORAGE_KEY = "island-tycoon-save-v2";
+
+type SaveSnap = {
+  level: number;
+  xp: number;
+  xpNext: number;
+  gold: number;
+  wood: number;
+  stone: number;
+  islandName: string;
+  plots: number;
+  buildings: number;
 };
 
-const BUTTONS: MenuButton[] = [
-  { id: "play", label: "Play", emoji: "▶", gradient: "from-emerald-400 via-green-500 to-teal-600", primary: true },
-  { id: "new", label: "New Game", emoji: "🏝️", gradient: "from-amber-400 via-orange-500 to-rose-500" },
-  { id: "shop", label: "Shop", emoji: "💰", gradient: "from-yellow-400 via-amber-500 to-orange-600" },
-  { id: "daily", label: "Daily Rewards", emoji: "🎁", gradient: "from-fuchsia-400 via-pink-500 to-rose-500" },
-  { id: "leaderboards", label: "Leaderboards", emoji: "🏆", gradient: "from-sky-400 via-indigo-500 to-violet-600" },
-  { id: "settings", label: "Settings", emoji: "⚙", gradient: "from-slate-400 via-slate-500 to-slate-700" },
-];
+function loadSnap(): SaveSnap | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const s = JSON.parse(raw);
+    const level = s.level ?? 1;
+    const xpNext = Math.floor(50 * Math.pow(1.35, level - 1));
+    return {
+      level,
+      xp: s.xp ?? 0,
+      xpNext,
+      gold: Math.floor(s.resources?.gold ?? 0),
+      wood: Math.floor(s.resources?.wood ?? 0),
+      stone: Math.floor(s.resources?.stone ?? 0),
+      islandName: s.activeIsland ?? "paradise",
+      plots: s.plots ?? 3,
+      buildings: Array.isArray(s.buildings) ? s.buildings.filter(Boolean).length : 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
+const fmt = (n: number) => {
+  if (n >= 1e9) return (n / 1e9).toFixed(1) + "B";
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + "M";
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + "K";
+  return Math.floor(n).toString();
+};
 
 export function MainMenu({
-  onPlay,
-  onNewGame,
-  onSettings,
-  onLeaderboards,
-  onDaily,
-  onShop,
-  hasSave,
+  onPlay, onNewGame, onSettings, onLeaderboards, onDaily, onShop,
+  onPrestige, onAchievements, onQuests, onEvents, hasSave,
 }: MainMenuProps) {
-  const handlers: Record<string, () => void> = {
-    play: onPlay,
-    new: onNewGame,
-    settings: onSettings,
-    leaderboards: onLeaderboards,
-    daily: onDaily,
-    shop: onShop,
-  };
-
-  // Pre-compute random animation properties for birds/clouds/butterflies
-  const birds = useMemo(
-    () =>
-      Array.from({ length: 4 }).map((_, i) => ({
-        id: i,
-        top: 8 + Math.random() * 30,
-        duration: 18 + Math.random() * 14,
-        delay: i * 5 + Math.random() * 4,
-        scale: 0.6 + Math.random() * 0.6,
-      })),
-    [],
-  );
-  const clouds = useMemo(
-    () =>
-      Array.from({ length: 5 }).map((_, i) => ({
-        id: i,
-        top: 4 + Math.random() * 28,
-        duration: 60 + Math.random() * 40,
-        delay: -Math.random() * 40,
-        scale: 0.8 + Math.random() * 0.9,
-        opacity: 0.55 + Math.random() * 0.35,
-      })),
-    [],
-  );
-  const butterflies = useMemo(
-    () =>
-      Array.from({ length: 3 }).map((_, i) => ({
-        id: i,
-        top: 45 + Math.random() * 35,
-        left: 10 + Math.random() * 80,
-        duration: 8 + Math.random() * 6,
-        delay: Math.random() * 5,
-        color: ["#ff5ea0", "#ffd84a", "#79f7e6"][i % 3],
-      })),
-    [],
-  );
-
-  const [showHint, setShowHint] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [snap, setSnap] = useState<SaveSnap | null>(null);
+  const [hoverPlay, setHoverPlay] = useState(false);
+
   useEffect(() => {
     setMounted(true);
-    const t = setTimeout(() => setShowHint(false), 4000);
-    return () => clearTimeout(t);
+    setSnap(loadSnap());
   }, []);
 
+  // Time-of-day cycle (60s loop)
+  const [t, setT] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      setT(((now - start) / 60000) % 1);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  // Sky gradient cycles: dawn -> day -> dusk -> night
+  const sky = useMemo(() => {
+    const stops = [
+      ["#ffb480", "#ffd6a5", "#9ad6f0"],   // dawn
+      ["#7ec8ff", "#bfe5ff", "#e6f4ff"],   // day
+      ["#ff8c7a", "#ffc56b", "#6c8fc7"],   // dusk
+      ["#0c1838", "#1b2a55", "#37406b"],   // night
+    ];
+    const idx = t * stops.length;
+    const i = Math.floor(idx) % stops.length;
+    const j = (i + 1) % stops.length;
+    const k = idx - Math.floor(idx);
+    const mix = (a: string, b: string) => {
+      const pa = a.match(/\w\w/g)!.map((h) => parseInt(h, 16));
+      const pb = b.match(/\w\w/g)!.map((h) => parseInt(h, 16));
+      const m = pa.map((v, n) => Math.round(v + (pb[n] - v) * k));
+      return `rgb(${m[0]},${m[1]},${m[2]})`;
+    };
+    return [mix(stops[i][0], stops[j][0]), mix(stops[i][1], stops[j][1]), mix(stops[i][2], stops[j][2])];
+  }, [t]);
+
+  const sideButtons = [
+    { id: "daily", label: "Daily", icon: Gift, color: "from-pink-500 to-rose-600", onClick: onDaily, badge: hasSave },
+    { id: "quests", label: "Quests", icon: Swords, color: "from-amber-500 to-orange-600", onClick: onQuests ?? onDaily },
+    { id: "ach", label: "Achievements", icon: Trophy, color: "from-yellow-400 to-amber-600", onClick: onAchievements ?? onLeaderboards },
+    { id: "shop", label: "Shop", icon: ShoppingBag, color: "from-emerald-500 to-teal-600", onClick: onShop },
+    { id: "prestige", label: "Prestige", icon: Sparkles, color: "from-fuchsia-500 to-violet-700", onClick: onPrestige ?? (() => toast("Prestige доступен в игре ✨")) },
+    { id: "events", label: "Events", icon: CalendarDays, color: "from-sky-500 to-indigo-600", onClick: onEvents ?? (() => toast("События скоро 🎉")) },
+    { id: "lb", label: "Leaderboards", icon: BarChart3, color: "from-violet-500 to-purple-700", onClick: onLeaderboards },
+  ];
+
   return (
-    <div className="fixed inset-0 overflow-hidden select-none">
-      {/* Sky gradient */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(180deg, #ffd28a 0%, #ffb46b 18%, #ff9a8a 35%, #6ec3e8 65%, #3ea3d8 100%)",
-        }}
+    <div className="fixed inset-0 overflow-hidden select-none text-white font-display">
+      {/* === Animated sky === */}
+      <motion.div
+        className="absolute inset-0 transition-colors"
+        style={{ background: `linear-gradient(180deg, ${sky[0]} 0%, ${sky[1]} 55%, ${sky[2]} 100%)` }}
       />
 
-      {/* Sun with glow */}
+      {/* Sun / Moon */}
       <motion.div
         className="absolute"
-        style={{ top: "14%", right: "16%" }}
-        animate={{ scale: [1, 1.06, 1] }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+        style={{
+          left: `${10 + t * 80}%`,
+          top: `${10 + Math.sin(t * Math.PI) * -8 + 8}%`,
+        }}
       >
         <div
-          className="w-40 h-40 rounded-full"
+          className="w-28 h-28 rounded-full"
           style={{
-            background: "radial-gradient(circle, #fff7c7 0%, #ffd84a 40%, rgba(255,200,80,0) 75%)",
-            filter: "blur(2px)",
+            background: t > 0.6
+              ? "radial-gradient(circle, #f5f7ff 0%, #c8d2ff 45%, rgba(200,210,255,0) 75%)"
+              : "radial-gradient(circle, #fff7c7 0%, #ffd84a 40%, rgba(255,200,80,0) 75%)",
+            filter: "blur(1px)",
           }}
         />
       </motion.div>
 
-      {/* Clouds */}
-      {mounted && clouds.map((c) => (
-        <motion.div
-          key={`c-${c.id}`}
-          className="absolute"
-          style={{ top: `${c.top}%`, opacity: c.opacity }}
-          initial={{ x: "-20vw" }}
-          animate={{ x: "120vw" }}
-          transition={{
-            duration: c.duration,
-            delay: c.delay,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-        >
-          <svg width={140 * c.scale} height={70 * c.scale} viewBox="0 0 140 70">
-            <g fill="#ffffff">
-              <ellipse cx="40" cy="42" rx="32" ry="22" />
-              <ellipse cx="72" cy="34" rx="34" ry="26" />
-              <ellipse cx="102" cy="44" rx="28" ry="20" />
-            </g>
-          </svg>
-        </motion.div>
-      ))}
+      {/* Clouds (parallax) */}
+      {mounted && Array.from({ length: 6 }).map((_, i) => {
+        const top = 5 + (i * 7) % 35;
+        const dur = 50 + i * 9;
+        const scale = 0.6 + (i % 3) * 0.3;
+        return (
+          <motion.div
+            key={`cl-${i}`}
+            className="absolute"
+            style={{ top: `${top}%`, opacity: 0.7 }}
+            initial={{ x: "-25vw" }}
+            animate={{ x: "120vw" }}
+            transition={{ duration: dur, delay: -i * 8, repeat: Infinity, ease: "linear" }}
+          >
+            <svg width={160 * scale} height={70 * scale} viewBox="0 0 160 70">
+              <g fill="#ffffff">
+                <ellipse cx="40" cy="44" rx="34" ry="22" />
+                <ellipse cx="80" cy="32" rx="38" ry="26" />
+                <ellipse cx="120" cy="46" rx="30" ry="20" />
+              </g>
+            </svg>
+          </motion.div>
+        );
+      })}
 
-      {/* Distant mountains silhouette */}
-      <svg
-        className="absolute bottom-[42%] left-0 w-full"
+      {/* Distant mountain layer (parallax depth) */}
+      <motion.svg
+        className="absolute bottom-[40%] left-0 w-[110%]"
         viewBox="0 0 800 200"
         preserveAspectRatio="none"
-        style={{ height: "18%" }}
+        style={{ height: "20%" }}
+        animate={{ x: [0, -20, 0] }}
+        transition={{ duration: 40, repeat: Infinity, ease: "easeInOut" }}
       >
-        <path d="M0,200 L0,120 L120,40 L220,110 L320,30 L460,130 L580,60 L700,120 L800,80 L800,200 Z" fill="#3d6e92" opacity="0.6" />
+        <path d="M0,200 L0,120 L120,40 L220,110 L320,30 L460,130 L580,60 L700,120 L800,80 L800,200 Z" fill="#3d6e92" opacity="0.55" />
         <path d="M0,200 L0,150 L100,90 L200,140 L320,80 L440,150 L560,100 L680,140 L800,110 L800,200 Z" fill="#2d567a" opacity="0.7" />
-      </svg>
+      </motion.svg>
 
-      {/* Ocean with animated waves */}
-      <div className="absolute bottom-0 left-0 right-0 h-1/2">
-        <div
-          className="absolute inset-0"
-          style={{
-            background: "linear-gradient(180deg, #3ec5f0 0%, #1ea1e0 50%, #0a5a9c 100%)",
-          }}
-        />
-        {/* Wave layers */}
+      {/* Ocean */}
+      <div className="absolute bottom-0 left-0 right-0 h-[55%]">
+        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, #3ec5f0 0%, #1c8fc9 55%, #07365f 100%)" }} />
         {[
-          { top: 0, color: "#ffffff", opacity: 0.4, duration: 8, amp: 6 },
-          { top: 14, color: "#a7e6ff", opacity: 0.35, duration: 11, amp: 8 },
-          { top: 32, color: "#7dd3fc", opacity: 0.25, duration: 14, amp: 10 },
+          { top: 0, color: "#ffffff", opacity: 0.35, duration: 9, amp: 6 },
+          { top: 12, color: "#a7e6ff", opacity: 0.3, duration: 13, amp: 8 },
+          { top: 28, color: "#6dc4f0", opacity: 0.22, duration: 17, amp: 10 },
         ].map((w, i) => (
           <motion.svg
             key={`w-${i}`}
             className="absolute left-0 w-[200%]"
-            style={{ top: `${w.top}%`, height: 60 }}
-            viewBox="0 0 1600 60"
+            style={{ top: `${w.top}%`, height: 70 }}
+            viewBox="0 0 1600 70"
             preserveAspectRatio="none"
             animate={{ x: ["0%", "-50%"] }}
             transition={{ duration: w.duration, repeat: Infinity, ease: "linear" }}
           >
             <path
-              d={`M0,30 Q200,${30 - w.amp} 400,30 T800,30 T1200,30 T1600,30 L1600,60 L0,60 Z`}
-              fill={w.color}
-              opacity={w.opacity}
+              d={`M0,35 Q200,${35 - w.amp} 400,35 T800,35 T1200,35 T1600,35 L1600,70 L0,70 Z`}
+              fill={w.color} opacity={w.opacity}
             />
           </motion.svg>
         ))}
 
-        {/* Island */}
+        {/* Island with subtle camera drift */}
         <motion.div
-          className="absolute left-1/2 -translate-x-1/2"
-          style={{ bottom: "22%" }}
-          animate={{ y: [0, -4, 0] }}
-          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute left-1/2"
+          style={{ bottom: "18%", x: "-50%" }}
+          animate={{ y: [0, -6, 0], x: ["-52%", "-48%", "-52%"] }}
+          transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
         >
-          <svg width="520" height="220" viewBox="0 0 520 220">
-            {/* Sand */}
-            <ellipse cx="260" cy="160" rx="240" ry="44" fill="#ffe7a8" />
-            <ellipse cx="260" cy="150" rx="210" ry="34" fill="#ffd884" />
-            {/* Grass mound */}
-            <ellipse cx="260" cy="125" rx="170" ry="48" fill="#6fd16a" />
-            <ellipse cx="260" cy="118" rx="140" ry="38" fill="#4ab84a" />
-            {/* Rocks */}
-            <ellipse cx="120" cy="155" rx="22" ry="12" fill="#8a96aa" />
-            <ellipse cx="420" cy="158" rx="26" ry="14" fill="#8a96aa" />
-            {/* Path */}
-            <ellipse cx="260" cy="148" rx="40" ry="8" fill="#d8d1b8" opacity="0.7" />
+          <svg width="560" height="240" viewBox="0 0 560 240">
+            <defs>
+              <radialGradient id="sand" cx="50%" cy="50%" r="60%">
+                <stop offset="0%" stopColor="#fff1bd" />
+                <stop offset="100%" stopColor="#e9c277" />
+              </radialGradient>
+              <radialGradient id="grass" cx="50%" cy="50%" r="60%">
+                <stop offset="0%" stopColor="#8be082" />
+                <stop offset="100%" stopColor="#3ea34a" />
+              </radialGradient>
+            </defs>
+            <ellipse cx="280" cy="170" rx="260" ry="48" fill="url(#sand)" />
+            <ellipse cx="280" cy="135" rx="180" ry="52" fill="url(#grass)" />
+            <ellipse cx="120" cy="168" rx="22" ry="12" fill="#8a96aa" />
+            <ellipse cx="450" cy="170" rx="26" ry="14" fill="#8a96aa" />
+            {/* Tiny buildings */}
+            <g transform="translate(220 105)">
+              <rect x="0" y="0" width="28" height="24" fill="#f5d29a" stroke="#8a5a2a" strokeWidth="1.5" />
+              <polygon points="-2,0 30,0 14,-14" fill="#c8523a" stroke="#7a3220" strokeWidth="1.5" />
+            </g>
+            <g transform="translate(300 110)">
+              <rect x="0" y="0" width="22" height="20" fill="#f5d29a" stroke="#8a5a2a" strokeWidth="1.5" />
+              <polygon points="-2,0 24,0 11,-12" fill="#3a7ac8" stroke="#1e4a82" strokeWidth="1.5" />
+            </g>
           </svg>
 
-          {/* Palms */}
-          {[
-            { left: "20%", delay: 0, scale: 1 },
-            { left: "72%", delay: 0.8, scale: 0.9 },
-            { left: "46%", delay: 0.4, scale: 1.15 },
-          ].map((p, i) => (
+          {[{ left: "15%", s: 1 }, { left: "75%", s: 0.9 }, { left: "48%", s: 1.1 }].map((p, i) => (
             <motion.div
-              key={`palm-${i}`}
+              key={`pl-${i}`}
               className="absolute"
-              style={{
-                left: p.left,
-                bottom: "55%",
-                transformOrigin: "bottom center",
-                transform: `scale(${p.scale})`,
-              }}
+              style={{ left: p.left, bottom: "55%", transformOrigin: "bottom center", transform: `scale(${p.s})` }}
               animate={{ rotate: [-3, 3, -3] }}
-              transition={{ duration: 5 + i * 0.4, repeat: Infinity, ease: "easeInOut", delay: p.delay }}
+              transition={{ duration: 5 + i * 0.4, repeat: Infinity, ease: "easeInOut" }}
             >
               <svg width="110" height="160" viewBox="0 0 110 160">
-                {/* Trunk */}
-                <path
-                  d="M55,160 Q48,110 52,70 Q56,40 62,10"
-                  stroke="#7a4a26"
-                  strokeWidth="8"
-                  fill="none"
-                  strokeLinecap="round"
-                />
-                {/* Leaves */}
+                <path d="M55,160 Q48,110 52,70 Q56,40 62,10" stroke="#7a4a26" strokeWidth="8" fill="none" strokeLinecap="round" />
                 {[0, 60, 120, 180, 240, 300].map((rot) => (
                   <g key={rot} transform={`translate(60 18) rotate(${rot})`}>
-                    <path
-                      d="M0,0 Q24,-10 50,0 Q24,8 0,0 Z"
-                      fill="#3aa84a"
-                      stroke="#2d8c3e"
-                      strokeWidth="2"
-                    />
+                    <path d="M0,0 Q24,-10 50,0 Q24,8 0,0 Z" fill="#3aa84a" stroke="#2d8c3e" strokeWidth="2" />
                   </g>
                 ))}
                 <circle cx="60" cy="18" r="6" fill="#2d8c3e" />
@@ -256,189 +270,296 @@ export function MainMenu({
       </div>
 
       {/* Birds */}
-      {mounted && birds.map((b) => (
+      {mounted && Array.from({ length: 4 }).map((_, i) => (
         <motion.div
-          key={`b-${b.id}`}
+          key={`bd-${i}`}
           className="absolute"
-          style={{ top: `${b.top}%` }}
+          style={{ top: `${10 + i * 6}%` }}
           initial={{ x: "-10vw" }}
-          animate={{ x: "110vw", y: [0, -20, 10, -10, 0] }}
+          animate={{ x: "110vw", y: [0, -16, 8, -10, 0] }}
           transition={{
-            x: { duration: b.duration, delay: b.delay, repeat: Infinity, ease: "linear" },
+            x: { duration: 22 + i * 4, delay: i * 5, repeat: Infinity, ease: "linear" },
             y: { duration: 3, repeat: Infinity, ease: "easeInOut" },
           }}
         >
-          <motion.svg
-            width={28 * b.scale}
-            height={14 * b.scale}
-            viewBox="0 0 28 14"
-            animate={{ scaleY: [1, 0.6, 1] }}
-            transition={{ duration: 0.6, repeat: Infinity }}
-          >
-            <path d="M2,8 Q7,1 14,7 Q21,1 26,8" stroke="#222" strokeWidth="2" fill="none" strokeLinecap="round" />
+          <motion.svg width={24} height={12} viewBox="0 0 28 14" animate={{ scaleY: [1, 0.5, 1] }} transition={{ duration: 0.6, repeat: Infinity }}>
+            <path d="M2,8 Q7,1 14,7 Q21,1 26,8" stroke="#1a1a2e" strokeWidth="2" fill="none" strokeLinecap="round" />
           </motion.svg>
         </motion.div>
-      ))}
-
-      {/* Butterflies */}
-      {mounted && butterflies.map((b) => (
-        <motion.div
-          key={`bf-${b.id}`}
-          className="absolute"
-          style={{ top: `${b.top}%`, left: `${b.left}%` }}
-          animate={{
-            x: [0, 40, -30, 20, 0],
-            y: [0, -30, -10, -40, 0],
-          }}
-          transition={{ duration: b.duration, delay: b.delay, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <motion.svg
-            width="18"
-            height="14"
-            viewBox="0 0 18 14"
-            animate={{ scaleX: [1, 0.4, 1] }}
-            transition={{ duration: 0.3, repeat: Infinity }}
-          >
-            <ellipse cx="5" cy="7" rx="4" ry="6" fill={b.color} />
-            <ellipse cx="13" cy="7" rx="4" ry="6" fill={b.color} />
-            <rect x="8.5" y="5" width="1" height="6" fill="#222" />
-          </motion.svg>
-        </motion.div>
-      ))}
-
-      {/* Sparkles */}
-      {mounted && Array.from({ length: 12 }).map((_, i) => (
-        <motion.div
-          key={`sp-${i}`}
-          className="absolute w-1.5 h-1.5 rounded-full bg-white"
-          style={{
-            top: `${Math.random() * 60}%`,
-            left: `${Math.random() * 100}%`,
-            boxShadow: "0 0 8px #fff, 0 0 16px #fff",
-          }}
-          animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2, 0.5] }}
-          transition={{ duration: 2 + Math.random() * 2, delay: Math.random() * 3, repeat: Infinity }}
-        />
       ))}
 
       {/* Vignette */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{ background: "radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.35) 100%)" }}
-      />
+      <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at center, transparent 45%, rgba(0,0,10,0.55) 100%)" }} />
 
-      {/* === AUTH CHIP (top-right) === */}
-      <AuthChip />
+      {/* ============ FOREGROUND UI ============ */}
 
-      {/* === FOREGROUND UI === */}
-      <div className="relative z-10 h-full w-full flex flex-col items-center justify-between py-6 sm:py-10 px-4">
-        {/* Logo */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.7, y: -30 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 0.9, ease: [0.2, 0.9, 0.3, 1.2] }}
-          className="text-center mt-4 sm:mt-8"
-        >
-          <motion.h1
-            className="font-display font-extrabold leading-none tracking-tight"
-            style={{
-              fontSize: "clamp(2.6rem, 8vw, 5.5rem)",
-              color: "#fff5d6",
-              textShadow:
-                "0 2px 0 #b8761c, 0 4px 0 #8a5414, 0 6px 0 #6b3e0f, 0 10px 18px rgba(0,0,0,0.45), 0 0 32px rgba(255,210,90,0.55)",
-              WebkitTextStroke: "1.5px #6b3e0f",
-            }}
-            animate={{ y: [0, -4, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          >
-            LOST ISLES
-          </motion.h1>
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-            className="mt-1 sm:mt-2 font-display font-bold"
-            style={{
-              fontSize: "clamp(1.2rem, 3.5vw, 2.2rem)",
-              color: "#ffd24a",
-              letterSpacing: "0.4em",
-              textShadow: "0 2px 0 #6b3e0f, 0 4px 10px rgba(0,0,0,0.4)",
-            }}
-          >
-            T Y C O O N
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.9, duration: 0.6 }}
-            className="mt-2 text-white/90 text-xs sm:text-sm font-bold tracking-wide drop-shadow"
-          >
-            Build your tropical empire 🌴
-          </motion.div>
-        </motion.div>
+      {/* TOP BAR */}
+      <motion.div
+        initial={{ y: -30, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, ease: [0.2, 0.9, 0.3, 1] }}
+        className="absolute top-3 left-3 right-3 sm:top-5 sm:left-5 sm:right-5 z-30 flex items-center gap-3"
+      >
+        <ProfileChip snap={snap} />
 
-        {/* Buttons */}
-        <div className="w-full max-w-md flex flex-col gap-3 mb-4 sm:mb-8">
-          {BUTTONS.map((b, i) => (
-            <motion.button
-              key={b.id}
-              initial={{ opacity: 0, x: -40 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.5 + i * 0.08, duration: 0.5, ease: "easeOut" }}
-              whileHover={{ scale: 1.04, y: -2 }}
-              whileTap={{ scale: 0.96 }}
-              onClick={handlers[b.id]}
-              disabled={b.id === "play" && !hasSave}
-              className={`relative group bg-gradient-to-br ${b.gradient} text-white font-display font-extrabold rounded-2xl border-2 border-white/80 shadow-pop overflow-hidden ${
-                b.primary ? "py-4 text-xl" : "py-3 text-base"
-              } ${b.id === "play" && !hasSave ? "opacity-50 cursor-not-allowed" : ""}`}
-              style={{
-                boxShadow:
-                  "0 6px 0 rgba(0,0,0,0.25), 0 12px 24px rgba(0,0,0,0.35), inset 0 2px 0 rgba(255,255,255,0.4)",
-              }}
-            >
-              {/* Shine sweep */}
-              <motion.div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background:
-                    "linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.4) 50%, transparent 65%)",
-                }}
-                initial={{ x: "-120%" }}
-                animate={{ x: "120%" }}
-                transition={{
-                  duration: 2.5,
-                  repeat: Infinity,
-                  repeatDelay: b.primary ? 1.5 : 4 + i,
-                  ease: "easeInOut",
-                }}
-              />
-              <span className="relative flex items-center justify-center gap-3">
-                <span className="text-2xl drop-shadow">{b.emoji}</span>
-                <span className="text-shadow-soft tracking-wide">{b.label}</span>
-              </span>
-              {b.id === "play" && hasSave && (
-                <motion.span
-                  className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full px-2 py-0.5 border-2 border-white"
-                  animate={{ scale: [1, 1.15, 1] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                >
-                  CONTINUE
-                </motion.span>
-              )}
-            </motion.button>
-          ))}
+        {/* Resources */}
+        <div className="hidden md:flex items-center gap-2 ml-2">
+          <ResChip icon={<Coins className="w-4 h-4 text-amber-300" />} value={fmt(snap?.gold ?? 0)} accent="from-amber-400/30 to-amber-600/10" />
+          <ResChip icon={<TreePine className="w-4 h-4 text-emerald-300" />} value={fmt(snap?.wood ?? 0)} accent="from-emerald-400/30 to-emerald-600/10" />
+          <ResChip icon={<Mountain className="w-4 h-4 text-slate-200" />} value={fmt(snap?.stone ?? 0)} accent="from-slate-300/30 to-slate-500/10" />
         </div>
 
-        {/* Footer */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: showHint ? 1 : 0.5 }}
-          transition={{ delay: 1.2 }}
-          className="text-white/80 text-xs font-bold drop-shadow"
+        <div className="flex-1" />
+
+        <IconChip onClick={() => toast("Уведомлений нет 🔔")} title="Уведомления">
+          <Bell className="w-4 h-4" />
+          {hasSave && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-black/30" />}
+        </IconChip>
+        <IconChip onClick={onSettings} title="Настройки">
+          <Settings className="w-4 h-4" />
+        </IconChip>
+        <AuthChip />
+      </motion.div>
+
+      {/* TITLE */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.85, y: -10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.9, delay: 0.15, ease: [0.2, 0.9, 0.3, 1.1] }}
+        className="absolute top-[14%] sm:top-[16%] left-0 right-0 z-20 text-center pointer-events-none px-4"
+      >
+        <h1
+          className="font-extrabold leading-none tracking-tight"
+          style={{
+            fontSize: "clamp(2.4rem, 7vw, 5rem)",
+            color: "#fff5d6",
+            textShadow: "0 2px 0 #b8761c, 0 4px 0 #8a5414, 0 6px 0 #6b3e0f, 0 10px 22px rgba(0,0,0,0.5), 0 0 40px rgba(255,210,90,0.45)",
+            WebkitTextStroke: "1.5px #6b3e0f",
+          }}
         >
-          v1.0 · Made with 🌺
+          LOST ISLES
+        </h1>
+        <div
+          className="mt-1 font-bold"
+          style={{
+            fontSize: "clamp(1rem, 3vw, 1.8rem)",
+            color: "#ffd24a",
+            letterSpacing: "0.5em",
+            textShadow: "0 2px 0 #6b3e0f, 0 4px 10px rgba(0,0,0,0.4)",
+          }}
+        >
+          T Y C O O N
+        </div>
+      </motion.div>
+
+      {/* SIDE QUICK MENU */}
+      <motion.div
+        initial={{ x: -60, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.3 }}
+        className="absolute left-3 sm:left-5 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-2"
+      >
+        {sideButtons.map((b, i) => (
+          <motion.button
+            key={b.id}
+            initial={{ x: -40, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.35 + i * 0.05 }}
+            whileHover={{ scale: 1.08, x: 4 }}
+            whileTap={{ scale: 0.94 }}
+            onClick={b.onClick}
+            title={b.label}
+            className="group relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border border-white/25 backdrop-blur-xl bg-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] flex items-center justify-center overflow-hidden"
+          >
+            <div className={`absolute inset-0 bg-gradient-to-br ${b.color} opacity-70 group-hover:opacity-100 transition-opacity`} />
+            <b.icon className="relative w-5 h-5 sm:w-6 sm:h-6 drop-shadow" />
+            <div className="absolute inset-0 ring-1 ring-inset ring-white/20 rounded-2xl" />
+            {/* label tooltip */}
+            <span className="absolute left-full ml-2 px-2.5 py-1 text-[11px] font-bold rounded-md bg-black/70 backdrop-blur whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none">
+              {b.label}
+            </span>
+          </motion.button>
+        ))}
+      </motion.div>
+
+      {/* CENTER — PLAY */}
+      <div className="absolute inset-0 z-20 flex items-end sm:items-center justify-center pointer-events-none">
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.4 }}
+          className="pointer-events-auto w-full max-w-md px-5 pb-8 sm:pb-0 sm:mt-24"
+        >
+          {/* Save card */}
+          <AnimatePresence>
+            {snap && hasSave && (
+              <motion.div
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 20 }}
+                className="mb-4 rounded-2xl border border-white/20 bg-white/10 backdrop-blur-2xl p-3.5 shadow-[0_10px_40px_rgba(0,0,0,0.4)]"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-[11px] uppercase tracking-widest text-white/70 font-bold">Последнее сохранение</div>
+                  <div className="text-[11px] font-bold text-emerald-300">● Сохранено</div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="text-3xl">🏝️</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold capitalize truncate">{snap.islandName}</div>
+                    <div className="text-xs text-white/70">
+                      Зданий: <b className="text-white">{snap.buildings}</b> / {snap.plots} · Уровень{" "}
+                      <b className="text-white">{snap.level}</b>
+                    </div>
+                    <div className="mt-1.5 h-1.5 bg-black/30 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.min(100, (snap.buildings / Math.max(1, snap.plots)) * 100)}%` }}
+                        transition={{ duration: 0.8, delay: 0.6 }}
+                        className="h-full bg-gradient-to-r from-emerald-400 to-teal-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* PLAY button */}
+          <motion.button
+            onMouseEnter={() => setHoverPlay(true)}
+            onMouseLeave={() => setHoverPlay(false)}
+            whileTap={{ scale: 0.97 }}
+            onClick={hasSave ? onPlay : onNewGame}
+            className="relative w-full overflow-hidden rounded-3xl py-5 border-2 border-white/40 shadow-[0_12px_40px_rgba(0,0,0,0.5)]"
+            style={{
+              background: "linear-gradient(135deg, #22d39a 0%, #11a87b 50%, #0a7a5e 100%)",
+            }}
+          >
+            {/* Glow */}
+            <motion.div
+              className="absolute -inset-2 rounded-3xl pointer-events-none"
+              style={{ background: "radial-gradient(ellipse at center, rgba(80,255,180,0.55), transparent 70%)" }}
+              animate={{ opacity: hoverPlay ? 0.9 : 0.4, scale: hoverPlay ? 1.05 : 1 }}
+              transition={{ duration: 0.4 }}
+            />
+            {/* Shine sweep */}
+            <motion.div
+              className="absolute inset-0 pointer-events-none"
+              style={{ background: "linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.45) 50%, transparent 65%)" }}
+              initial={{ x: "-120%" }}
+              animate={{ x: "120%" }}
+              transition={{ duration: 2.4, repeat: Infinity, repeatDelay: 1.2, ease: "easeInOut" }}
+            />
+            <span className="relative flex items-center justify-center gap-3 text-white font-extrabold text-2xl tracking-wider drop-shadow">
+              <Play className="w-7 h-7 fill-white" />
+              {hasSave ? "ПРОДОЛЖИТЬ" : "ИГРАТЬ"}
+            </span>
+            {hasSave && (
+              <span className="relative block mt-1 text-xs text-white/85 font-semibold">
+                Тапни, чтобы вернуться на остров →
+              </span>
+            )}
+          </motion.button>
+
+          {/* Secondary actions */}
+          <div className="mt-3 grid grid-cols-2 gap-2.5">
+            <SecondaryBtn icon={<Plus className="w-4 h-4" />} label="Новая игра" onClick={onNewGame} />
+            <SecondaryBtn
+              icon={<ChevronRight className="w-4 h-4" />}
+              label={hasSave ? "Прогресс острова" : "Открыть архипелаг"}
+              onClick={hasSave ? onPlay : onNewGame}
+            />
+          </div>
         </motion.div>
+      </div>
+
+      {/* Footer */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.6 }}
+        transition={{ delay: 1.2 }}
+        className="absolute bottom-2 right-3 text-white/70 text-[10px] font-bold tracking-wider"
+      >
+        v1.0 · Lost Isles Tycoon
+      </motion.div>
+    </div>
+  );
+}
+
+/* ---------- subcomponents ---------- */
+
+function ResChip({ icon, value, accent }: { icon: React.ReactNode; value: string; accent: string }) {
+  return (
+    <div className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/20 backdrop-blur-xl bg-gradient-to-br ${accent} shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]`}>
+      {icon}
+      <span className="text-xs font-extrabold tabular-nums">{value}</span>
+    </div>
+  );
+}
+
+function IconChip({ children, onClick, title }: { children: React.ReactNode; onClick?: () => void; title?: string }) {
+  return (
+    <motion.button
+      whileHover={{ scale: 1.08 }}
+      whileTap={{ scale: 0.92 }}
+      onClick={onClick}
+      title={title}
+      className="relative w-9 h-9 rounded-full border border-white/25 bg-white/10 backdrop-blur-xl flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]"
+    >
+      {children}
+    </motion.button>
+  );
+}
+
+function SecondaryBtn({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
+  return (
+    <motion.button
+      whileHover={{ scale: 1.03, y: -1 }}
+      whileTap={{ scale: 0.96 }}
+      onClick={onClick}
+      className="relative flex items-center justify-center gap-2 py-2.5 rounded-xl border border-white/25 bg-white/10 backdrop-blur-xl text-xs font-bold text-white/95 shadow-[0_6px_18px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.2)] hover:bg-white/15 transition-colors"
+    >
+      {icon}
+      <span>{label}</span>
+    </motion.button>
+  );
+}
+
+function ProfileChip({ snap }: { snap: SaveSnap | null }) {
+  const { user } = useAuth();
+  const name = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Гость";
+  const avatar = user?.user_metadata?.avatar_url as string | undefined;
+  const level = snap?.level ?? 1;
+  const xpPct = snap ? Math.min(100, (snap.xp / Math.max(1, snap.xpNext)) * 100) : 0;
+
+  return (
+    <div className="flex items-center gap-2.5 pl-1 pr-3 py-1 rounded-full border border-white/25 bg-white/10 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_6px_18px_rgba(0,0,0,0.3)]">
+      <div className="relative">
+        {avatar ? (
+          <img src={avatar} alt="" className="w-9 h-9 rounded-full border-2 border-emerald-300" />
+        ) : (
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center font-extrabold text-sm border-2 border-white/40">
+            {name.charAt(0).toUpperCase()}
+          </div>
+        )}
+        <div className="absolute -bottom-1 -right-1 min-w-[22px] h-[18px] px-1 rounded-md bg-gradient-to-br from-amber-400 to-orange-600 text-[10px] font-extrabold flex items-center justify-center border border-white/40 shadow">
+          {level}
+        </div>
+      </div>
+      <div className="flex flex-col min-w-0">
+        <div className="text-xs font-extrabold truncate max-w-[120px] leading-tight">{name}</div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-24 h-1.5 bg-black/40 rounded-full overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${xpPct}%` }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="h-full bg-gradient-to-r from-cyan-300 to-blue-500"
+            />
+          </div>
+          <span className="text-[9px] font-bold text-white/70 tabular-nums">{Math.round(xpPct)}%</span>
+        </div>
       </div>
     </div>
   );
@@ -446,49 +567,29 @@ export function MainMenu({
 
 function AuthChip() {
   const { user, loading } = useAuth();
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    toast.success("Вы вышли из аккаунта");
-  };
-
   if (loading) return null;
-
+  if (!user) {
+    return (
+      <Link
+        to="/login"
+        className="flex items-center gap-1.5 px-3 h-9 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-xs font-extrabold border border-white/40 shadow-lg transition"
+      >
+        ☁️ Войти
+      </Link>
+    );
+  }
   return (
-    <div className="absolute top-3 right-3 sm:top-5 sm:right-5 z-30">
-      {user ? (
-        <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md rounded-full pl-1 pr-3 py-1 shadow-lg border-2 border-white">
-          {user.user_metadata?.avatar_url ? (
-            <img
-              src={user.user_metadata.avatar_url}
-              alt=""
-              className="w-8 h-8 rounded-full border-2 border-emerald-400"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-white font-bold text-sm">
-              {(user.user_metadata?.full_name || user.email || "?").charAt(0).toUpperCase()}
-            </div>
-          )}
-          <span className="text-xs font-bold text-slate-700 max-w-[110px] truncate">
-            {user.user_metadata?.full_name || user.email?.split("@")[0]}
-          </span>
-          <button
-            onClick={handleSignOut}
-            title="Выйти"
-            className="ml-1 w-6 h-6 rounded-full bg-rose-100 hover:bg-rose-200 text-rose-600 flex items-center justify-center text-xs font-bold transition"
-          >
-            ⎋
-          </button>
-        </div>
-      ) : (
-        <Link
-          to="/login"
-          className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-sm font-bold rounded-full px-4 py-2 shadow-lg border-2 border-white transition"
-        >
-          <span>☁️</span>
-          <span>Войти</span>
-        </Link>
-      )}
-    </div>
+    <motion.button
+      whileHover={{ scale: 1.08 }}
+      whileTap={{ scale: 0.92 }}
+      onClick={async () => {
+        await supabase.auth.signOut();
+        toast.success("Вы вышли из аккаунта");
+      }}
+      title="Выйти"
+      className="w-9 h-9 rounded-full border border-white/25 bg-rose-500/20 hover:bg-rose-500/40 backdrop-blur-xl flex items-center justify-center"
+    >
+      <LogOut className="w-4 h-4" />
+    </motion.button>
   );
 }
