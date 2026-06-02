@@ -168,6 +168,17 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
               </motion.button>
             );
           })}
+          {/* Settings button */}
+          <motion.button
+            whileHover={{ y: -4 }}
+            whileTap={{ scale: 0.94 }}
+            onClick={() => setModal("settings")}
+            className="btn-3d relative flex-1 bg-gradient-to-br from-slate-400 to-slate-600 text-white rounded-2xl py-4 sm:py-5 px-2 sm:px-3 flex flex-col items-center gap-1.5 sm:gap-2 font-display font-bold"
+            title="Настройки"
+          >
+            <span className="text-3xl sm:text-4xl drop-shadow">⚙️</span>
+            <span className="text-xs sm:text-sm text-shadow-soft leading-tight">Настройки</span>
+          </motion.button>
         </div>
       </div>
 
