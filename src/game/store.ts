@@ -72,6 +72,10 @@ const normalize = (s: GameState): GameState => {
     dailyMissionsDate: s.dailyMissionsDate ?? "",
     dailyCounters: s.dailyCounters ?? emptyCounters(),
     settings: s.settings ?? defaultSettings(),
+    prestigeTokens: s.prestigeTokens ?? 0,
+    prestigeCount: s.prestigeCount ?? 0,
+    prestigeUpgrades: s.prestigeUpgrades && typeof s.prestigeUpgrades === "object" ? s.prestigeUpgrades : {},
+    prestigeAchievements: Array.isArray(s.prestigeAchievements) ? s.prestigeAchievements : [],
   };
 };
 
