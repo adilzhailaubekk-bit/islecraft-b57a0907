@@ -117,4 +117,9 @@ export interface GameState {
   dailyMissionsDate: string;
   dailyCounters: DailyCounters;
   settings: GameSettings;
+  // Prestige / Rebirth — permanent meta-progression
+  prestigeTokens: number;
+  prestigeCount: number;
+  prestigeUpgrades: Record<string, number>;
+  prestigeAchievements: string[];
 }
