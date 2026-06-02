@@ -292,10 +292,17 @@ interface ResourceBarProps {
 
 export function ResourceBar({ resources, rates }: ResourceBarProps) {
   const keys: (keyof Resources)[] = ["gold", "wood", "stone", "energy"];
+  const maxRate = Math.max(0.0001, ...keys.map((k) => rates[k] || 0));
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 w-full">
       {keys.map((k) => (
-        <ResourceCell key={k} resourceKey={k} value={resources[k]} rate={rates[k]} />
+        <ResourceCell
+          key={k}
+          resourceKey={k}
+          value={resources[k]}
+          rate={rates[k]}
+          maxRate={maxRate}
+        />
       ))}
     </div>
   );
@@ -305,16 +312,19 @@ function ResourceCell({
   resourceKey,
   value,
   rate,
+  maxRate,
 }: {
   resourceKey: keyof Resources;
   value: number;
   rate: number;
+  maxRate: number;
 }) {
   const theme = THEME[resourceKey];
   const Icon = theme.Icon;
   const prevValue = useRef(value);
   const [pops, setPops] = useState<Pop[]>([]);
   const [bump, setBump] = useState(0);
+  const [hover, setHover] = useState(false);
 
   useEffect(() => {
     const delta = value - prevValue.current;
@@ -327,36 +337,82 @@ function ResourceCell({
     }
   }, [value]);
 
+  const rateShare = rate > 0 ? Math.min(1, rate / maxRate) : 0;
+  const active = rate > 0;
+
   return (
     <motion.div
       key={resourceKey}
       layout
-      animate={{ scale: bump ? [1, 1.05, 1] : 1 }}
+      onHoverStart={() => setHover(true)}
+      onHoverEnd={() => setHover(false)}
+      animate={{ scale: bump ? [1, 1.05, 1] : 1, y: hover ? -2 : 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className={`relative bg-gradient-to-br ${theme.cell} backdrop-blur rounded-2xl px-2 sm:px-3 py-2 border-2 ${theme.border} flex items-center gap-2 sm:gap-3 overflow-visible`}
+      className={`relative bg-gradient-to-br ${theme.cell} backdrop-blur-xl rounded-2xl px-2.5 sm:px-3.5 py-2 sm:py-2.5 border ${theme.border} flex items-center gap-2 sm:gap-3 overflow-hidden`}
       style={{
-        boxShadow: theme.glow + ", inset 0 1px 0 rgba(255,255,255,0.8)",
+        boxShadow:
+          theme.glow +
+          ", inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -2px 6px rgba(0,0,0,0.06), 0 8px 18px rgba(20,30,60,0.12)",
       }}
     >
-      {/* Inner shine overlay */}
+      {/* Animated holographic conic sweep */}
+      {active && (
+        <motion.div
+          className="absolute -inset-8 pointer-events-none opacity-25"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 9, repeat: Infinity, ease: "linear" }}
+          style={{
+            background: `conic-gradient(from 0deg, transparent 0%, ${theme.particle} 18%, transparent 30%, transparent 65%, ${theme.particle} 78%, transparent 90%)`,
+            filter: "blur(14px)",
+            mixBlendMode: "screen",
+          }}
+        />
+      )}
+
+      {/* Top gloss */}
       <div
-        className="absolute inset-0 rounded-2xl pointer-events-none opacity-60"
+        className="absolute inset-x-0 top-0 h-1/2 rounded-t-2xl pointer-events-none"
         style={{
-          background: "linear-gradient(160deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 40%)",
+          background:
+            "linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 100%)",
         }}
       />
 
+      {/* Sweeping highlight */}
+      <motion.div
+        className="absolute inset-y-0 -left-1/3 w-1/3 pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.55) 50%, transparent 70%)",
+        }}
+        animate={{ x: ["0%", "420%"] }}
+        transition={{ duration: 4.5, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }}
+      />
+
       {/* Icon disc */}
-      <div
-        className="relative w-11 h-11 sm:w-14 sm:h-14 rounded-full flex items-center justify-center flex-shrink-0"
+      <motion.div
+        className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center flex-shrink-0"
+        animate={
+          active
+            ? {
+                boxShadow: [
+                  "inset 0 2px 4px rgba(255,255,255,0.6), inset 0 -3px 6px rgba(0,0,0,0.25), 0 4px 10px rgba(0,0,0,0.25), 0 0 0px " +
+                    theme.particle,
+                  "inset 0 2px 4px rgba(255,255,255,0.6), inset 0 -3px 6px rgba(0,0,0,0.25), 0 4px 10px rgba(0,0,0,0.25), 0 0 14px " +
+                    theme.particle,
+                  "inset 0 2px 4px rgba(255,255,255,0.6), inset 0 -3px 6px rgba(0,0,0,0.25), 0 4px 10px rgba(0,0,0,0.25), 0 0 0px " +
+                    theme.particle,
+                ],
+              }
+            : {}
+        }
+        transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
         style={{
           background: theme.iconBg,
-          boxShadow:
-            "inset 0 2px 4px rgba(255,255,255,0.6), inset 0 -3px 6px rgba(0,0,0,0.25), 0 4px 10px rgba(0,0,0,0.25)",
-          border: "2px solid rgba(255,255,255,0.85)",
+          border: "2px solid rgba(255,255,255,0.9)",
         }}
       >
-        <div className="absolute inset-1 sm:inset-1.5">
+        <div className="absolute inset-1.5">
           <Icon />
         </div>
         {/* Particle burst on gain */}
@@ -372,30 +428,69 @@ function ResourceCell({
             />
           )}
         </AnimatePresence>
-      </div>
+      </motion.div>
 
       {/* Text */}
       <div className="flex-1 min-w-0 relative">
-        <div className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-widest ${theme.text} opacity-70 truncate`}>
-          {theme.name}
+        <div className="flex items-center justify-between gap-1">
+          <div
+            className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.14em] ${theme.text} opacity-70 truncate`}
+          >
+            {theme.name}
+          </div>
+          {active && (
+            <div
+              className="hidden sm:inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-[1px] rounded-full"
+              style={{
+                background: "rgba(255,255,255,0.75)",
+                color: theme.pop,
+                border: `1px solid ${theme.particle}`,
+              }}
+            >
+              <motion.span
+                animate={{ y: [0, -1, 0] }}
+                transition={{ duration: 1.2, repeat: Infinity }}
+              >
+                ▲
+              </motion.span>
+              <span className="tabular-nums">{fmtRate(rate)}</span>
+            </div>
+          )}
         </div>
+
         <div
-          className={`font-display font-extrabold text-base sm:text-xl leading-tight tabular-nums truncate ${theme.text}`}
-          style={{ textShadow: "0 1px 0 rgba(255,255,255,0.6)" }}
+          className={`font-display font-black text-lg sm:text-2xl leading-tight tabular-nums truncate ${theme.text}`}
+          style={{
+            textShadow:
+              "0 1px 0 rgba(255,255,255,0.85), 0 2px 6px rgba(0,0,0,0.08)",
+            letterSpacing: "-0.01em",
+          }}
         >
           <AnimatedNumber value={value} />
         </div>
-        {rate > 0 && (
-          <div className="text-[9px] sm:text-[11px] text-emerald-700 font-bold tabular-nums flex items-center gap-0.5">
-            <motion.span
-              animate={{ opacity: [0.6, 1, 0.6] }}
-              transition={{ duration: 1.6, repeat: Infinity }}
-            >
-              ▲
-            </motion.span>
-            <span>{fmtRate(rate)}</span>
+
+        {/* Mobile rate label */}
+        {active && (
+          <div className="mt-0.5 sm:hidden">
+            <span className="text-[9px] font-bold tabular-nums" style={{ color: theme.pop }}>
+              ▲ {fmtRate(rate)}
+            </span>
           </div>
         )}
+
+        {/* Velocity bar */}
+        <div className="mt-1 h-1 rounded-full bg-white/60 overflow-hidden">
+          <motion.div
+            className="h-full rounded-full"
+            style={{
+              background: `linear-gradient(90deg, ${theme.particle}, ${theme.pop})`,
+              boxShadow: `0 0 8px ${theme.particle}`,
+            }}
+            initial={false}
+            animate={{ width: `${Math.max(active ? 6 : 0, rateShare * 100)}%` }}
+            transition={{ type: "spring", stiffness: 120, damping: 18 }}
+          />
+        </div>
 
         {/* Floating +N popups */}
         <AnimatePresence>
@@ -409,7 +504,8 @@ function ResourceCell({
               className="absolute right-1 top-0 font-display font-extrabold text-sm sm:text-base pointer-events-none"
               style={{
                 color: theme.pop,
-                textShadow: "0 1px 0 rgba(255,255,255,0.9), 0 0 6px rgba(255,255,255,0.6)",
+                textShadow:
+                  "0 1px 0 rgba(255,255,255,0.9), 0 0 6px rgba(255,255,255,0.6)",
               }}
             >
               +{fmt(p.delta)}
