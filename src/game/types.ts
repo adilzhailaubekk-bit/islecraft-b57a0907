@@ -124,4 +124,6 @@ export interface GameState {
   prestigeCount: number;
   prestigeUpgrades: Record<string, number>;
   prestigeAchievements: string[];
+  // Per-island saved buildings and plots (for inactive islands)
+  islandStates?: Record<string, { buildings: (BuildingState | null)[]; plots: number }>;
 }

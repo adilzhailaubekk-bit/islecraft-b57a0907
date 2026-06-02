@@ -63,6 +63,7 @@ const initialState = (): GameState => ({
   prestigeCount: 0,
   prestigeUpgrades: {},
   prestigeAchievements: [],
+  islandStates: {},
 });
 
 // Normalize older save formats
@@ -84,6 +85,7 @@ const normalize = (s: GameState): GameState => {
     prestigeCount: s.prestigeCount ?? 0,
     prestigeUpgrades: s.prestigeUpgrades && typeof s.prestigeUpgrades === "object" ? s.prestigeUpgrades : {},
     prestigeAchievements: Array.isArray(s.prestigeAchievements) ? s.prestigeAchievements : [],
+    islandStates: s.islandStates && typeof s.islandStates === "object" ? s.islandStates : {},
   };
 };
 
@@ -505,9 +507,23 @@ export function useGameStore() {
   }, [addXp]);
 
   const switchIsland = useCallback((islandId: string) => {
-    setState((p) =>
-      p.unlockedIslands.includes(islandId) ? { ...p, activeIsland: islandId } : p,
-    );
+    setState((p) => {
+      if (!p.unlockedIslands.includes(islandId)) return p;
+      if (p.activeIsland === islandId) return p;
+      const islandStates = { ...(p.islandStates ?? {}) };
+      // Save current island's buildings/plots
+      islandStates[p.activeIsland] = { buildings: p.buildings, plots: p.plots };
+      // Load target island's saved state (or fresh start)
+      const target = islandStates[islandId] ?? { buildings: [], plots: 3 };
+      delete islandStates[islandId];
+      return {
+        ...p,
+        activeIsland: islandId,
+        buildings: target.buildings,
+        plots: target.plots,
+        islandStates,
+      };
+    });
   }, []);
 
   const buyBooster = useCallback((boosterId: string, price: number, duration: number) => {
