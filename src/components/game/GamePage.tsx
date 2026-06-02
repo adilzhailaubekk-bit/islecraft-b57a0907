@@ -10,6 +10,7 @@ import { IslandsModal } from "@/components/game/IslandsModal";
 import { AchievementsModal } from "@/components/game/AchievementsModal";
 import { DailyModal } from "@/components/game/DailyModal";
 import { OfflineModal } from "@/components/game/OfflineModal";
+import { SettingsModal } from "@/components/game/SettingsModal";
 import { LevelBadge } from "@/components/game/LevelBadge";
 import { fmt } from "@/game/format";
 
