@@ -1065,133 +1065,466 @@ function HutBuilding({ stages }: { stages: number }) {
 
 
 
+/* ============================================================
+   LumberBuilding — Sawmill with log-cabin walls, spinning blade,
+   log conveyor, stacked timber, sawdust pile, and woodsman's axe.
+   ============================================================ */
 function LumberBuilding({ stages }: { stages: number }) {
   const saw = useRef<THREE.Mesh>(null!);
-  useFrame((_, dt) => {
-    if (saw.current) saw.current.rotation.z += dt * 5;
+  const log = useRef<THREE.Group>(null!);
+  useFrame(({ clock }, dt) => {
+    if (saw.current) saw.current.rotation.x += dt * 8;
+    if (log.current) {
+      // log slowly creeps toward blade then resets
+      const t = (clock.elapsedTime % 4) / 4;
+      log.current.position.x = -0.5 + t * 0.85;
+    }
   });
   return (
     <>
-      <mesh castShadow position={[0, 0.08, 0]}>
-        <cylinderGeometry args={[0.7, 0.75, 0.16, 16]} />
-        <meshStandardMaterial color={PALETTE.rockLight} />
+      {/* Stone foundation */}
+      <mesh castShadow receiveShadow position={[0, 0.07, 0]}>
+        <boxGeometry args={[1.25, 0.14, 1.1]} />
+        <meshStandardMaterial color="#9aa3b2" roughness={1} />
       </mesh>
-      <mesh castShadow position={[0, 0.4, 0]}>
-        <boxGeometry args={[1.1, 0.7, 0.9]} />
-        <meshStandardMaterial color={PALETTE.woodLight} />
+
+      {/* Log-cabin walls — horizontal stacked logs */}
+      {Array.from({ length: 5 }).map((_, i) => {
+        const y = 0.2 + i * 0.13;
+        const c = i % 2 ? "#a06b3a" : "#8a5a30";
+        return (
+          <group key={`lw-${i}`}>
+            <mesh castShadow position={[0, y, -0.5]} rotation={[0, 0, Math.PI / 2]}>
+              <cylinderGeometry args={[0.065, 0.065, 1.15, 10]} />
+              <meshStandardMaterial color={c} roughness={0.9} />
+            </mesh>
+            <mesh castShadow position={[-0.55, y, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.065, 0.065, 1.0, 10]} />
+              <meshStandardMaterial color={c} roughness={0.9} />
+            </mesh>
+            <mesh castShadow position={[0.55, y, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.065, 0.065, 1.0, 10]} />
+              <meshStandardMaterial color={c} roughness={0.9} />
+            </mesh>
+          </group>
+        );
+      })}
+
+      {/* Open front — supporting posts only */}
+      {[-0.5, 0.5].map((x, i) => (
+        <mesh key={`fp-${i}`} castShadow position={[x, 0.5, 0.5]}>
+          <cylinderGeometry args={[0.07, 0.07, 0.7, 8]} />
+          <meshStandardMaterial color="#5a3818" />
+        </mesh>
+      ))}
+
+      {/* Pitched plank roof */}
+      <group position={[0, 0.95, 0]}>
+        <mesh castShadow position={[-0.32, 0.18, 0]} rotation={[0, 0, Math.PI / 6]}>
+          <boxGeometry args={[0.06, 0.78, 1.25]} />
+          <meshStandardMaterial color={PALETTE.roofTeal} roughness={0.85} />
+        </mesh>
+        <mesh castShadow position={[0.32, 0.18, 0]} rotation={[0, 0, -Math.PI / 6]}>
+          <boxGeometry args={[0.06, 0.78, 1.25]} />
+          <meshStandardMaterial color={PALETTE.roofTeal} roughness={0.85} />
+        </mesh>
+        <mesh castShadow position={[0, 0.5, 0]}>
+          <boxGeometry args={[0.08, 0.06, 1.28]} />
+          <meshStandardMaterial color={PALETTE.woodDark} />
+        </mesh>
+        {/* Sign with axe icon */}
+        <mesh castShadow position={[0, 0.05, 0.64]}>
+          <boxGeometry args={[0.45, 0.18, 0.04]} />
+          <meshStandardMaterial color="#6b3e1c" />
+        </mesh>
+        <mesh position={[0, 0.05, 0.665]} rotation={[0, 0, 0.6]}>
+          <boxGeometry args={[0.03, 0.13, 0.005]} />
+          <meshStandardMaterial color="#5a3818" />
+        </mesh>
+        <mesh position={[0.04, 0.09, 0.665]} rotation={[0, 0, 0.6]}>
+          <boxGeometry args={[0.09, 0.05, 0.005]} />
+          <meshStandardMaterial color="#cdd3dc" metalness={0.85} roughness={0.25} />
+        </mesh>
+      </group>
+
+      {/* Conveyor / log feed table */}
+      <mesh castShadow position={[0, 0.32, 0.25]}>
+        <boxGeometry args={[1.05, 0.05, 0.3]} />
+        <meshStandardMaterial color="#6b3e1c" />
       </mesh>
-      <mesh castShadow position={[0, 0.9, 0]}>
-        <boxGeometry args={[1.25, 0.35, 1.05]} />
-        <meshStandardMaterial color={PALETTE.roofTeal} />
+      {/* Moving log being cut */}
+      <group ref={log} position={[-0.5, 0.42, 0.25]}>
+        <mesh castShadow rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.08, 0.08, 0.45, 12]} />
+          <meshStandardMaterial color="#a06b3a" />
+        </mesh>
+      </group>
+
+      {/* Big circular saw blade — vertical, mounted on post */}
+      <mesh castShadow position={[0.35, 0.42, 0.42]}>
+        <cylinderGeometry args={[0.025, 0.025, 0.5, 8]} />
+        <meshStandardMaterial color={PALETTE.woodDark} />
       </mesh>
-      <mesh castShadow position={[0, 1.1, 0]}>
-        <boxGeometry args={[1.1, 0.06, 0.9]} />
-        <meshStandardMaterial color={PALETTE.roofBlue} />
+      <mesh ref={saw} position={[0.35, 0.5, 0.25]} rotation={[0, 0, 0]}>
+        <cylinderGeometry args={[0.26, 0.26, 0.02, 24]} />
+        <meshStandardMaterial color="#e8edf3" metalness={0.95} roughness={0.12} emissive="#aab" emissiveIntensity={0.15} />
       </mesh>
-      <mesh ref={saw} position={[0.65, 0.5, 0]}>
-        <torusGeometry args={[0.22, 0.05, 8, 24]} />
-        <meshStandardMaterial color="#dde2ea" metalness={0.95} roughness={0.15} emissive="#aaa" emissiveIntensity={0.1} />
+      {/* saw teeth ring */}
+      <mesh position={[0.35, 0.5, 0.26]}>
+        <torusGeometry args={[0.26, 0.018, 6, 22]} />
+        <meshStandardMaterial color="#9aa3b2" metalness={0.7} />
       </mesh>
-      {/* Stacked logs */}
+
+      {/* Sawdust pile under blade */}
+      <mesh castShadow position={[0.35, 0.18, 0.05]}>
+        <coneGeometry args={[0.18, 0.12, 12]} />
+        <meshStandardMaterial color="#e8c89a" roughness={1} />
+      </mesh>
+
+      {/* Stacked logs pile (left side) */}
       {[0, 1, 2].map((i) => (
-        <mesh key={i} castShadow position={[-0.55, 0.18 + i * 0.12, 0.35]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.06, 0.06, 0.4, 10]} />
+        <mesh key={`stk-${i}`} castShadow position={[-0.78, 0.22 + i * 0.13, -0.25]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.065, 0.065, 0.5, 12]} />
+          <meshStandardMaterial color={i % 2 ? "#a06b3a" : "#8a5a30"} />
+        </mesh>
+      ))}
+      {/* Second log row offset */}
+      {[0, 1].map((i) => (
+        <mesh key={`stk2-${i}`} castShadow position={[-0.78, 0.485 + i * 0.13, -0.18]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.065, 0.065, 0.5, 12]} />
+          <meshStandardMaterial color="#9a6535" />
+        </mesh>
+      ))}
+
+      {/* Chimney with smoke for sawmill workshop */}
+      <mesh castShadow position={[0.45, 1.15, -0.35]}>
+        <boxGeometry args={[0.16, 0.5, 0.16]} />
+        <meshStandardMaterial color="#7c7c84" roughness={1} />
+      </mesh>
+      <ChimneySmoke position={[0.45, 1.45, -0.35]} />
+
+      {/* Axe leaning against logs (clear identity) */}
+      {stages >= 2 && (
+        <group position={[-0.78, 0.42, 0.15]} rotation={[0, 0.4, -0.25]}>
+          <mesh castShadow>
+            <cylinderGeometry args={[0.022, 0.022, 0.6, 8]} />
+            <meshStandardMaterial color={PALETTE.woodDark} />
+          </mesh>
+          <mesh castShadow position={[0, 0.3, 0]}>
+            <boxGeometry args={[0.16, 0.13, 0.03]} />
+            <meshStandardMaterial color="#cdd3dc" metalness={0.85} roughness={0.2} />
+          </mesh>
+        </group>
+      )}
+    </>
+  );
+}
+
+/* ============================================================
+   QuarryBuilding — Stone pit with terraced walls, wooden mine
+   entrance, minecart on rails, pickaxes, glowing crystal vein.
+   ============================================================ */
+function QuarryBuilding({ stages }: { stages: number }) {
+  const cart = useRef<THREE.Group>(null!);
+  useFrame(({ clock }) => {
+    if (cart.current) {
+      const t = (clock.elapsedTime * 0.4) % 1;
+      cart.current.position.x = -0.45 + t * 0.9;
+    }
+  });
+  return (
+    <>
+      {/* Excavated pit floor */}
+      <mesh receiveShadow position={[0, 0.05, 0.15]}>
+        <cylinderGeometry args={[0.62, 0.7, 0.1, 16]} />
+        <meshStandardMaterial color="#7a7e88" roughness={1} />
+      </mesh>
+
+      {/* Terraced rock walls around back */}
+      {[0, 1, 2].map((i) => {
+        const y = 0.12 + i * 0.18;
+        const r = 0.85 - i * 0.12;
+        return (
+          <mesh key={`tr-${i}`} castShadow position={[0, y, -0.3 - i * 0.05]}>
+            <cylinderGeometry args={[r, r + 0.05, 0.18, 16, 1, false, -Math.PI / 2, Math.PI]} />
+            <meshStandardMaterial color={i === 0 ? "#8a8e98" : i === 1 ? PALETTE.rockLight : "#a8b0c0"} roughness={1} />
+          </mesh>
+        );
+      })}
+
+      {/* Large boulders embedded in walls */}
+      <mesh castShadow position={[-0.45, 0.32, -0.3]}>
+        <dodecahedronGeometry args={[0.22]} />
+        <meshStandardMaterial color="#8a8e98" roughness={1} flatShading />
+      </mesh>
+      <mesh castShadow position={[0.5, 0.38, -0.35]}>
+        <dodecahedronGeometry args={[0.26]} />
+        <meshStandardMaterial color="#9aa3b2" roughness={1} flatShading />
+      </mesh>
+      <mesh castShadow position={[0.18, 0.6, -0.45]}>
+        <dodecahedronGeometry args={[0.2]} />
+        <meshStandardMaterial color="#7a7e88" roughness={1} flatShading />
+      </mesh>
+
+      {/* Mine entrance — wooden frame with dark opening */}
+      <group position={[0, 0.32, -0.15]}>
+        {/* dark opening */}
+        <mesh position={[0, 0, 0]}>
+          <boxGeometry args={[0.34, 0.42, 0.05]} />
+          <meshStandardMaterial color="#0a0a10" />
+        </mesh>
+        {/* wooden frame */}
+        <mesh castShadow position={[-0.2, 0, 0.03]}>
+          <boxGeometry args={[0.06, 0.5, 0.08]} />
+          <meshStandardMaterial color={PALETTE.woodDark} />
+        </mesh>
+        <mesh castShadow position={[0.2, 0, 0.03]}>
+          <boxGeometry args={[0.06, 0.5, 0.08]} />
+          <meshStandardMaterial color={PALETTE.woodDark} />
+        </mesh>
+        <mesh castShadow position={[0, 0.25, 0.03]}>
+          <boxGeometry args={[0.5, 0.07, 0.08]} />
+          <meshStandardMaterial color={PALETTE.woodDark} />
+        </mesh>
+        {/* Lantern above entrance */}
+        <mesh position={[0, 0.32, 0.08]}>
+          <boxGeometry args={[0.08, 0.1, 0.08]} />
+          <meshStandardMaterial color={PALETTE.flowerYellow} emissive="#ffb734" emissiveIntensity={1.2} />
+        </mesh>
+        <pointLight position={[0, 0.32, 0.08]} color="#ffd58a" intensity={0.7} distance={1.4} />
+      </group>
+
+      {/* Rails leading from mine */}
+      {[-0.07, 0.07].map((z, i) => (
+        <mesh key={`rail-${i}`} position={[0, 0.12, 0.15 + z]}>
+          <boxGeometry args={[0.9, 0.015, 0.015]} />
+          <meshStandardMaterial color="#5a5a60" metalness={0.7} roughness={0.4} />
+        </mesh>
+      ))}
+      {/* Wooden ties */}
+      {[-0.35, -0.1, 0.15, 0.4].map((x, i) => (
+        <mesh key={`tie-${i}`} position={[x, 0.105, 0.15]}>
+          <boxGeometry args={[0.06, 0.02, 0.22]} />
           <meshStandardMaterial color={PALETTE.woodDark} />
         </mesh>
       ))}
-      {stages >= 2 && (
-        <mesh castShadow position={[-0.55, 0.5, -0.3]}>
-          <boxGeometry args={[0.3, 0.5, 0.3]} />
-          <meshStandardMaterial color={PALETTE.woodDark} />
-        </mesh>
-      )}
-    </>
-  );
-}
 
-function QuarryBuilding({ stages }: { stages: number }) {
-  return (
-    <>
-      <mesh castShadow position={[0, 0.1, 0]}>
-        <cylinderGeometry args={[0.7, 0.85, 0.2, 12]} />
-        <meshStandardMaterial color={PALETTE.rockDark} />
-      </mesh>
-      <mesh castShadow position={[0.25, 0.45, 0.1]}>
-        <dodecahedronGeometry args={[0.38]} />
-        <meshStandardMaterial color={PALETTE.rockLight} />
-      </mesh>
-      <mesh castShadow position={[-0.3, 0.4, -0.15]}>
-        <dodecahedronGeometry args={[0.32]} />
-        <meshStandardMaterial color={PALETTE.rockLight} />
-      </mesh>
-      <mesh castShadow position={[0, 0.7, -0.05]}>
-        <dodecahedronGeometry args={[0.26]} />
-        <meshStandardMaterial color={PALETTE.crystal} emissive={PALETTE.crystal} emissiveIntensity={0.5} />
-      </mesh>
-      {/* Pickaxe */}
-      <group position={[0.5, 0.6, 0.4]} rotation={[0, 0, -0.6]}>
+      {/* Minecart on rails — full of rocks */}
+      <group ref={cart} position={[-0.45, 0.2, 0.15]}>
         <mesh castShadow>
-          <cylinderGeometry args={[0.03, 0.03, 0.7, 8]} />
+          <boxGeometry args={[0.28, 0.16, 0.22]} />
+          <meshStandardMaterial color="#6b3e1c" />
+        </mesh>
+        {/* metal trim */}
+        <mesh position={[0, 0.06, 0]}>
+          <boxGeometry args={[0.3, 0.025, 0.24]} />
+          <meshStandardMaterial color="#3a3a40" metalness={0.7} />
+        </mesh>
+        {/* rocks inside */}
+        <mesh castShadow position={[-0.05, 0.1, 0]}>
+          <dodecahedronGeometry args={[0.06]} />
+          <meshStandardMaterial color={PALETTE.rockLight} flatShading />
+        </mesh>
+        <mesh castShadow position={[0.06, 0.1, 0.03]}>
+          <dodecahedronGeometry args={[0.05]} />
+          <meshStandardMaterial color="#9aa3b2" flatShading />
+        </mesh>
+        {/* wheels */}
+        {[-0.1, 0.1].map((x, i) =>
+          [-0.11, 0.11].map((z, j) => (
+            <mesh key={`w-${i}-${j}`} position={[x, -0.07, z]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.04, 0.04, 0.02, 10]} />
+              <meshStandardMaterial color="#2a2a2a" metalness={0.5} />
+            </mesh>
+          ))
+        )}
+      </group>
+
+      {/* Crossed pickaxes sign — unmistakable mining icon */}
+      <group position={[0.55, 0.55, 0.35]}>
+        <mesh position={[0, 0, 0]} rotation={[0, 0, 0.6]}>
+          <cylinderGeometry args={[0.022, 0.022, 0.45, 8]} />
           <meshStandardMaterial color={PALETTE.woodDark} />
         </mesh>
-        <mesh castShadow position={[0, 0.35, 0]}>
-          <boxGeometry args={[0.4, 0.06, 0.06]} />
-          <meshStandardMaterial color="#cdd3dc" metalness={0.8} />
+        <mesh position={[0, 0.2, 0]} rotation={[0, 0, 0.6]}>
+          <boxGeometry args={[0.28, 0.05, 0.05]} />
+          <meshStandardMaterial color="#cdd3dc" metalness={0.85} roughness={0.2} />
+        </mesh>
+        <mesh position={[0, 0, 0]} rotation={[0, 0, -0.6]}>
+          <cylinderGeometry args={[0.022, 0.022, 0.45, 8]} />
+          <meshStandardMaterial color={PALETTE.woodDark} />
+        </mesh>
+        <mesh position={[0, 0.2, 0]} rotation={[0, 0, -0.6]}>
+          <boxGeometry args={[0.28, 0.05, 0.05]} />
+          <meshStandardMaterial color="#9aa3b2" metalness={0.85} roughness={0.25} />
         </mesh>
       </group>
+
+      {/* Rock pile beside cart */}
+      <mesh castShadow position={[-0.6, 0.18, 0.45]}>
+        <dodecahedronGeometry args={[0.13]} flatShading />
+        <meshStandardMaterial color={PALETTE.rockLight} flatShading />
+      </mesh>
+      <mesh castShadow position={[-0.45, 0.16, 0.5]}>
+        <dodecahedronGeometry args={[0.1]} />
+        <meshStandardMaterial color="#9aa3b2" flatShading />
+      </mesh>
+
+      {/* Glowing crystal vein deeper in pit */}
       {stages >= 2 && (
-        <mesh castShadow position={[-0.5, 0.55, 0.3]}>
-          <dodecahedronGeometry args={[0.22]} />
-          <meshStandardMaterial color={PALETTE.crystal} emissive={PALETTE.crystal} emissiveIntensity={0.6} />
-        </mesh>
+        <>
+          <mesh castShadow position={[0.3, 0.55, -0.5]} rotation={[0.3, 0.4, 0.2]}>
+            <coneGeometry args={[0.08, 0.28, 6]} />
+            <meshStandardMaterial color={PALETTE.crystal} emissive={PALETTE.crystal} emissiveIntensity={0.9} roughness={0.2} />
+          </mesh>
+          <mesh castShadow position={[0.42, 0.5, -0.48]} rotation={[0.1, -0.3, -0.3]}>
+            <coneGeometry args={[0.06, 0.22, 6]} />
+            <meshStandardMaterial color={PALETTE.crystal} emissive={PALETTE.crystal} emissiveIntensity={0.9} roughness={0.2} />
+          </mesh>
+          <pointLight position={[0.35, 0.6, -0.45]} color={PALETTE.crystal} intensity={0.8} distance={1.6} />
+        </>
       )}
     </>
   );
 }
 
+/* ============================================================
+   WindmillBuilding — Classic Dutch windmill: stone base, tapered
+   white tower with planking & windows, balcony, swiveling cap,
+   four sail blades with lattice, flag, door.
+   ============================================================ */
 function WindmillBuilding() {
   const blades = useRef<THREE.Group>(null!);
-  useFrame((_, dt) => {
+  const flag = useRef<THREE.Mesh>(null!);
+  useFrame(({ clock }, dt) => {
     if (blades.current) blades.current.rotation.z += dt * 1.4;
+    if (flag.current) {
+      const s = 1 + Math.sin(clock.elapsedTime * 4) * 0.08;
+      flag.current.scale.x = s;
+    }
   });
   return (
     <>
-      <mesh castShadow position={[0, 0.1, 0]}>
-        <cylinderGeometry args={[0.55, 0.65, 0.18, 16]} />
-        <meshStandardMaterial color={PALETTE.rockLight} />
+      {/* Stone base ring */}
+      <mesh castShadow receiveShadow position={[0, 0.1, 0]}>
+        <cylinderGeometry args={[0.6, 0.7, 0.2, 16]} />
+        <meshStandardMaterial color="#8a8e98" roughness={1} />
       </mesh>
-      <mesh castShadow position={[0, 0.65, 0]}>
-        <cylinderGeometry args={[0.28, 0.42, 1.1, 16]} />
-        <meshStandardMaterial color="#fff5e0" />
+      {/* Stone block detail */}
+      {Array.from({ length: 8 }).map((_, i) => {
+        const a = (i / 8) * Math.PI * 2;
+        return (
+          <mesh key={`sb-${i}`} position={[Math.cos(a) * 0.66, 0.1, Math.sin(a) * 0.66]}>
+            <boxGeometry args={[0.16, 0.06, 0.02]} />
+            <meshStandardMaterial color="#6c7383" roughness={1} />
+          </mesh>
+        );
+      })}
+
+      {/* Tapered tower with plank texture rings */}
+      <mesh castShadow position={[0, 0.7, 0]}>
+        <cylinderGeometry args={[0.3, 0.48, 1.2, 16]} />
+        <meshStandardMaterial color="#fff5e0" roughness={0.85} />
       </mesh>
-      {/* Diagonal trim */}
-      <mesh position={[0, 0.4, 0.43]} rotation={[0, 0, 0.5]}>
-        <boxGeometry args={[0.6, 0.04, 0.02]} />
+      {/* Plank ring trim */}
+      {[0.3, 0.65, 1.0].map((y, i) => (
+        <mesh key={`pr-${i}`} position={[0, y, 0]}>
+          <torusGeometry args={[0.46 - i * 0.07, 0.015, 6, 24]} />
+          <meshStandardMaterial color={PALETTE.woodDark} />
+        </mesh>
+      ))}
+
+      {/* Door at base */}
+      <mesh position={[0, 0.32, 0.46]}>
+        <boxGeometry args={[0.22, 0.36, 0.03]} />
+        <meshStandardMaterial color="#6b3e1c" />
+      </mesh>
+      <mesh position={[0.07, 0.32, 0.475]}>
+        <sphereGeometry args={[0.018, 8, 6]} />
+        <meshStandardMaterial color={PALETTE.gold} metalness={0.8} />
+      </mesh>
+      {/* Door frame */}
+      <mesh position={[0, 0.5, 0.47]}>
+        <boxGeometry args={[0.26, 0.04, 0.025]} />
         <meshStandardMaterial color={PALETTE.woodDark} />
       </mesh>
-      <mesh position={[0, 0.7, 0.43]} rotation={[0, 0, -0.5]}>
-        <boxGeometry args={[0.6, 0.04, 0.02]} />
+
+      {/* Small round windows */}
+      {[0, 1, 2].map((i) => {
+        const a = (i / 3) * Math.PI * 2 + Math.PI / 4;
+        return (
+          <mesh key={`win-${i}`} position={[Math.cos(a) * 0.36, 0.95, Math.sin(a) * 0.36]} rotation={[0, -a + Math.PI / 2, 0]}>
+            <cylinderGeometry args={[0.06, 0.06, 0.04, 12]} />
+            <meshStandardMaterial color="#fff0a8" emissive="#ffb734" emissiveIntensity={0.7} />
+          </mesh>
+        );
+      })}
+
+      {/* Balcony ring */}
+      <mesh castShadow position={[0, 1.05, 0]}>
+        <torusGeometry args={[0.36, 0.025, 8, 20]} />
         <meshStandardMaterial color={PALETTE.woodDark} />
       </mesh>
-      <mesh castShadow position={[0, 1.3, 0]}>
-        <coneGeometry args={[0.32, 0.42, 12]} />
-        <meshStandardMaterial color={PALETTE.roofRed} />
+      {Array.from({ length: 12 }).map((_, i) => {
+        const a = (i / 12) * Math.PI * 2;
+        return (
+          <mesh key={`bl-${i}`} position={[Math.cos(a) * 0.36, 1.13, Math.sin(a) * 0.36]}>
+            <cylinderGeometry args={[0.012, 0.012, 0.14, 6]} />
+            <meshStandardMaterial color={PALETTE.woodDark} />
+          </mesh>
+        );
+      })}
+      <mesh position={[0, 1.2, 0]}>
+        <torusGeometry args={[0.36, 0.018, 6, 20]} />
+        <meshStandardMaterial color={PALETTE.woodDark} />
       </mesh>
-      <mesh position={[0, 1.56, 0]}>
-        <sphereGeometry args={[0.06, 10, 8]} />
-        <meshStandardMaterial color={PALETTE.gold} metalness={0.7} />
+
+      {/* Conical roof cap */}
+      <mesh castShadow position={[0, 1.42, 0]}>
+        <coneGeometry args={[0.34, 0.45, 16]} />
+        <meshStandardMaterial color={PALETTE.roofRed} roughness={0.75} />
       </mesh>
-      <group ref={blades} position={[0, 1.15, 0.32]}>
+      {/* Spire */}
+      <mesh position={[0, 1.72, 0]}>
+        <cylinderGeometry args={[0.015, 0.015, 0.16, 6]} />
+        <meshStandardMaterial color="#2a2a2a" />
+      </mesh>
+      {/* Flag */}
+      <mesh ref={flag} position={[0.06, 1.78, 0]}>
+        <boxGeometry args={[0.12, 0.07, 0.005]} />
+        <meshStandardMaterial color={PALETTE.flagRed} side={THREE.DoubleSide} />
+      </mesh>
+
+      {/* Sail blade assembly */}
+      <group ref={blades} position={[0, 1.25, 0.4]}>
+        {/* central hub */}
+        <mesh>
+          <cylinderGeometry args={[0.08, 0.08, 0.1, 12]} rotation={[Math.PI / 2, 0, 0]} />
+          <meshStandardMaterial color={PALETTE.woodDark} />
+        </mesh>
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.08, 0.08, 0.1, 12]} />
+          <meshStandardMaterial color={PALETTE.woodDark} />
+        </mesh>
         {[0, 1, 2, 3].map((i) => (
-          <group key={i} rotation={[0, 0, (i * Math.PI) / 2]}>
-            <mesh castShadow position={[0, 0.4, 0]}>
-              <boxGeometry args={[0.1, 0.75, 0.04]} />
-              <meshStandardMaterial color="#ffffff" />
+          <group key={`bl-${i}`} rotation={[0, 0, (i * Math.PI) / 2]}>
+            {/* main spar */}
+            <mesh castShadow position={[0, 0.5, 0]}>
+              <boxGeometry args={[0.05, 0.95, 0.04]} />
+              <meshStandardMaterial color={PALETTE.woodDark} />
             </mesh>
-            <mesh position={[0.08, 0.4, 0.025]}>
-              <boxGeometry args={[0.06, 0.7, 0.005]} />
-              <meshStandardMaterial color={PALETTE.flagRed} />
+            {/* sail canvas */}
+            <mesh castShadow position={[0.12, 0.5, 0.01]}>
+              <boxGeometry args={[0.18, 0.88, 0.008]} />
+              <meshStandardMaterial color="#fafaf0" side={THREE.DoubleSide} roughness={0.95} />
             </mesh>
+            {/* lattice cross supports */}
+            {[-0.3, 0, 0.3].map((y, j) => (
+              <mesh key={`lat-${j}`} position={[0.12, 0.5 + y, 0.02]}>
+                <boxGeometry args={[0.2, 0.012, 0.005]} />
+                <meshStandardMaterial color={PALETTE.woodDark} />
+              </mesh>
+            ))}
           </group>
         ))}
       </group>
@@ -1199,95 +1532,389 @@ function WindmillBuilding() {
   );
 }
 
+/* ============================================================
+   MarketBuilding — Open trade square: tiled plaza, multiple
+   striped awning stalls, produce baskets, hanging coin sign,
+   barrels, scale, customer benches.
+   ============================================================ */
 function MarketBuilding({ stages }: { stages: number }) {
+  const coin = useRef<THREE.Mesh>(null!);
+  useFrame(({ clock }) => {
+    if (coin.current) coin.current.rotation.y = clock.elapsedTime * 1.5;
+  });
   return (
     <>
-      <mesh castShadow position={[0, 0.08, 0]}>
-        <boxGeometry args={[1.3, 0.16, 1.1]} />
-        <meshStandardMaterial color={PALETTE.rockLight} />
+      {/* Tiled stone plaza */}
+      <mesh receiveShadow position={[0, 0.05, 0]}>
+        <boxGeometry args={[1.4, 0.1, 1.2]} />
+        <meshStandardMaterial color="#e8dcc0" roughness={1} />
       </mesh>
-      <mesh castShadow position={[0, 0.4, 0]}>
-        <boxGeometry args={[1.2, 0.55, 1]} />
-        <meshStandardMaterial color="#fff1d0" />
-      </mesh>
-      {/* Striped awning roof */}
-      {[-0.5, -0.25, 0, 0.25, 0.5].map((x, i) => (
-        <mesh key={i} castShadow position={[x, 0.95, 0]} rotation={[0, Math.PI / 4, 0]}>
-          <coneGeometry args={[0.22, 0.4, 4]} />
-          <meshStandardMaterial color={i % 2 ? PALETTE.roofRed : "#ffffff"} />
+      {/* Tile grid lines */}
+      {[-0.35, 0, 0.35].map((x, i) => (
+        <mesh key={`gx-${i}`} position={[x, 0.101, 0]}>
+          <boxGeometry args={[0.02, 0.002, 1.2]} />
+          <meshStandardMaterial color="#b8a878" />
         </mesh>
       ))}
-      <mesh castShadow position={[0, 1.05, 0]}>
-        <boxGeometry args={[1.3, 0.06, 1.1]} />
-        <meshStandardMaterial color={PALETTE.roofRed} />
+      {[-0.3, 0.3].map((z, i) => (
+        <mesh key={`gz-${i}`} position={[0, 0.101, z]}>
+          <boxGeometry args={[1.4, 0.002, 0.02]} />
+          <meshStandardMaterial color="#b8a878" />
+        </mesh>
+      ))}
+
+      {/* Back wooden booth wall */}
+      <mesh castShadow position={[0, 0.45, -0.5]}>
+        <boxGeometry args={[1.3, 0.7, 0.08]} />
+        <meshStandardMaterial color="#a06b3a" roughness={0.9} />
       </mesh>
-      {/* Open counter */}
-      <mesh position={[0, 0.35, 0.52]}>
-        <boxGeometry args={[0.9, 0.1, 0.06]} />
-        <meshStandardMaterial color={PALETTE.woodDark} />
+      {/* Vertical plank seams */}
+      {[-0.55, -0.25, 0.05, 0.35, 0.65].map((x, i) => (
+        <mesh key={`vp-${i}`} position={[x - 0.05, 0.45, -0.455]}>
+          <boxGeometry args={[0.012, 0.7, 0.005]} />
+          <meshStandardMaterial color={PALETTE.woodDark} />
+        </mesh>
+      ))}
+
+      {/* Big counter — front display */}
+      <mesh castShadow position={[0, 0.32, 0.25]}>
+        <boxGeometry args={[1.2, 0.06, 0.45]} />
+        <meshStandardMaterial color="#6b3e1c" />
       </mesh>
-      {/* Produce */}
-      <mesh castShadow position={[-0.3, 0.45, 0.45]}>
-        <sphereGeometry args={[0.07, 12, 10]} />
-        <meshStandardMaterial color="#ff6b3a" />
-      </mesh>
-      <mesh castShadow position={[-0.1, 0.45, 0.45]}>
-        <sphereGeometry args={[0.07, 12, 10]} />
-        <meshStandardMaterial color={PALETTE.flowerYellow} />
-      </mesh>
-      <mesh castShadow position={[0.15, 0.45, 0.45]}>
-        <sphereGeometry args={[0.07, 12, 10]} />
-        <meshStandardMaterial color="#88e066" />
-      </mesh>
-      {stages >= 2 && (
-        <>
-          {[-0.7, 0.7].map((x, i) => (
-            <mesh key={i} position={[x, 0.18, 0.6]}>
-              <boxGeometry args={[0.22, 0.32, 0.22]} />
-              <meshStandardMaterial color={PALETTE.woodDark} />
+      {/* Counter legs */}
+      {[-0.55, 0.55].map((x, i) => (
+        <mesh key={`cl-${i}`} position={[x, 0.18, 0.25]}>
+          <boxGeometry args={[0.08, 0.24, 0.08]} />
+          <meshStandardMaterial color={PALETTE.woodDark} />
+        </mesh>
+      ))}
+
+      {/* RED & WHITE striped awning — the iconic market roof */}
+      <group position={[0, 0.92, 0.15]}>
+        {Array.from({ length: 7 }).map((_, i) => {
+          const x = -0.6 + i * 0.2;
+          return (
+            <mesh key={`aw-${i}`} castShadow position={[x, 0, 0]} rotation={[Math.PI / 8, 0, 0]}>
+              <boxGeometry args={[0.18, 0.04, 0.55]} />
+              <meshStandardMaterial color={i % 2 ? PALETTE.roofRed : "#ffffff"} side={THREE.DoubleSide} roughness={0.85} />
+            </mesh>
+          );
+        })}
+        {/* Scalloped front trim */}
+        {Array.from({ length: 7 }).map((_, i) => {
+          const x = -0.6 + i * 0.2;
+          return (
+            <mesh key={`sc-${i}`} position={[x, -0.1, 0.27]} rotation={[Math.PI / 8, 0, 0]}>
+              <coneGeometry args={[0.08, 0.1, 3]} />
+              <meshStandardMaterial color={i % 2 ? "#ffffff" : PALETTE.roofRed} side={THREE.DoubleSide} />
+            </mesh>
+          );
+        })}
+        {/* Awning ridge pole */}
+        <mesh position={[0, 0.08, -0.22]}>
+          <cylinderGeometry args={[0.025, 0.025, 1.45, 8]} rotation={[0, 0, Math.PI / 2]} />
+          <meshStandardMaterial color={PALETTE.woodDark} />
+        </mesh>
+        <mesh position={[0, 0.08, -0.22]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.025, 0.025, 1.45, 8]} />
+          <meshStandardMaterial color={PALETTE.woodDark} />
+        </mesh>
+      </group>
+
+      {/* Awning support posts */}
+      {[-0.6, 0.6].map((x, i) => (
+        <mesh key={`ap-${i}`} castShadow position={[x, 0.6, 0.4]}>
+          <cylinderGeometry args={[0.035, 0.035, 0.95, 8]} />
+          <meshStandardMaterial color={PALETTE.woodDark} />
+        </mesh>
+      ))}
+
+      {/* Produce baskets on counter — fruit pyramids */}
+      {/* Apple basket */}
+      <group position={[-0.35, 0.4, 0.3]}>
+        <mesh castShadow>
+          <cylinderGeometry args={[0.11, 0.09, 0.08, 12]} />
+          <meshStandardMaterial color="#8a5a30" />
+        </mesh>
+        {[[0, 0.08, 0], [-0.05, 0.08, 0.04], [0.05, 0.08, 0.04], [0, 0.13, 0.02]].map(([x, y, z], i) => (
+          <mesh key={`ap-${i}`} castShadow position={[x as number, y as number, z as number]}>
+            <sphereGeometry args={[0.045, 10, 8]} />
+            <meshStandardMaterial color="#ff4848" />
+          </mesh>
+        ))}
+      </group>
+      {/* Orange basket */}
+      <group position={[0, 0.4, 0.3]}>
+        <mesh castShadow>
+          <cylinderGeometry args={[0.11, 0.09, 0.08, 12]} />
+          <meshStandardMaterial color="#8a5a30" />
+        </mesh>
+        {[[0, 0.08, 0], [-0.05, 0.08, 0.04], [0.05, 0.08, 0.04], [0, 0.13, 0.02]].map(([x, y, z], i) => (
+          <mesh key={`or-${i}`} castShadow position={[x as number, y as number, z as number]}>
+            <sphereGeometry args={[0.045, 10, 8]} />
+            <meshStandardMaterial color="#ff8a2a" />
+          </mesh>
+        ))}
+      </group>
+      {/* Green basket */}
+      <group position={[0.35, 0.4, 0.3]}>
+        <mesh castShadow>
+          <cylinderGeometry args={[0.11, 0.09, 0.08, 12]} />
+          <meshStandardMaterial color="#8a5a30" />
+        </mesh>
+        {[[0, 0.08, 0], [-0.05, 0.08, 0.04], [0.05, 0.08, 0.04], [0, 0.13, 0.02]].map(([x, y, z], i) => (
+          <mesh key={`gr-${i}`} castShadow position={[x as number, y as number, z as number]}>
+            <sphereGeometry args={[0.045, 10, 8]} />
+            <meshStandardMaterial color="#7ada3a" />
+          </mesh>
+        ))}
+      </group>
+
+      {/* Hanging gold-coin sign — explicit "MARKET" identity */}
+      <group position={[0, 0.95, 0.45]}>
+        <mesh>
+          <cylinderGeometry args={[0.005, 0.005, 0.12, 6]} />
+          <meshStandardMaterial color="#2a2a2a" />
+        </mesh>
+        <mesh ref={coin} position={[0, -0.12, 0]}>
+          <cylinderGeometry args={[0.09, 0.09, 0.02, 24]} />
+          <meshStandardMaterial color={PALETTE.gold} emissive={PALETTE.gold} emissiveIntensity={0.4} metalness={0.85} roughness={0.25} />
+        </mesh>
+        <mesh position={[0, -0.12, 0]}>
+          <torusGeometry args={[0.075, 0.008, 6, 18]} />
+          <meshStandardMaterial color="#b8860b" metalness={0.9} roughness={0.3} />
+        </mesh>
+      </group>
+
+      {/* Barrels at side */}
+      {stages >= 1 && (
+        <group position={[-0.62, 0.2, -0.25]}>
+          <mesh castShadow>
+            <cylinderGeometry args={[0.13, 0.13, 0.35, 14]} />
+            <meshStandardMaterial color="#7a4e1e" />
+          </mesh>
+          {[-0.1, 0.1].map((y, i) => (
+            <mesh key={`bh-${i}`} position={[0, y, 0]}>
+              <torusGeometry args={[0.135, 0.012, 6, 16]} />
+              <meshStandardMaterial color="#2a2a2a" metalness={0.6} />
             </mesh>
           ))}
+        </group>
+      )}
+
+      {/* Sacks of grain */}
+      {stages >= 2 && (
+        <>
+          <mesh castShadow position={[0.62, 0.18, -0.25]}>
+            <sphereGeometry args={[0.14, 12, 10]} />
+            <meshStandardMaterial color="#e8d8a8" roughness={1} />
+          </mesh>
+          <mesh castShadow position={[0.62, 0.34, -0.18]}>
+            <sphereGeometry args={[0.12, 12, 10]} />
+            <meshStandardMaterial color="#d8c898" roughness={1} />
+          </mesh>
         </>
       )}
+
+      {/* Lantern hanging on post */}
+      <mesh position={[0.6, 1.05, 0.35]}>
+        <boxGeometry args={[0.08, 0.1, 0.08]} />
+        <meshStandardMaterial color={PALETTE.flowerYellow} emissive="#ffb734" emissiveIntensity={1.1} />
+      </mesh>
+      <pointLight position={[0.6, 1.05, 0.35]} color="#ffd58a" intensity={0.5} distance={1.5} />
     </>
   );
 }
 
+/* ============================================================
+   RefineryBuilding — Alchemy / wizard tower: dark stone base,
+   purple gothic tower with arched windows, swirling potion vat,
+   floating glowing orb, magical runes, conical spired roof.
+   ============================================================ */
 function RefineryBuilding() {
   const orb = useRef<THREE.Mesh>(null!);
+  const orbGroup = useRef<THREE.Group>(null!);
+  const rune = useRef<THREE.Group>(null!);
+  const potion = useRef<THREE.Mesh>(null!);
   useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
     if (orb.current) {
-      const s = 1 + Math.sin(clock.elapsedTime * 2.5) * 0.08;
+      const s = 1 + Math.sin(t * 2.5) * 0.08;
       orb.current.scale.setScalar(s);
     }
+    if (orbGroup.current) orbGroup.current.position.y = 1.55 + Math.sin(t * 1.6) * 0.05;
+    if (rune.current) rune.current.rotation.y = t * 0.6;
+    if (potion.current) potion.current.rotation.y = -t * 0.8;
   });
   return (
     <>
-      <mesh castShadow position={[0, 0.1, 0]}>
-        <cylinderGeometry args={[0.7, 0.8, 0.2, 16]} />
-        <meshStandardMaterial color={PALETTE.rockDark} />
+      {/* Stone base */}
+      <mesh castShadow receiveShadow position={[0, 0.1, 0]}>
+        <cylinderGeometry args={[0.7, 0.82, 0.2, 16]} />
+        <meshStandardMaterial color="#3a3548" roughness={1} />
       </mesh>
-      <mesh castShadow position={[0, 0.5, 0]}>
-        <boxGeometry args={[0.9, 0.8, 0.9]} />
-        <meshStandardMaterial color="#4a3a7a" />
+      {/* Stone block pattern */}
+      {Array.from({ length: 10 }).map((_, i) => {
+        const a = (i / 10) * Math.PI * 2;
+        return (
+          <mesh key={`sb-${i}`} position={[Math.cos(a) * 0.74, 0.1, Math.sin(a) * 0.74]}>
+            <boxGeometry args={[0.14, 0.06, 0.02]} />
+            <meshStandardMaterial color="#2a2535" roughness={1} />
+          </mesh>
+        );
+      })}
+
+      {/* Steps up to door */}
+      <mesh castShadow position={[0, 0.18, 0.55]}>
+        <boxGeometry args={[0.4, 0.08, 0.18]} />
+        <meshStandardMaterial color="#4a4458" />
       </mesh>
-      <mesh castShadow position={[0, 1.05, 0]}>
-        <cylinderGeometry args={[0.28, 0.4, 0.5, 12]} />
-        <meshStandardMaterial color="#7a5aaa" emissive="#5030a0" emissiveIntensity={0.3} />
+      <mesh castShadow position={[0, 0.25, 0.65]}>
+        <boxGeometry args={[0.3, 0.06, 0.15]} />
+        <meshStandardMaterial color="#5a5468" />
       </mesh>
-      <mesh ref={orb} position={[0, 1.55, 0]}>
-        <sphereGeometry args={[0.3, 20, 16]} />
-        <meshPhysicalMaterial
-          color="#c490ff"
-          emissive="#9050ff"
-          emissiveIntensity={1.6}
-          transmission={0.4}
-          thickness={0.5}
-          roughness={0.1}
-        />
+
+      {/* Main tower body — tall hexagonal prism */}
+      <mesh castShadow position={[0, 0.7, 0]}>
+        <cylinderGeometry args={[0.48, 0.55, 0.95, 6]} />
+        <meshStandardMaterial color="#4a3a7a" roughness={0.7} />
       </mesh>
-      <FxSparkles count={20} scale={[1, 1, 1]} position={[0, 1.55, 0]} size={3} speed={1} color="#c0a0ff" />
+      {/* Stone seam rings */}
+      {[0.35, 0.7, 1.05].map((y, i) => (
+        <mesh key={`sr-${i}`} position={[0, y, 0]}>
+          <torusGeometry args={[0.51, 0.012, 6, 6]} />
+          <meshStandardMaterial color="#2a1f4a" />
+        </mesh>
+      ))}
+
+      {/* Gothic arched door */}
+      <group position={[0, 0.5, 0.5]}>
+        <mesh>
+          <boxGeometry args={[0.26, 0.42, 0.04]} />
+          <meshStandardMaterial color="#1a0f30" />
+        </mesh>
+        <mesh position={[0, 0.22, 0]}>
+          <cylinderGeometry args={[0.13, 0.13, 0.04, 12, 1, false, 0, Math.PI]} />
+          <meshStandardMaterial color="#1a0f30" />
+        </mesh>
+        {/* Iron studs */}
+        {[[-0.08, -0.12], [0.08, -0.12], [-0.08, 0.05], [0.08, 0.05]].map(([x, y], i) => (
+          <mesh key={`st-${i}`} position={[x, y, 0.025]}>
+            <sphereGeometry args={[0.018, 8, 6]} />
+            <meshStandardMaterial color="#666" metalness={0.85} />
+          </mesh>
+        ))}
+        {/* glowing keyhole */}
+        <mesh position={[0.08, 0, 0.025]}>
+          <sphereGeometry args={[0.02, 8, 6]} />
+          <meshStandardMaterial color="#c490ff" emissive="#9050ff" emissiveIntensity={1.5} />
+        </mesh>
+      </group>
+
+      {/* Arched glowing windows around tower */}
+      {[0, 1, 2, 3, 4].map((i) => {
+        const a = (i / 5) * Math.PI * 2 + Math.PI / 5;
+        return (
+          <group key={`aw-${i}`} position={[Math.cos(a) * 0.51, 0.95, Math.sin(a) * 0.51]} rotation={[0, -a + Math.PI / 2, 0]}>
+            <mesh>
+              <boxGeometry args={[0.12, 0.22, 0.04]} />
+              <meshStandardMaterial color="#c490ff" emissive="#9050ff" emissiveIntensity={1.2} />
+            </mesh>
+            <mesh position={[0, 0.11, 0]}>
+              <cylinderGeometry args={[0.06, 0.06, 0.04, 10, 1, false, 0, Math.PI]} />
+              <meshStandardMaterial color="#c490ff" emissive="#9050ff" emissiveIntensity={1.2} />
+            </mesh>
+          </group>
+        );
+      })}
+
+      {/* Bubbling potion cauldron on side */}
+      <group position={[-0.7, 0.32, 0.4]}>
+        {/* iron rim */}
+        <mesh castShadow>
+          <cylinderGeometry args={[0.16, 0.13, 0.16, 14]} />
+          <meshStandardMaterial color="#1a1a1a" metalness={0.85} roughness={0.4} />
+        </mesh>
+        {/* rim band */}
+        <mesh position={[0, 0.08, 0]}>
+          <torusGeometry args={[0.16, 0.018, 8, 16]} />
+          <meshStandardMaterial color="#3a3a3a" metalness={0.85} />
+        </mesh>
+        {/* liquid potion */}
+        <mesh ref={potion} position={[0, 0.07, 0]}>
+          <cylinderGeometry args={[0.145, 0.145, 0.02, 14]} />
+          <meshStandardMaterial color="#c490ff" emissive="#9050ff" emissiveIntensity={1.4} />
+        </mesh>
+        {/* legs */}
+        {[0, 1, 2].map((i) => {
+          const a = (i / 3) * Math.PI * 2;
+          return (
+            <mesh key={`lg-${i}`} position={[Math.cos(a) * 0.1, -0.1, Math.sin(a) * 0.1]}>
+              <cylinderGeometry args={[0.015, 0.015, 0.1, 6]} />
+              <meshStandardMaterial color="#1a1a1a" metalness={0.7} />
+            </mesh>
+          );
+        })}
+        <pointLight position={[0, 0.18, 0]} color="#c070ff" intensity={1.2} distance={1.4} />
+      </group>
+
+      {/* Floating rune ring around orb */}
+      <group ref={rune} position={[0, 1.55, 0]}>
+        {[0, 1, 2, 3, 4, 5].map((i) => {
+          const a = (i / 6) * Math.PI * 2;
+          return (
+            <mesh key={`rn-${i}`} position={[Math.cos(a) * 0.45, 0, Math.sin(a) * 0.45]} rotation={[0, -a, 0]}>
+              <boxGeometry args={[0.06, 0.08, 0.01]} />
+              <meshStandardMaterial color="#e0c8ff" emissive="#a070ff" emissiveIntensity={1.3} />
+            </mesh>
+          );
+        })}
+      </group>
+
+      {/* Pedestal under orb */}
+      <mesh castShadow position={[0, 1.25, 0]}>
+        <cylinderGeometry args={[0.25, 0.35, 0.18, 12]} />
+        <meshStandardMaterial color="#3a2a6a" roughness={0.6} />
+      </mesh>
+      <mesh position={[0, 1.36, 0]}>
+        <torusGeometry args={[0.25, 0.015, 6, 16]} />
+        <meshStandardMaterial color={PALETTE.gold} metalness={0.85} roughness={0.3} />
+      </mesh>
+
+      {/* The glowing orb */}
+      <group ref={orbGroup} position={[0, 1.55, 0]}>
+        <mesh ref={orb}>
+          <sphereGeometry args={[0.28, 24, 20]} />
+          <meshPhysicalMaterial
+            color="#c490ff"
+            emissive="#9050ff"
+            emissiveIntensity={1.6}
+            transmission={0.4}
+            thickness={0.5}
+            roughness={0.1}
+          />
+        </mesh>
+      </group>
+
+      {/* Conical spired roof */}
+      <mesh castShadow position={[0, 1.45, 0]}>
+        <coneGeometry args={[0.55, 0.5, 6]} />
+        <meshStandardMaterial color="#2a1f4a" roughness={0.7} />
+      </mesh>
+      {/* Tall spire */}
+      <mesh castShadow position={[0, 1.95, 0]}>
+        <coneGeometry args={[0.08, 0.5, 8]} />
+        <meshStandardMaterial color={PALETTE.gold} metalness={0.85} roughness={0.25} emissive={PALETTE.gold} emissiveIntensity={0.25} />
+      </mesh>
+      {/* Crescent star on top */}
+      <mesh position={[0, 2.25, 0]} rotation={[0, 0, Math.PI / 5]}>
+        <torusGeometry args={[0.06, 0.012, 6, 12, Math.PI * 1.3]} />
+        <meshStandardMaterial color={PALETTE.gold} metalness={0.9} emissive={PALETTE.gold} emissiveIntensity={0.6} />
+      </mesh>
+
+      <FxSparkles count={24} scale={[1, 1, 1]} position={[0, 1.55, 0]} size={3} speed={1} color="#c0a0ff" />
       <pointLight position={[0, 1.55, 0]} color="#b070ff" intensity={2.4} distance={5} />
+      <pointLight position={[0, 0.5, 0.55]} color="#9050ff" intensity={0.5} distance={1.2} />
     </>
   );
 }
