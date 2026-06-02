@@ -960,7 +960,7 @@ function HutBuilding({ stages }: { stages: number }) {
 
       {/* Worker hut roof — simple gabled (двускатная) shape, bright red */}
       <GableRoof
-        baseY={1.05}
+        baseY={0.90}
         width={1.18}
         depth={1.18}
         height={0.62}
@@ -1196,7 +1196,7 @@ function LumberBuilding({ stages }: { stages: number }) {
 
       {/* Sawmill roof — wide wooden pitched roof */}
       <GableRoof
-        baseY={0.95}
+        baseY={0.80}
         width={1.35}
         depth={1.4}
         height={0.55}
