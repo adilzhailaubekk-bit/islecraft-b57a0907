@@ -3417,7 +3417,7 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom, lowPower = fals
       <NoHit>
         {slots.map((pos, i) => {
           if (!state.buildings[i]) return null;
-          return <BuildingSurround key={`bs-${i}`} position={[pos[0], 0.52, pos[1]]} seed={i + 1} />;
+          return <BuildingSurround key={`bs-${i}`} position={[pos[0], 0.52, pos[1]]} seed={i + 1} buildingId={state.buildings[i]!.id} />;
         })}
       </NoHit>
 
