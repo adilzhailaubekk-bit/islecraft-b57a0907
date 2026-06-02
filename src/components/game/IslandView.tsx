@@ -1362,7 +1362,7 @@ function QuarryBuilding({ stages }: { stages: number }) {
 
       {/* Rock pile beside cart */}
       <mesh castShadow position={[-0.6, 0.18, 0.45]}>
-        <dodecahedronGeometry args={[0.13]} flatShading />
+        <dodecahedronGeometry args={[0.13]} />
         <meshStandardMaterial color={PALETTE.rockLight} flatShading />
       </mesh>
       <mesh castShadow position={[-0.45, 0.16, 0.5]}>
