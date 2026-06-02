@@ -2977,7 +2977,7 @@ function WoodStack({ position, rotation = 0 }: { position: [number, number, numb
 
 function StonePile({ position, rotation = 0 }: { position: [number, number, number]; rotation?: number }) {
   const ref = useRef<THREE.Group>(null!);
-  const rotOffsets = useMemo(() => {
+  const rotOffsets = useMemo<[number, number, number]>(() => {
     const rng = mulberry32(Math.floor(position[0] * 100 + position[2] * 10));
     return [rng() * Math.PI, rng() * Math.PI, rng() * Math.PI];
   }, [position]);
