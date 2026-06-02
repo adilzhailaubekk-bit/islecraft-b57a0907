@@ -238,6 +238,12 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
         gold={game.offlineEarnings?.gold ?? 0}
         seconds={game.offlineEarnings?.seconds ?? 0}
       />
+      <SettingsModal
+        open={modal === "settings"}
+        onClose={() => setModal(null)}
+        settings={game.state.settings}
+        onUpdate={game.updateSettings}
+      />
     </div>
   );
 }
