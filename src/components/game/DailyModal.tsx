@@ -351,35 +351,74 @@ function RewardPopup({ reward, onClose }: { reward: { kind: DailyRewardKind; amo
           exit={{ opacity: 0 }}
           onClick={onClose}
         >
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
           <motion.div
-            className="relative bg-gradient-to-br from-amber-200 via-orange-200 to-rose-200 rounded-3xl p-8 text-center border-4 border-white shadow-pop max-w-sm"
-            initial={{ scale: 0.4, rotate: -10 }}
-            animate={{ scale: 1, rotate: 0 }}
+            className="absolute inset-0 bg-gradient-radial from-amber-500/40 via-black/70 to-black/80 backdrop-blur-md"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          />
+          {/* Behind-card sunburst + glow rings live outside the card so they overflow nicely */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <SunburstRays color="#fde68a" />
+            <GlowRings color="rgba(253, 224, 71, 0.55)" />
+            <Confetti />
+          </div>
+          <motion.div
+            className="relative bg-gradient-to-br from-amber-100 via-orange-200 to-rose-200 rounded-3xl p-8 text-center border-4 border-white max-w-sm overflow-hidden"
+            style={{
+              boxShadow:
+                "0 24px 60px -12px rgba(245, 158, 11, 0.65), 0 0 0 6px rgba(255,255,255,0.5), inset 0 2px 0 rgba(255,255,255,0.8)",
+            }}
+            initial={{ scale: 0.3, rotate: -12, opacity: 0 }}
+            animate={{ scale: 1, rotate: 0, opacity: 1 }}
             exit={{ scale: 0.6, opacity: 0 }}
-            transition={{ type: "spring", damping: 16, stiffness: 220 }}
+            transition={{ type: "spring", damping: 14, stiffness: 240 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <Particles />
+            <ShineSweep />
             <motion.div
-              animate={{ scale: [1, 1.15, 1], rotate: [0, 8, -8, 0] }}
-              transition={{ duration: 1.8, repeat: Infinity }}
-              className="text-7xl mb-3 drop-shadow-lg"
+              className="relative inline-block mb-3"
+              animate={{ y: [0, -6, 0] }}
+              transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
             >
-              {kindEmoji(reward.kind)}
+              {/* Inner glow disc */}
+              <motion.div
+                className="absolute inset-0 rounded-full blur-2xl"
+                style={{ background: "radial-gradient(circle, rgba(253,224,71,0.9), transparent 70%)" }}
+                animate={{ scale: [1, 1.25, 1], opacity: [0.7, 1, 0.7] }}
+                transition={{ duration: 1.8, repeat: Infinity }}
+              />
+              <motion.div
+                animate={{ scale: [1, 1.18, 1], rotate: [0, 10, -10, 0] }}
+                transition={{ duration: 1.8, repeat: Infinity }}
+                className="relative text-7xl drop-shadow-[0_6px_8px_rgba(180,83,9,0.5)]"
+              >
+                {kindEmoji(reward.kind)}
+              </motion.div>
             </motion.div>
-            <div className="font-display font-bold text-2xl text-amber-900 mb-1">
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="font-display font-bold text-2xl text-amber-900 mb-1 text-shadow-soft"
+            >
               День {reward.day}!
-            </div>
-            <div className="text-xl font-bold mb-4">
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 8, scale: 0.8 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: 0.35, type: "spring", damping: 12 }}
+              className="text-xl font-extrabold mb-4 text-amber-950"
+            >
               {kindLabel(reward.kind, reward.amount)}
-            </div>
-            <button
+            </motion.div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={onClose}
               className="btn-3d bg-gradient-gold text-amber-900 font-display font-bold py-3 px-8 rounded-2xl"
             >
               Отлично!
-            </button>
+            </motion.button>
           </motion.div>
         </motion.div>
       )}
@@ -398,28 +437,68 @@ function SpinReward({ reward, onClose }: { reward: SpinSegment | null; onClose: 
           exit={{ opacity: 0 }}
           onClick={onClose}
         >
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <SunburstRays color="#ffffff" />
+            <GlowRings color="rgba(255,255,255,0.5)" />
+            <Confetti />
+          </div>
           <motion.div
-            className={`relative bg-gradient-to-br ${reward.color} rounded-3xl p-8 text-center border-4 border-white shadow-pop max-w-sm text-white`}
-            initial={{ scale: 0.4 }}
-            animate={{ scale: 1 }}
+            className={`relative bg-gradient-to-br ${reward.color} rounded-3xl p-8 text-center border-4 border-white max-w-sm text-white overflow-hidden`}
+            style={{
+              boxShadow:
+                "0 24px 60px -12px rgba(0,0,0,0.6), 0 0 0 6px rgba(255,255,255,0.4), inset 0 2px 0 rgba(255,255,255,0.6)",
+            }}
+            initial={{ scale: 0.3, rotate: 8, opacity: 0 }}
+            animate={{ scale: 1, rotate: 0, opacity: 1 }}
             exit={{ scale: 0.6, opacity: 0 }}
-            transition={{ type: "spring", damping: 14 }}
+            transition={{ type: "spring", damping: 13, stiffness: 240 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <Particles />
+            <ShineSweep />
             <motion.div
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ duration: 1.4, repeat: Infinity }}
-              className="text-7xl mb-3 drop-shadow-lg"
+              className="relative inline-block mb-3"
+              animate={{ y: [0, -6, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             >
-              {reward.emoji}
+              <motion.div
+                className="absolute inset-0 rounded-full blur-2xl"
+                style={{ background: "radial-gradient(circle, rgba(255,255,255,0.9), transparent 70%)" }}
+                animate={{ scale: [1, 1.3, 1], opacity: [0.6, 1, 0.6] }}
+                transition={{ duration: 1.6, repeat: Infinity }}
+              />
+              <motion.div
+                animate={{ scale: [1, 1.22, 1], rotate: [0, -8, 8, 0] }}
+                transition={{ duration: 1.6, repeat: Infinity }}
+                className="relative text-7xl drop-shadow-[0_6px_8px_rgba(0,0,0,0.4)]"
+              >
+                {reward.emoji}
+              </motion.div>
             </motion.div>
-            <div className="font-display font-bold text-2xl mb-1 text-shadow-soft">Выпало!</div>
-            <div className="text-xl font-bold mb-4 text-shadow-soft">{reward.label}</div>
-            <button onClick={onClose} className="btn-3d bg-white text-amber-900 font-display font-bold py-3 px-8 rounded-2xl">
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="font-display font-bold text-2xl mb-1 text-shadow-soft"
+            >
+              Выпало!
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.35, type: "spring", damping: 12 }}
+              className="text-xl font-extrabold mb-4 text-shadow-soft"
+            >
+              {reward.label}
+            </motion.div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onClose}
+              className="btn-3d bg-white text-amber-900 font-display font-bold py-3 px-8 rounded-2xl"
+            >
               Забрать
-            </button>
+            </motion.button>
           </motion.div>
         </motion.div>
       )}
@@ -427,14 +506,22 @@ function SpinReward({ reward, onClose }: { reward: SpinSegment | null; onClose: 
   );
 }
 
-function Particles() {
-  // Use a deterministic pattern instead of Math.random() to avoid SSR hydration mismatch.
-  const items = Array.from({ length: 12 }, (_, i) => {
-    const angle = (i / 12) * Math.PI * 2;
+// =================== EFFECTS ===================
+
+const CONFETTI_COLORS = ["#fbbf24", "#f97316", "#ec4899", "#a855f7", "#22d3ee", "#10b981", "#fde047", "#ffffff"];
+
+function Confetti() {
+  // Deterministic confetti burst — avoids SSR hydration mismatch.
+  const items = Array.from({ length: 28 }, (_, i) => {
+    const angle = (i / 28) * Math.PI * 2 + (i % 2) * 0.18;
+    const dist = 140 + (i % 5) * 40;
     return {
-      x: Math.cos(angle) * 80,
-      y: Math.sin(angle) * 80,
-      delay: i * 0.05,
+      x: Math.cos(angle) * dist,
+      y: Math.sin(angle) * dist,
+      rot: (i * 47) % 360,
+      delay: (i % 8) * 0.04,
+      color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+      shape: i % 3,
     };
   });
   return (
@@ -442,13 +529,78 @@ function Particles() {
       {items.map((p, i) => (
         <motion.div
           key={i}
-          className="absolute top-1/2 left-1/2 w-2 h-2 rounded-full bg-yellow-300"
-          initial={{ x: 0, y: 0, opacity: 1, scale: 0.5 }}
-          animate={{ x: p.x, y: p.y, opacity: 0, scale: 1.4 }}
-          transition={{ duration: 1.2, delay: p.delay, repeat: Infinity, repeatDelay: 0.4 }}
+          className="absolute top-1/2 left-1/2"
+          initial={{ x: 0, y: 0, opacity: 1, scale: 0.4, rotate: 0 }}
+          animate={{ x: p.x, y: p.y + 60, opacity: 0, scale: 1.2, rotate: p.rot + 360 }}
+          transition={{ duration: 1.6, delay: p.delay, repeat: Infinity, repeatDelay: 1.2, ease: "easeOut" }}
+          style={{
+            width: p.shape === 0 ? 8 : 10,
+            height: p.shape === 0 ? 14 : 10,
+            borderRadius: p.shape === 1 ? "9999px" : "2px",
+            background: p.color,
+            boxShadow: `0 0 8px ${p.color}`,
+          }}
         />
       ))}
     </div>
+  );
+}
+
+function SunburstRays({ color }: { color: string }) {
+  const rays = Array.from({ length: 12 }, (_, i) => i);
+  return (
+    <motion.div
+      className="absolute w-[520px] h-[520px]"
+      animate={{ rotate: 360 }}
+      transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
+    >
+      {rays.map((i) => (
+        <div
+          key={i}
+          className="absolute top-1/2 left-1/2 origin-bottom"
+          style={{
+            width: 40,
+            height: 260,
+            transform: `translate(-50%, -100%) rotate(${i * 30}deg)`,
+            background: `linear-gradient(to top, ${color}00, ${color}55)`,
+            filter: "blur(2px)",
+            opacity: 0.55,
+          }}
+        />
+      ))}
+    </motion.div>
+  );
+}
+
+function GlowRings({ color }: { color: string }) {
+  return (
+    <>
+      {[0, 0.4, 0.8].map((delay, i) => (
+        <motion.div
+          key={i}
+          className="absolute rounded-full border-2"
+          style={{ borderColor: color, width: 200, height: 200 }}
+          initial={{ scale: 0.4, opacity: 0.9 }}
+          animate={{ scale: 2.2, opacity: 0 }}
+          transition={{ duration: 1.8, delay, repeat: Infinity, ease: "easeOut" }}
+        />
+      ))}
+    </>
+  );
+}
+
+function ShineSweep() {
+  return (
+    <motion.div
+      className="absolute inset-y-0 -left-1/2 w-1/2 pointer-events-none"
+      style={{
+        background:
+          "linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.55) 50%, transparent 70%)",
+      }}
+      initial={{ x: 0 }}
+      animate={{ x: "400%" }}
+      transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 1.4, ease: "easeInOut" }}
+    />
   );
 }
 
