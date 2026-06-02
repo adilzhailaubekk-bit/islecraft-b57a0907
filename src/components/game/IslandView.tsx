@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useRef, useState, type Ref } from "react";
+import { Suspense, createContext, useContext, useEffect, useMemo, useRef, useState, type Ref } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   OrbitControls,
@@ -19,7 +19,21 @@ interface IslandViewProps {
   onPlotClick: (index: number) => void;
   moveMode?: boolean;
   movingFrom?: number | null;
+  lowPower?: boolean;
 }
+
+/* ============================================================
+   Performance gating: skip expensive sparkles on low-power devices.
+   ============================================================ */
+const LowPowerContext = createContext(false);
+
+function FxSparkles(props: React.ComponentProps<typeof Sparkles>) {
+  const low = useContext(LowPowerContext);
+  if (low) return null;
+  return <Sparkles {...props} />;
+}
+
+
 
 /* ============================================================
    Stylized palette — bright, saturated, cartoon-premium feel
