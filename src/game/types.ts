@@ -32,6 +32,8 @@ export interface IslandDef {
   unlockCost: number;
   rateBonus: number; // multiplier on all production
   description: string;
+  goldBonus?: number; // extra multiplier on gold only
+  offlineBonus?: number; // multiplier on offline earnings
 }
 
 export interface BoosterState {
