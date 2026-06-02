@@ -87,11 +87,11 @@ const normalize = (s: GameState): GameState => {
   };
 };
 
-export const buildingCost = (def: BuildingDef, level: number): Partial<Resources> => {
+export const buildingCost = (def: BuildingDef, level: number, costMult = 1): Partial<Resources> => {
   const mult = Math.pow(def.costMultiplier, level);
   const out: Partial<Resources> = {};
   for (const k of Object.keys(def.baseCost) as (keyof Resources)[]) {
-    out[k] = Math.floor((def.baseCost[k] ?? 0) * mult);
+    out[k] = Math.max(1, Math.floor((def.baseCost[k] ?? 0) * mult * costMult));
   }
   return out;
 };
@@ -106,7 +106,9 @@ export const computeRates = (state: GameState): Resources => {
   const island = ISLANDS.find((i) => i.id === state.activeIsland)!;
   const islandMult = island.rateBonus;
   const speed = state.boosters.speedBoostUntil > Date.now() ? 2 : 1;
-  const workerMult = 1 + state.boosters.extraWorkers * 0.05;
+  const bonuses = computePrestigeBonuses(state.prestigeUpgrades);
+  const workerCount = state.boosters.extraWorkers + bonuses.workerBonus;
+  const workerMult = 1 + workerCount * 0.05;
   const goldDouble = state.boosters.doubleIncomeUntil > Date.now() ? 2 : 1;
 
   const raw: Resources = { gold: 0, wood: 0, stone: 0, energy: 0 };
@@ -115,7 +117,9 @@ export const computeRates = (state: GameState): Resources => {
     const def = BUILDINGS.find((d) => d.id === b.id);
     if (!def) continue;
     let r = buildingRate(def, b.level) * islandMult * speed * workerMult;
-    if (def.produces === "gold") r *= goldDouble;
+    if (def.produces === "gold") r *= goldDouble * bonuses.goldMult;
+    else if (def.produces === "wood") r *= bonuses.woodMult;
+    else if (def.produces === "stone") r *= bonuses.stoneMult;
     raw[def.produces] += r;
   }
   // Apply soft cap per resource to prevent early-game wealth explosions.
