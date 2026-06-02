@@ -50,6 +50,7 @@ const initialState = (): GameState => ({
   dailyMissions: [],
   dailyMissionsDate: "",
   dailyCounters: emptyCounters(),
+  settings: defaultSettings(),
 });
 
 // Normalize older save formats
