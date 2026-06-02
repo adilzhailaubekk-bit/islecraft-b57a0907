@@ -244,13 +244,7 @@ function IslandBase({ grassTint }: { grassTint: string }) {
         <cylinderGeometry args={[7.1, 7.4, 0.12, 80]} />
         <meshStandardMaterial color={PALETTE.grassDeep} roughness={0.9} />
       </mesh>
-      {/* Rocky cliff accents around the shoreline */}
-      {rocks.map((r, i) => (
-        <mesh key={i} position={r.pos} scale={r.scale} rotation={[0, r.rot, 0]} castShadow receiveShadow>
-          <dodecahedronGeometry args={[0.55, 0]} />
-          <meshStandardMaterial color={PALETTE.rockLight} roughness={0.95} />
-        </mesh>
-      ))}
+      {/* Rocky cliff accents removed for cleaner look */}
     </group>
   );
 }
