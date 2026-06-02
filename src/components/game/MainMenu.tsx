@@ -327,6 +327,9 @@ export function MainMenu({
         style={{ background: "radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.35) 100%)" }}
       />
 
+      {/* === AUTH CHIP (top-right) === */}
+      <AuthChip />
+
       {/* === FOREGROUND UI === */}
       <div className="relative z-10 h-full w-full flex flex-col items-center justify-between py-6 sm:py-10 px-4">
         {/* Logo */}
