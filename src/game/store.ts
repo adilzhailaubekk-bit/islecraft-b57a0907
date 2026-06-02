@@ -383,7 +383,7 @@ export function useGameStore() {
       if (!def) return p;
       const existingIdx = p.buildings.findIndex((b) => b && b.id === buildingId);
       const level = existingIdx >= 0 ? p.buildings[existingIdx]!.level : 0;
-      const cost = buildingCost(def, level);
+      const cost = buildingCost(def, level, computePrestigeBonuses(p.prestigeUpgrades).buildCostMult);
       if (!canAfford(p.resources, cost)) return p;
       const newRes = { ...p.resources };
       for (const k of Object.keys(cost) as (keyof Resources)[]) {
