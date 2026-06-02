@@ -643,6 +643,13 @@ export function useGameStore() {
     offlineEarnings.current = null;
   }, []);
 
+  const updateSettings = useCallback((patch: Partial<GameState["settings"]>) => {
+    setState((p) => ({
+      ...p,
+      settings: { ...p.settings, ...patch },
+    }));
+  }, []);
+
   return {
     state,
     rates: computeRates(state),
