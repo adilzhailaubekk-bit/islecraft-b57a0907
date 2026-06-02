@@ -48,7 +48,15 @@ function IndexPage() {
             }}
             onShop={() => enter("shop")}
             onDaily={() => enter("daily")}
+            onQuests={() => enter("daily")}
+            onAchievements={() => enter("achievements")}
             onLeaderboards={() => enter("achievements")}
+            onPrestige={() => enter("prestige")}
+            onEvents={() =>
+              toast("События скоро будут доступны 🎉", {
+                description: "Сезонные ивенты в разработке.",
+              })
+            }
             onSettings={() =>
               toast("Настройки скоро будут доступны ⚙", {
                 description: "В разработке: звук, графика, язык.",
