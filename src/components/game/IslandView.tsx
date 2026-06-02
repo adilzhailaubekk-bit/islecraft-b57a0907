@@ -3016,6 +3016,8 @@ function StonePile({ position, rotation = 0 }: { position: [number, number, numb
     </group>
   );
 }
+
+function PathSegment({
   position,
   rotation = 0,
   length = 1,
