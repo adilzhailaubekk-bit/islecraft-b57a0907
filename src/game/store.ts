@@ -63,6 +63,7 @@ const initialState = (): GameState => ({
   prestigeCount: 0,
   prestigeUpgrades: {},
   prestigeAchievements: [],
+  islandStates: {},
 });
 
 // Normalize older save formats
