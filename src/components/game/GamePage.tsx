@@ -138,8 +138,8 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
       </div>
 
       {/* BOTTOM ACTION DOCK */}
-      <div className="relative z-10 p-2 sm:p-4">
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl border-2 border-white shadow-pop p-2 sm:p-3 flex gap-1 sm:gap-2 max-w-3xl mx-auto">
+      <div className="relative z-10 p-3 sm:p-5">
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl border-2 border-white shadow-pop p-2 sm:p-4 flex gap-2 sm:gap-3 max-w-3xl mx-auto">
           {ACTIONS.map((a) => {
             const notif =
               a.id === "daily" ? (dailyTotalBadge > 0 ? String(dailyTotalBadge) : null) :
@@ -151,15 +151,15 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
                 whileHover={{ y: -4 }}
                 whileTap={{ scale: 0.94 }}
                 onClick={() => setModal(a.id)}
-                className={`btn-3d relative flex-1 bg-gradient-to-br ${a.gradient} text-white rounded-2xl py-3 px-2 flex flex-col items-center gap-1 font-display font-bold`}
+                className={`btn-3d relative flex-1 bg-gradient-to-br ${a.gradient} text-white rounded-2xl py-4 sm:py-5 px-2 sm:px-3 flex flex-col items-center gap-1.5 sm:gap-2 font-display font-bold`}
               >
-                <span className="text-2xl sm:text-3xl drop-shadow">{a.emoji}</span>
-                <span className="text-[10px] sm:text-xs text-shadow-soft">{a.label}</span>
+                <span className="text-3xl sm:text-4xl drop-shadow">{a.emoji}</span>
+                <span className="text-xs sm:text-sm text-shadow-soft leading-tight">{a.label}</span>
                 {notif && (
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center border-2 border-white shadow"
+                    className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-xs font-bold rounded-full min-w-[22px] h-[22px] px-1 flex items-center justify-center border-2 border-white shadow"
                   >
                     {notif}
                   </motion.span>
