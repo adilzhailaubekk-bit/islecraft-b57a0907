@@ -117,8 +117,10 @@ export const computeRates = (state: GameState): Resources => {
     const def = BUILDINGS.find((d) => d.id === b.id);
     if (!def) continue;
     let r = buildingRate(def, b.level) * islandMult * speed * workerMult;
-    if (def.produces === "gold") r *= goldDouble * bonuses.goldMult;
-    else if (def.produces === "wood") r *= bonuses.woodMult;
+    if (def.produces === "gold") {
+      r *= goldDouble * bonuses.goldMult;
+      if (island.goldBonus) r *= island.goldBonus;
+    } else if (def.produces === "wood") r *= bonuses.woodMult;
     else if (def.produces === "stone") r *= bonuses.stoneMult;
     raw[def.produces] += r;
   }
@@ -203,7 +205,11 @@ export function useGameStore() {
     const elapsed = Math.min((now - s.lastTick) / 1000, 60 * 60 * 4);
     if (elapsed > 30 && s.buildings.some(Boolean)) {
       const rates = computeRates(s);
-      const offlineMult = 0.25 * computePrestigeBonuses(s.prestigeUpgrades).offlineMult;
+      const island = ISLANDS.find((i) => i.id === s.activeIsland)!;
+      const offlineMult =
+        0.25 *
+        computePrestigeBonuses(s.prestigeUpgrades).offlineMult *
+        (island.offlineBonus ?? 1);
       const earned: Resources = {
         gold: rates.gold * elapsed * offlineMult,
         wood: rates.wood * elapsed * offlineMult,
