@@ -669,5 +669,6 @@ export function useGameStore() {
     claimMission,
     offlineEarnings: offlineEarnings.current,
     resetOfflineNotice,
+    updateSettings,
   };
 }
