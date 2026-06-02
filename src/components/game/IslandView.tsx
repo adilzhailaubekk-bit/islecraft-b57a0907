@@ -1498,8 +1498,8 @@ function WindmillBuilding() {
       {/* Sail blade assembly */}
       <group ref={blades} position={[0, 1.25, 0.4]}>
         {/* central hub */}
-        <mesh>
-          <cylinderGeometry args={[0.08, 0.08, 0.1, 12]} rotation={[Math.PI / 2, 0, 0]} />
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.08, 0.08, 0.1, 12]} />
           <meshStandardMaterial color={PALETTE.woodDark} />
         </mesh>
         <mesh rotation={[Math.PI / 2, 0, 0]}>
