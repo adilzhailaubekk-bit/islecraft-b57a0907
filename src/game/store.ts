@@ -203,7 +203,7 @@ export function useGameStore() {
     const elapsed = Math.min((now - s.lastTick) / 1000, 60 * 60 * 4);
     if (elapsed > 30 && s.buildings.some(Boolean)) {
       const rates = computeRates(s);
-      const offlineMult = 0.25; // offline earns 25% of online rate
+      const offlineMult = 0.25 * computePrestigeBonuses(s.prestigeUpgrades).offlineMult;
       const earned: Resources = {
         gold: rates.gold * elapsed * offlineMult,
         wood: rates.wood * elapsed * offlineMult,
