@@ -288,7 +288,7 @@ export function useGameStore() {
         await supabase
           .from("profiles")
           .update({
-            game_state: s as unknown as Record<string, unknown>,
+            game_state: s as never,
             gold: Math.floor(s.resources.gold),
             level: s.level,
             xp: Math.floor(s.xp),
