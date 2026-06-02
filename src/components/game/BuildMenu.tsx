@@ -73,7 +73,7 @@ export function BuildMenu({ open, onClose, plotIndex, state, onBuild, onUpgrade 
               whileTap={unlocked ? { scale: 0.97 } : {}}
               onClick={() => {
                 if (!unlocked || !afford) return;
-                onBuild(def.id);
+                onBuild(def.id, plotIndex);
                 onClose();
               }}
               disabled={!unlocked || !afford}
