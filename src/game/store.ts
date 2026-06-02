@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { BuildingDef, BuildingState, DailyMission, GameState, Resources } from "./types";
+import { defaultSettings } from "./types";
 import {
   BUILDINGS,
   ISLANDS,
