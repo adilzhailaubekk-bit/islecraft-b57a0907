@@ -9,7 +9,7 @@ import { Toaster } from "@/components/ui/sonner";
 const STORAGE_KEY = "island-tycoon-save-v1";
 
 type Screen = "menu" | "game";
-type InitialModal = "shop" | "daily" | "achievements" | null;
+type InitialModal = "shop" | "daily" | "achievements" | "prestige" | null;
 
 function IndexPage() {
   const [screen, setScreen] = useState<Screen>("menu");
@@ -48,7 +48,15 @@ function IndexPage() {
             }}
             onShop={() => enter("shop")}
             onDaily={() => enter("daily")}
+            onQuests={() => enter("daily")}
+            onAchievements={() => enter("achievements")}
             onLeaderboards={() => enter("achievements")}
+            onPrestige={() => enter("prestige")}
+            onEvents={() =>
+              toast("События скоро будут доступны 🎉", {
+                description: "Сезонные ивенты в разработке.",
+              })
+            }
             onSettings={() =>
               toast("Настройки скоро будут доступны ⚙", {
                 description: "В разработке: звук, графика, язык.",
