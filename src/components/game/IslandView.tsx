@@ -3083,23 +3083,58 @@ function PathSegment({
   );
 }
 
-function BuildingSurround({ position, seed }: { position: [number, number, number]; seed: number }) {
+function BuildingSurround({ position, seed, buildingId }: { position: [number, number, number]; seed: number; buildingId?: string }) {
   const rng = useMemo(() => mulberry32(seed * 97 + 13), [seed]);
   const props = useMemo(() => {
-    const items: { kind: "barrel" | "crate" | "tuft" | "flower"; offset: [number, number]; rot: number }[] = [];
-    const n = 3 + Math.floor(rng() * 2);
-    for (let i = 0; i < n; i++) {
+    const items: { kind: "barrel" | "crate" | "tuft" | "flower" | "gold" | "wood" | "stone"; offset: [number, number]; rot: number }[] = [];
+    // Resource-specific models based on building type
+    const isGold = buildingId === "hut" || buildingId === "market" || buildingId === "refinery";
+    const isWood = buildingId === "lumber";
+    const isStone = buildingId === "quarry";
+    if (isGold) {
+      const a = rng() * Math.PI * 2;
+      const r = 0.9 + rng() * 0.3;
+      items.push({ kind: "gold", offset: [Math.cos(a) * r, Math.sin(a) * r], rot: rng() * Math.PI });
+    }
+    if (isWood) {
+      const a = rng() * Math.PI * 2;
+      const r = 0.85 + rng() * 0.35;
+      items.push({ kind: "wood", offset: [Math.cos(a) * r, Math.sin(a) * r], rot: rng() * Math.PI });
+      // Second wood stack occasionally
+      if (rng() > 0.4) {
+        const a2 = a + 1.2;
+        const r2 = 0.9 + rng() * 0.3;
+        items.push({ kind: "wood", offset: [Math.cos(a2) * r2, Math.sin(a2) * r2], rot: rng() * Math.PI });
+      }
+    }
+    if (isStone) {
+      const a = rng() * Math.PI * 2;
+      const r = 0.85 + rng() * 0.35;
+      items.push({ kind: "stone", offset: [Math.cos(a) * r, Math.sin(a) * r], rot: rng() * Math.PI });
+      // Extra stone pile for quarries
+      if (rng() > 0.3) {
+        const a2 = a + 1.8;
+        const r2 = 0.9 + rng() * 0.3;
+        items.push({ kind: "stone", offset: [Math.cos(a2) * r2, Math.sin(a2) * r2], rot: rng() * Math.PI });
+      }
+    }
+    // Generic decor (fewer when resource models are present)
+    const genericCount = (isGold || isWood || isStone) ? 1 + Math.floor(rng() * 2) : 2 + Math.floor(rng() * 2);
+    for (let i = 0; i < genericCount; i++) {
       const a = rng() * Math.PI * 2;
       const r = 0.85 + rng() * 0.35;
       const kind = (["barrel", "crate", "tuft", "flower"] as const)[Math.floor(rng() * 4)];
       items.push({ kind, offset: [Math.cos(a) * r, Math.sin(a) * r], rot: rng() * Math.PI });
     }
     return items;
-  }, [rng]);
+  }, [rng, buildingId]);
   return (
     <group position={position}>
       {props.map((p, i) => {
         const pos: [number, number, number] = [p.offset[0], 0, p.offset[1]];
+        if (p.kind === "gold") return <GoldPile key={i} position={pos} rotation={p.rot} />;
+        if (p.kind === "wood") return <WoodStack key={i} position={pos} rotation={p.rot} />;
+        if (p.kind === "stone") return <StonePile key={i} position={pos} rotation={p.rot} />;
         if (p.kind === "barrel") return <Barrel key={i} position={pos} />;
         if (p.kind === "crate") return <Crate key={i} position={pos} rotation={p.rot} />;
         if (p.kind === "tuft") return <GrassTuft key={i} position={pos} tint={PALETTE.grassMid} />;
