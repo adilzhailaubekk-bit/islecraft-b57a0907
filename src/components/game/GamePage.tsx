@@ -148,6 +148,7 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
             const notif =
               a.id === "daily" ? (dailyTotalBadge > 0 ? String(dailyTotalBadge) : null) :
               a.id === "achievements" ? (claimableAchievements > 0 ? String(claimableAchievements) : null) :
+              a.id === "prestige" ? (canPrestige(game.state) ? "!" : null) :
               null;
             return (
               <motion.button
