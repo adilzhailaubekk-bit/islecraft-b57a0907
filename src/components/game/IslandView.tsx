@@ -2676,29 +2676,51 @@ export function IslandView({ state, onPlotClick, moveMode, movingFrom }: IslandV
   useEffect(() => setMounted(true), []);
   const island = ISLANDS.find((i) => i.id === state.activeIsland)!;
 
-  // Detect low-power devices and tune renderer accordingly
-  const lowPower = useMemo(() => {
+  // Auto-detect low-power devices (more aggressive than before).
+  const autoLow = useMemo(() => {
     if (typeof navigator === "undefined") return false;
     const cores = (navigator as Navigator & { hardwareConcurrency?: number }).hardwareConcurrency ?? 8;
     const mem = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8;
     const mobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-    return cores <= 4 || mem <= 4 || mobile;
+    const narrow = typeof window !== "undefined" && window.innerWidth < 900;
+    return mobile || narrow || cores <= 6 || mem <= 4;
   }, []);
+
+  // User-controlled quality override stored in localStorage. Cycles auto → high → low.
+  type Quality = "auto" | "high" | "low";
+  const [quality, setQuality] = useState<Quality>("auto");
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = window.localStorage.getItem("gfx-quality") as Quality | null;
+    if (saved === "auto" || saved === "high" || saved === "low") setQuality(saved);
+  }, []);
+  const cycleQuality = () => {
+    const next: Quality = quality === "auto" ? "high" : quality === "high" ? "low" : "auto";
+    setQuality(next);
+    if (typeof window !== "undefined") window.localStorage.setItem("gfx-quality", next);
+  };
+
+  const lowPower = quality === "low" ? true : quality === "high" ? false : autoLow;
+  const qualityLabel = quality === "auto" ? `Авто (${lowPower ? "Низк." : "Выс."})` : quality === "high" ? "Высокое" : "Низкое";
+  const qualityEmoji = lowPower ? "🌱" : "✨";
 
   return (
     <div className="relative w-full h-full overflow-hidden rounded-3xl bg-gradient-sky">
       {mounted && (
         <Canvas
+          key={lowPower ? "low" : "high"}
           shadows={false}
-          dpr={lowPower ? [1, 1] : [1, 1.5]}
+          dpr={lowPower ? 1 : [1, 1.25]}
           camera={{ position: [26, 22, 26], fov: 45 }}
           gl={{ antialias: !lowPower, alpha: false, powerPreference: "high-performance", toneMappingExposure: 1.1, stencil: false, depth: true }}
-          performance={{ min: 0.5 }}
+          performance={{ min: 0.4 }}
           frameloop="always"
         >
           <Suspense fallback={null}>
-            <IslandScene state={state} onPlotClick={onPlotClick} moveMode={moveMode} movingFrom={movingFrom} />
-            <CameraRig />
+            <LowPowerContext.Provider value={lowPower}>
+              <IslandScene state={state} onPlotClick={onPlotClick} moveMode={moveMode} movingFrom={movingFrom} lowPower={lowPower} />
+              <CameraRig />
+            </LowPowerContext.Provider>
           </Suspense>
         </Canvas>
       )}
@@ -2708,6 +2730,16 @@ export function IslandView({ state, onPlotClick, moveMode, movingFrom }: IslandV
           {island.emoji} {island.name} · ×{island.rateBonus}
         </span>
       </div>
+
+      <button
+        type="button"
+        onClick={cycleQuality}
+        title="Качество графики"
+        className="absolute top-3 right-3 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full shadow-card border-2 border-white text-xs font-display font-bold hover:bg-white transition-colors"
+      >
+        {qualityEmoji} {qualityLabel}
+      </button>
+
 
       <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/40 text-white text-[11px] px-3 py-1 rounded-full pointer-events-none backdrop-blur">
         Перетаскивайте — вращение · колесо/щипок — масштаб
