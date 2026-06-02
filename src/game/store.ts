@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { BuildingDef, BuildingState, DailyMission, GameState, Resources } from "./types";
+import { defaultSettings } from "./types";
 import {
   BUILDINGS,
   ISLANDS,
@@ -49,6 +50,7 @@ const initialState = (): GameState => ({
   dailyMissions: [],
   dailyMissionsDate: "",
   dailyCounters: emptyCounters(),
+  settings: defaultSettings(),
 });
 
 // Normalize older save formats
@@ -65,6 +67,7 @@ const normalize = (s: GameState): GameState => {
     dailyMissions: Array.isArray(s.dailyMissions) ? s.dailyMissions : [],
     dailyMissionsDate: s.dailyMissionsDate ?? "",
     dailyCounters: s.dailyCounters ?? emptyCounters(),
+    settings: s.settings ?? defaultSettings(),
   };
 };
 
@@ -640,6 +643,13 @@ export function useGameStore() {
     offlineEarnings.current = null;
   }, []);
 
+  const updateSettings = useCallback((patch: Partial<GameState["settings"]>) => {
+    setState((p) => ({
+      ...p,
+      settings: { ...p.settings, ...patch },
+    }));
+  }, []);
+
   return {
     state,
     rates: computeRates(state),
@@ -659,5 +669,6 @@ export function useGameStore() {
     claimMission,
     offlineEarnings: offlineEarnings.current,
     resetOfflineNotice,
+    updateSettings,
   };
 }

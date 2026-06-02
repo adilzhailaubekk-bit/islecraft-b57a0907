@@ -79,6 +79,22 @@ export interface DailyCounters {
   goldSpent: number;
 }
 
+export interface GameSettings {
+  graphics: {
+    quality: "low" | "medium" | "high";
+    particles: boolean;
+    animations: boolean;
+  };
+}
+
+export const defaultSettings = (): GameSettings => ({
+  graphics: {
+    quality: "high",
+    particles: true,
+    animations: true,
+  },
+});
+
 export interface GameState {
   resources: Resources;
   buildings: (BuildingState | null)[]; // sparse, indexed by plot slot
@@ -100,4 +116,5 @@ export interface GameState {
   dailyMissions: DailyMission[];
   dailyMissionsDate: string;
   dailyCounters: DailyCounters;
+  settings: GameSettings;
 }
