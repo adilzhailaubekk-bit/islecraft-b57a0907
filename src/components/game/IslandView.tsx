@@ -958,34 +958,19 @@ function HutBuilding({ stages }: { stages: number }) {
         </mesh>
       ))}
 
-      {/* Roof — triangular prism (pitched) */}
-      <group position={[0, 1.45, 0]}>
-        {/* Triangular gable ends */}
-        <mesh castShadow position={[0, 0.3, 0.625]} rotation={[Math.PI / 2, Math.PI / 6, 0]}>
-          <cylinderGeometry args={[0.72, 0.72, 0.04, 3]} />
-          <meshStandardMaterial color="#caa370" roughness={0.9} />
-        </mesh>
-        <mesh castShadow position={[0, 0.3, -0.625]} rotation={[Math.PI / 2, Math.PI / 6, 0]}>
-          <cylinderGeometry args={[0.72, 0.72, 0.04, 3]} />
-          <meshStandardMaterial color="#caa370" roughness={0.9} />
-        </mesh>
+      {/* Worker hut roof — simple gabled (двускатная) shape, bright red */}
+      <GableRoof
+        baseY={1.05}
+        width={1.18}
+        depth={1.18}
+        height={0.62}
+        color={PALETTE.roofRed}
+        ridgeColor="#7a2020"
+        gableColor="#e8c08a"
+        overhang={0.1}
+        thickness={0.06}
+      />
 
-        {/* Two pitched thatched slopes */}
-        <mesh castShadow position={[-0.31, 0.3, 0]} rotation={[0, 0, Math.PI / 6]}>
-          <boxGeometry args={[0.08, 0.72, 1.3]} />
-          <meshStandardMaterial color="#caa050" roughness={1} />
-        </mesh>
-        <mesh castShadow position={[0.31, 0.3, 0]} rotation={[0, 0, -Math.PI / 6]}>
-          <boxGeometry args={[0.08, 0.72, 1.3]} />
-          <meshStandardMaterial color="#caa050" roughness={1} />
-        </mesh>
-
-        {/* Ridge cap along the top */}
-        <mesh castShadow position={[0, 0.65, 0]}>
-          <boxGeometry args={[0.1, 0.06, 1.32]} />
-          <meshStandardMaterial color="#7a4e1e" roughness={0.95} />
-        </mesh>
-      </group>
 
 
       {/* Door frame + door with planks */}
