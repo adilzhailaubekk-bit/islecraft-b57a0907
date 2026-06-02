@@ -67,6 +67,7 @@ const normalize = (s: GameState): GameState => {
     dailyMissions: Array.isArray(s.dailyMissions) ? s.dailyMissions : [],
     dailyMissionsDate: s.dailyMissionsDate ?? "",
     dailyCounters: s.dailyCounters ?? emptyCounters(),
+    settings: s.settings ?? defaultSettings(),
   };
 };
 
