@@ -298,7 +298,7 @@ export function MainMenu({
         initial={{ y: -30, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: [0.2, 0.9, 0.3, 1] }}
-        className="absolute top-3 left-3 right-3 sm:top-5 sm:left-5 sm:right-5 z-30 flex items-center gap-3"
+        className="absolute top-[max(0.75rem,env(safe-area-inset-top))] left-2 right-2 sm:top-5 sm:left-5 sm:right-5 z-30 flex items-center gap-1.5 sm:gap-3"
       >
         <ProfileChip snap={snap} />
 
@@ -357,7 +357,7 @@ export function MainMenu({
         initial={{ x: -60, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.3 }}
-        className="absolute left-3 sm:left-5 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-2"
+        className="absolute left-2 sm:left-5 top-[42%] sm:top-1/2 -translate-y-1/2 z-30 flex flex-col gap-1.5 sm:gap-2"
       >
         {sideButtons.map((b, i) => (
           <motion.button
@@ -369,13 +369,12 @@ export function MainMenu({
             whileTap={{ scale: 0.94 }}
             onClick={b.onClick}
             title={b.label}
-            className="group relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border border-white/25 backdrop-blur-xl bg-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] flex items-center justify-center overflow-hidden"
+            className="group relative w-10 h-10 sm:w-14 sm:h-14 rounded-2xl border border-white/25 backdrop-blur-xl bg-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] flex items-center justify-center overflow-hidden"
           >
             <div className={`absolute inset-0 bg-gradient-to-br ${b.color} opacity-70 group-hover:opacity-100 transition-opacity`} />
-            <b.icon className="relative w-5 h-5 sm:w-6 sm:h-6 drop-shadow" />
+            <b.icon className="relative w-4 h-4 sm:w-6 sm:h-6 drop-shadow" />
             <div className="absolute inset-0 ring-1 ring-inset ring-white/20 rounded-2xl" />
-            {/* label tooltip */}
-            <span className="absolute left-full ml-2 px-2.5 py-1 text-[11px] font-bold rounded-md bg-black/70 backdrop-blur whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none">
+            <span className="absolute left-full ml-2 px-2.5 py-1 text-[11px] font-bold rounded-md bg-black/70 backdrop-blur whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none hidden sm:block">
               {b.label}
             </span>
           </motion.button>
@@ -547,10 +546,10 @@ function ProfileChip({ snap }: { snap: SaveSnap | null }) {
           {level}
         </div>
       </div>
-      <div className="flex flex-col min-w-0">
-        <div className="text-xs font-extrabold truncate max-w-[120px] leading-tight">{name}</div>
+      <div className="hidden xs:flex flex-col min-w-0 sm:flex">
+        <div className="text-xs font-extrabold truncate max-w-[100px] sm:max-w-[120px] leading-tight">{name}</div>
         <div className="flex items-center gap-1.5">
-          <div className="w-24 h-1.5 bg-black/40 rounded-full overflow-hidden">
+          <div className="w-16 sm:w-24 h-1.5 bg-black/40 rounded-full overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${xpPct}%` }}
