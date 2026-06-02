@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import GamePage from "@/components/game/GamePage";
 import { MainMenu } from "@/components/game/MainMenu";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 
-const STORAGE_KEY = "island-tycoon-save-v1";
+const STORAGE_KEY = "island-tycoon-save-v2";
 
 type Screen = "menu" | "game";
 type InitialModal = "shop" | "daily" | "achievements" | "prestige" | null;
@@ -14,13 +14,19 @@ type InitialModal = "shop" | "daily" | "achievements" | "prestige" | null;
 function IndexPage() {
   const [screen, setScreen] = useState<Screen>("menu");
   const [initialModal, setInitialModal] = useState<InitialModal>(null);
-  const hasSave =
-    typeof window !== "undefined" && !!localStorage.getItem(STORAGE_KEY);
+  // Start as false on server + first client render to avoid hydration mismatch,
+  // then sync from localStorage after mount.
+  const [hasSave, setHasSave] = useState(false);
+  useEffect(() => {
+    setHasSave(!!localStorage.getItem(STORAGE_KEY));
+  }, []);
 
   const enter = (modal: InitialModal = null) => {
     setInitialModal(modal);
     setScreen("game");
   };
+
+
 
   return (
     <>
