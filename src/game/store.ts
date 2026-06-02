@@ -17,6 +17,14 @@ import {
   type DailyRewardKind,
   type SpinSegment,
 } from "./data";
+import {
+  PRESTIGE_UPGRADES,
+  PRESTIGE_ACHIEVEMENTS,
+  prestigeUpgradeCost,
+  calcPrestigeTokens,
+  computePrestigeBonuses,
+  canPrestige,
+} from "./prestige";
 
 const STORAGE_KEY = "island-tycoon-save-v2";
 
@@ -51,6 +59,10 @@ const initialState = (): GameState => ({
   dailyMissionsDate: "",
   dailyCounters: emptyCounters(),
   settings: defaultSettings(),
+  prestigeTokens: 0,
+  prestigeCount: 0,
+  prestigeUpgrades: {},
+  prestigeAchievements: [],
 });
 
 // Normalize older save formats
@@ -68,14 +80,18 @@ const normalize = (s: GameState): GameState => {
     dailyMissionsDate: s.dailyMissionsDate ?? "",
     dailyCounters: s.dailyCounters ?? emptyCounters(),
     settings: s.settings ?? defaultSettings(),
+    prestigeTokens: s.prestigeTokens ?? 0,
+    prestigeCount: s.prestigeCount ?? 0,
+    prestigeUpgrades: s.prestigeUpgrades && typeof s.prestigeUpgrades === "object" ? s.prestigeUpgrades : {},
+    prestigeAchievements: Array.isArray(s.prestigeAchievements) ? s.prestigeAchievements : [],
   };
 };
 
-export const buildingCost = (def: BuildingDef, level: number): Partial<Resources> => {
+export const buildingCost = (def: BuildingDef, level: number, costMult = 1): Partial<Resources> => {
   const mult = Math.pow(def.costMultiplier, level);
   const out: Partial<Resources> = {};
   for (const k of Object.keys(def.baseCost) as (keyof Resources)[]) {
-    out[k] = Math.floor((def.baseCost[k] ?? 0) * mult);
+    out[k] = Math.max(1, Math.floor((def.baseCost[k] ?? 0) * mult * costMult));
   }
   return out;
 };
@@ -90,7 +106,9 @@ export const computeRates = (state: GameState): Resources => {
   const island = ISLANDS.find((i) => i.id === state.activeIsland)!;
   const islandMult = island.rateBonus;
   const speed = state.boosters.speedBoostUntil > Date.now() ? 2 : 1;
-  const workerMult = 1 + state.boosters.extraWorkers * 0.05;
+  const bonuses = computePrestigeBonuses(state.prestigeUpgrades);
+  const workerCount = state.boosters.extraWorkers + bonuses.workerBonus;
+  const workerMult = 1 + workerCount * 0.05;
   const goldDouble = state.boosters.doubleIncomeUntil > Date.now() ? 2 : 1;
 
   const raw: Resources = { gold: 0, wood: 0, stone: 0, energy: 0 };
@@ -99,7 +117,9 @@ export const computeRates = (state: GameState): Resources => {
     const def = BUILDINGS.find((d) => d.id === b.id);
     if (!def) continue;
     let r = buildingRate(def, b.level) * islandMult * speed * workerMult;
-    if (def.produces === "gold") r *= goldDouble;
+    if (def.produces === "gold") r *= goldDouble * bonuses.goldMult;
+    else if (def.produces === "wood") r *= bonuses.woodMult;
+    else if (def.produces === "stone") r *= bonuses.stoneMult;
     raw[def.produces] += r;
   }
   // Apply soft cap per resource to prevent early-game wealth explosions.
@@ -183,7 +203,7 @@ export function useGameStore() {
     const elapsed = Math.min((now - s.lastTick) / 1000, 60 * 60 * 4);
     if (elapsed > 30 && s.buildings.some(Boolean)) {
       const rates = computeRates(s);
-      const offlineMult = 0.25; // offline earns 25% of online rate
+      const offlineMult = 0.25 * computePrestigeBonuses(s.prestigeUpgrades).offlineMult;
       const earned: Resources = {
         gold: rates.gold * elapsed * offlineMult,
         wood: rates.wood * elapsed * offlineMult,
@@ -363,7 +383,7 @@ export function useGameStore() {
       if (!def) return p;
       const existingIdx = p.buildings.findIndex((b) => b && b.id === buildingId);
       const level = existingIdx >= 0 ? p.buildings[existingIdx]!.level : 0;
-      const cost = buildingCost(def, level);
+      const cost = buildingCost(def, level, computePrestigeBonuses(p.prestigeUpgrades).buildCostMult);
       if (!canAfford(p.resources, cost)) return p;
       const newRes = { ...p.resources };
       for (const k of Object.keys(cost) as (keyof Resources)[]) {
@@ -398,7 +418,7 @@ export function useGameStore() {
       if (!def) return p;
       if (plotIdx < 0) return p;
       if (p.buildings[plotIdx]) return p;
-      const cost = buildingCost(def, 0);
+      const cost = buildingCost(def, 0, computePrestigeBonuses(p.prestigeUpgrades).buildCostMult);
       if (!canAfford(p.resources, cost)) return p;
       const newRes = { ...p.resources };
       for (const k of Object.keys(cost) as (keyof Resources)[]) {
@@ -422,7 +442,7 @@ export function useGameStore() {
       if (!existing) return p;
       const def = BUILDINGS.find((b) => b.id === existing.id);
       if (!def) return p;
-      const cost = buildingCost(def, existing.level);
+      const cost = buildingCost(def, existing.level, computePrestigeBonuses(p.prestigeUpgrades).buildCostMult);
       if (!canAfford(p.resources, cost)) return p;
       const newRes = { ...p.resources };
       for (const k of Object.keys(cost) as (keyof Resources)[]) {
@@ -651,6 +671,70 @@ export function useGameStore() {
     }));
   }, []);
 
+  // ============ PRESTIGE / REBIRTH ============
+
+  const performPrestige = useCallback((): { tokens: number; newAchievements: string[] } | null => {
+    const cur = stateRef.current;
+    if (!canPrestige(cur)) return null;
+    const tokens = calcPrestigeTokens(cur);
+    let result: { tokens: number; newAchievements: string[] } = { tokens, newAchievements: [] };
+    setState((p) => {
+      const prestigeCount = p.prestigeCount + 1;
+      // Auto-award prestige achievements
+      const newAch: string[] = [];
+      for (const a of PRESTIGE_ACHIEVEMENTS) {
+        if (!p.prestigeAchievements.includes(a.id) && prestigeCount >= a.goal) {
+          newAch.push(a.id);
+        }
+      }
+      const achievementReward = newAch.reduce((s, id) => {
+        const a = PRESTIGE_ACHIEVEMENTS.find((x) => x.id === id);
+        return s + (a?.reward ?? 0);
+      }, 0);
+      result = { tokens, newAchievements: newAch };
+      const base = initialState();
+      return {
+        ...base,
+        // Permanent meta — preserved across rebirths
+        prestigeTokens: p.prestigeTokens + tokens + achievementReward,
+        prestigeCount,
+        prestigeUpgrades: p.prestigeUpgrades,
+        prestigeAchievements: [...p.prestigeAchievements, ...newAch],
+        unlockedIslands: p.unlockedIslands, // keep discovered islands
+        achievements: p.achievements,       // keep normal achievements
+        cosmetics: p.cosmetics,             // keep cosmetics
+        settings: p.settings,
+        // Track lifetime progress
+        totalGoldEarned: p.totalGoldEarned,
+        // Keep daily streak so retention isn't punished
+        dailyStreak: p.dailyStreak,
+        lastDailyClaim: p.lastDailyClaim,
+        dailyCycleDay: p.dailyCycleDay,
+        lastSpinAt: p.lastSpinAt,
+        dailyMissions: p.dailyMissions,
+        dailyMissionsDate: p.dailyMissionsDate,
+        dailyCounters: p.dailyCounters,
+      };
+    });
+    return result;
+  }, []);
+
+  const buyPrestigeUpgrade = useCallback((upgradeId: string) => {
+    setState((p) => {
+      const def = PRESTIGE_UPGRADES.find((u) => u.id === upgradeId);
+      if (!def) return p;
+      const level = p.prestigeUpgrades[upgradeId] ?? 0;
+      if (level >= def.maxLevel) return p;
+      const cost = prestigeUpgradeCost(def, level);
+      if (p.prestigeTokens < cost) return p;
+      return {
+        ...p,
+        prestigeTokens: p.prestigeTokens - cost,
+        prestigeUpgrades: { ...p.prestigeUpgrades, [upgradeId]: level + 1 },
+      };
+    });
+  }, []);
+
   return {
     state,
     rates: computeRates(state),
@@ -671,5 +755,7 @@ export function useGameStore() {
     offlineEarnings: offlineEarnings.current,
     resetOfflineNotice,
     updateSettings,
+    performPrestige,
+    buyPrestigeUpgrade,
   };
 }
