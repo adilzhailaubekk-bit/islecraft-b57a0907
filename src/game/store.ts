@@ -84,6 +84,7 @@ const normalize = (s: GameState): GameState => {
     prestigeCount: s.prestigeCount ?? 0,
     prestigeUpgrades: s.prestigeUpgrades && typeof s.prestigeUpgrades === "object" ? s.prestigeUpgrades : {},
     prestigeAchievements: Array.isArray(s.prestigeAchievements) ? s.prestigeAchievements : [],
+    islandStates: s.islandStates && typeof s.islandStates === "object" ? s.islandStates : {},
   };
 };
 
