@@ -10,9 +10,8 @@ interface BuildMenuProps {
   onClose: () => void;
   plotIndex: number;
   state: GameState;
-  onBuild: (id: string) => void;
-  onBuyPlot: () => void;
-  plotPrice: number;
+  onBuild: (id: string, plotIndex: number) => void;
+  onUpgrade: (id: string) => void;
 }
 
 const RES_EMOJI: Record<keyof Resources, string> = {
@@ -22,30 +21,9 @@ const RES_EMOJI: Record<keyof Resources, string> = {
   energy: "⚡",
 };
 
-export function BuildMenu({ open, onClose, plotIndex, state, onBuild, onBuyPlot, plotPrice }: BuildMenuProps) {
+export function BuildMenu({ open, onClose, plotIndex, state, onBuild, onUpgrade }: BuildMenuProps) {
   const existing = state.buildings[plotIndex];
-  const needsPlot = plotIndex >= state.plots;
 
-  if (needsPlot) {
-    return (
-      <Modal open={open} onClose={onClose} title="Купить участок" icon="🗺️" maxWidth="max-w-md">
-        <div className="text-center space-y-4">
-          <div className="text-6xl">🏗️</div>
-          <p className="text-muted-foreground">Расширьте остров новым участком земли, чтобы строить больше зданий.</p>
-          <button
-            onClick={() => {
-              onBuyPlot();
-              onClose();
-            }}
-            disabled={state.resources.gold < plotPrice}
-            className="btn-3d w-full bg-gradient-primary text-primary-foreground font-display font-bold text-lg py-4 rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Купить за 🪙 {fmt(plotPrice)}
-          </button>
-        </div>
-      </Modal>
-    );
-  }
 
   if (existing) {
     const def = BUILDINGS.find((b) => b.id === existing.id)!;
@@ -69,10 +47,11 @@ export function BuildMenu({ open, onClose, plotIndex, state, onBuild, onBuyPlot,
             </div>
           </div>
           <button
-            onClick={() => onBuild(existing.id)}
+            onClick={() => onUpgrade(existing.id)}
             disabled={!afford}
             className="btn-3d w-full bg-gradient-primary text-primary-foreground font-display font-bold text-lg py-4 rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed"
           >
+
             Улучшить · {Object.entries(cost).map(([k, v]) => `${RES_EMOJI[k as keyof Resources]} ${fmt(v as number)}`).join(" ")}
           </button>
         </div>
@@ -94,7 +73,7 @@ export function BuildMenu({ open, onClose, plotIndex, state, onBuild, onBuyPlot,
               whileTap={unlocked ? { scale: 0.97 } : {}}
               onClick={() => {
                 if (!unlocked || !afford) return;
-                onBuild(def.id);
+                onBuild(def.id, plotIndex);
                 onClose();
               }}
               disabled={!unlocked || !afford}

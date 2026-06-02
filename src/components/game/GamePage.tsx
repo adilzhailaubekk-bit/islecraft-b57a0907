@@ -188,10 +188,10 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
         onClose={() => setModal(null)}
         plotIndex={plotIndex}
         state={game.state}
-        onBuild={game.buyOrUpgrade}
-        onBuyPlot={game.buyPlot}
-        plotPrice={plotCost(game.state.plots)}
+        onBuild={game.buildAtPlot}
+        onUpgrade={game.buyOrUpgrade}
       />
+
       <ShopModal
         open={modal === "shop"}
         onClose={() => setModal(null)}
