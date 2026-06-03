@@ -787,5 +787,6 @@ export function useGameStore() {
     updateSettings,
     performPrestige,
     buyPrestigeUpgrade,
+    addGold,
   };
 }
