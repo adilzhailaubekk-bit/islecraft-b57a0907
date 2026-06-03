@@ -3464,18 +3464,9 @@ function GoldNugget({ position }: { position: [number, number, number] }) {
 function IslandScene({ state, onPlotClick, moveMode, movingFrom, lowPower = false }: IslandViewProps) {
 
   const island = ISLANDS.find((i) => i.id === state.activeIsland)!;
-  const tint = useMemo(() => {
-    switch (island.id) {
-      case "volcano":
-        return "#6a4a3a";
-      case "crystal":
-        return "#7ad0c0";
-      case "golden":
-        return "#d8c25a";
-      default:
-        return PALETTE.grassTop;
-    }
-  }, [island.id]);
+  const theme = ISLAND_THEMES[island.id] ?? DEFAULT_THEME;
+  const tint = theme.grassTint;
+
 
   const palms = useMemo(
     () =>
