@@ -351,12 +351,9 @@ export function MainMenu({
           Isle
           <br />
           <span className="relative inline-block">
-            <span
-              className="absolute left-[-4%] right-[-4%] top-[18%] bottom-[14%] rounded-[14px] -z-10"
-              style={{ background: "rgba(58,168,138,0.65)", boxShadow: "0 12px 40px rgba(58,168,138,0.35)" }}
-            />
             <span style={{ color: "#ffffff", position: "relative", padding: "0 0.18em" }}>craft</span>
           </span>
+
         </h1>
       </motion.div>
 
