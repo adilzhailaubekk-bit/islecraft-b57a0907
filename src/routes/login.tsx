@@ -92,7 +92,7 @@ function LoginPage() {
             <div className="text-center mb-6">
               <div className="text-6xl mb-2">🏝️</div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-                Lost Isles Tycoon
+                Islecraft
               </h1>
               <p className="text-sm text-slate-500 mt-1">
                 {mode === "login" ? "Войдите, чтобы сохранить прогресс в облаке" : "Создайте аккаунт и стройте свою империю"}
@@ -200,8 +200,8 @@ function LoginPage() {
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Вход — Lost Isles Tycoon" },
-      { name: "description", content: "Войдите в Lost Isles Tycoon, чтобы сохранить прогресс в облаке." },
+      { title: "Вход — Islecraft" },
+      { name: "description", content: "Войдите в Islecraft, чтобы сохранить прогресс в облаке." },
     ],
   }),
   component: LoginPage,
