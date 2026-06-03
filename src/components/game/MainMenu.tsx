@@ -322,7 +322,7 @@ export function MainMenu({
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, delay: 0.15, ease: [0.2, 0.9, 0.3, 1.1] }}
-        className="absolute top-[13%] sm:top-[15%] left-0 right-0 z-20 text-center pointer-events-none px-4"
+        className="absolute top-[10%] sm:top-[12%] left-0 right-0 z-20 text-center pointer-events-none px-4"
       >
         <div
           className="inline-block mb-3 px-3 py-1 rounded-full font-semibold tracking-[0.18em]"
