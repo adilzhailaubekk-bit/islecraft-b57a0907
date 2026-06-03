@@ -508,7 +508,7 @@ export function MainMenu({
 
           {/* Secondary — full width like primary */}
           <div className="mt-3 w-full">
-            <SecondaryBtn icon={<Plus className="w-5 h-5" strokeWidth={2.4} />} label="Новая игра" onClick={onNewGame} />
+            <SecondaryBtn icon={<Plus className="w-5 h-5" strokeWidth={2.4} />} label="Новая игра" onClick={requestNewGame} />
           </div>
         </motion.div>
       </div>
