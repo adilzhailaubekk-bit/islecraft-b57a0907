@@ -72,6 +72,111 @@ const PALETTE = {
 };
 
 /* ============================================================
+   Per-island theme system. Lets every primitive (palm, rock,
+   ocean, beach) pick up unique colors for a given island.
+   ============================================================ */
+type IslandTheme = {
+  grassTint: string;
+  grassDeep: string;
+  sandLight: string;
+  sandDark: string;
+  dirt: string;
+  rockColor: string;
+  trunkBark: string;
+  leafLight: string;
+  leafMid: string;
+  oceanShallow: string;
+  oceanMid: string;
+  oceanDeep: string;
+  oceanFoam: string;
+  fogColor: string;
+  sparkle: string;
+  ambient: string;
+};
+
+const DEFAULT_THEME: IslandTheme = {
+  grassTint: PALETTE.grassTop,
+  grassDeep: PALETTE.grassDeep,
+  sandLight: PALETTE.sandLight,
+  sandDark: PALETTE.sandDark,
+  dirt: PALETTE.dirt,
+  rockColor: PALETTE.rockLight,
+  trunkBark: PALETTE.trunkBark,
+  leafLight: PALETTE.leafLight,
+  leafMid: PALETTE.leafMid,
+  oceanShallow: PALETTE.oceanShallow,
+  oceanMid: PALETTE.oceanMid,
+  oceanDeep: PALETTE.oceanDeep,
+  oceanFoam: PALETTE.oceanFoam,
+  fogColor: "#bfe6f5",
+  sparkle: "#fff4c0",
+  ambient: "#ffffff",
+};
+
+const ISLAND_THEMES: Record<string, IslandTheme> = {
+  paradise: DEFAULT_THEME,
+  volcano: {
+    grassTint: "#5a3528",
+    grassDeep: "#321a10",
+    sandLight: "#3a2620",
+    sandDark: "#1f120c",
+    dirt: "#15080a",
+    rockColor: "#2c1f26",
+    trunkBark: "#3a1a10",
+    leafLight: "#e26a2c",
+    leafMid: "#7a3018",
+    oceanShallow: "#5a2a44",
+    oceanMid: "#2c1430",
+    oceanDeep: "#0d0612",
+    oceanFoam: "#ffb070",
+    fogColor: "#8a3a26",
+    sparkle: "#ff8a3c",
+    ambient: "#ff5a28",
+  },
+  crystal: {
+    grassTint: "#7fd9c8",
+    grassDeep: "#358ea0",
+    sandLight: "#f4faff",
+    sandDark: "#c5d8f2",
+    dirt: "#3a4a7a",
+    rockColor: "#aac8ef",
+    trunkBark: "#54467a",
+    leafLight: "#d6b6ff",
+    leafMid: "#7a5ad8",
+    oceanShallow: "#7ef6e8",
+    oceanMid: "#3cc2d8",
+    oceanDeep: "#175088",
+    oceanFoam: "#eafaff",
+    fogColor: "#cdeaf5",
+    sparkle: "#c8a8ff",
+    ambient: "#a8c8ff",
+  },
+  golden: {
+    grassTint: "#a4cf6c",
+    grassDeep: "#5b893a",
+    sandLight: "#ffe69a",
+    sandDark: "#d8a548",
+    dirt: "#7a4a18",
+    rockColor: "#c8a35a",
+    trunkBark: "#5a3818",
+    leafLight: "#e7e070",
+    leafMid: "#3c8a3a",
+    oceanShallow: "#5fd0f0",
+    oceanMid: "#1ea1e0",
+    oceanDeep: "#0a5a9c",
+    oceanFoam: "#fff4d0",
+    fogColor: "#ffe7a8",
+    sparkle: "#ffd24a",
+    ambient: "#ffd070",
+  },
+};
+
+const IslandThemeContext = createContext<IslandTheme>(DEFAULT_THEME);
+const useIslandTheme = () => useContext(IslandThemeContext);
+
+
+
+/* ============================================================
    GableRoof — reusable, correctly-oriented pitched roof.
    Built from real geometry so normals point OUTWARD, the ridge
    sits at the top, both slopes face down-and-outward toward the
@@ -231,6 +336,7 @@ function NoHit({ children }: { children: React.ReactNode }) {
    Ocean — bright tropical water with foam ring
    ============================================================ */
 function Ocean() {
+  const theme = useIslandTheme();
   const ref = useRef<THREE.Mesh>(null!);
   // Lower segment count for perf; still smooth-looking waves
   const geom = useMemo(() => new THREE.PlaneGeometry(180, 180, 56, 56), []);
@@ -251,7 +357,6 @@ function Ocean() {
         Math.cos(y * 0.28 + t * 0.85) * 0.18;
     }
     geom.attributes.position.needsUpdate = true;
-    // Skip expensive per-frame normal recompute — flat normals + light fakes it
   });
 
   return (
@@ -259,42 +364,45 @@ function Ocean() {
       {/* Deep base layer adds rich blue depth under the surface */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.1, 0]}>
         <circleGeometry args={[90, 64]} />
-        <meshBasicMaterial color={PALETTE.oceanDeep} />
+        <meshBasicMaterial color={theme.oceanDeep} />
       </mesh>
       {/* Mid gradient ring */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.7, 0]}>
         <ringGeometry args={[10, 40, 64]} />
-        <meshBasicMaterial color={PALETTE.oceanMid} transparent opacity={0.7} />
+        <meshBasicMaterial color={theme.oceanMid} transparent opacity={0.7} />
       </mesh>
       {/* Animated transparent surface */}
       <mesh ref={ref} geometry={geom} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.4, 0]} receiveShadow>
         <meshStandardMaterial
-          color={PALETTE.oceanShallow}
+          color={theme.oceanShallow}
           roughness={0.2}
           metalness={0.15}
           transparent
           opacity={0.78}
-          emissive={PALETTE.oceanShallow}
+          emissive={theme.oceanShallow}
           emissiveIntensity={0.08}
         />
       </mesh>
       {/* Foam rings around the island */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.22, 0]}>
         <ringGeometry args={[8.7, 9.9, 64]} />
-        <meshBasicMaterial color={PALETTE.oceanFoam} transparent opacity={0.6} />
+        <meshBasicMaterial color={theme.oceanFoam} transparent opacity={0.6} />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.21, 0]}>
         <ringGeometry args={[9.9, 11.4, 64]} />
-        <meshBasicMaterial color={PALETTE.oceanFoam} transparent opacity={0.28} />
+        <meshBasicMaterial color={theme.oceanFoam} transparent opacity={0.28} />
       </mesh>
     </group>
   );
 }
 
+
 /* ============================================================
    Island base — multi-tier with rocky cliffs
    ============================================================ */
 function IslandBase({ grassTint }: { grassTint: string }) {
+  const theme = useIslandTheme();
+
   const rocks = useMemo(() => {
     const rng = mulberry32(7);
     return Array.from({ length: 18 }).map((_, i) => {
@@ -313,17 +421,17 @@ function IslandBase({ grassTint }: { grassTint: string }) {
       {/* Deep underwater dirt */}
       <mesh position={[0, -1.9, 0]} receiveShadow>
         <cylinderGeometry args={[10, 11.8, 1.8, 64]} />
-        <meshStandardMaterial color={PALETTE.dirt} roughness={1} />
+        <meshStandardMaterial color={theme.dirt} roughness={1} />
       </mesh>
       {/* Sand beach (light) */}
       <mesh position={[0, -0.25, 0]} receiveShadow castShadow>
         <cylinderGeometry args={[8.9, 9.8, 0.95, 80]} />
-        <meshStandardMaterial color={PALETTE.sandLight} roughness={0.95} />
+        <meshStandardMaterial color={theme.sandLight} roughness={0.95} />
       </mesh>
       {/* Sand darker rim */}
       <mesh position={[0, -0.05, 0]} receiveShadow>
         <cylinderGeometry args={[8.2, 8.9, 0.25, 80]} />
-        <meshStandardMaterial color={PALETTE.sandDark} roughness={0.95} />
+        <meshStandardMaterial color={theme.sandDark} roughness={0.95} />
       </mesh>
       {/* Grass top */}
       <mesh position={[0, 0.2, 0]} receiveShadow castShadow>
@@ -333,8 +441,9 @@ function IslandBase({ grassTint }: { grassTint: string }) {
       {/* Subtle deeper grass shade */}
       <mesh position={[0, 0.45, 0]} receiveShadow>
         <cylinderGeometry args={[7.1, 7.4, 0.12, 80]} />
-        <meshStandardMaterial color={PALETTE.grassDeep} roughness={0.9} />
+        <meshStandardMaterial color={theme.grassDeep} roughness={0.9} />
       </mesh>
+
       {/* Rocky cliff accents removed for cleaner look */}
     </group>
   );
@@ -430,6 +539,7 @@ function Palm({
   scale?: number;
   delay?: number;
 }) {
+  const theme = useIslandTheme();
   const group = useRef<THREE.Group>(null!);
   useFrame(({ clock }) => {
     const t = clock.elapsedTime + delay;
@@ -448,7 +558,7 @@ function Palm({
           return (
             <mesh key={i} position={[bend, y, 0]} rotation={[0, 0, -0.08 * i]} castShadow>
               <cylinderGeometry args={[r, r + 0.02, 0.45, 10]} />
-              <meshStandardMaterial color={PALETTE.trunkBark} roughness={1} />
+              <meshStandardMaterial color={theme.trunkBark} roughness={1} />
             </mesh>
           );
         })}
@@ -461,15 +571,16 @@ function Palm({
               <group key={i} rotation={[0, a, tilt]}>
                 <mesh position={[0.65, 0, 0]} castShadow>
                   <sphereGeometry args={[0.55, 10, 6]} />
-                  <meshStandardMaterial color={i % 2 ? PALETTE.leafLight : PALETTE.leafMid} roughness={0.7} />
+                  <meshStandardMaterial color={i % 2 ? theme.leafLight : theme.leafMid} roughness={0.7} />
                 </mesh>
                 <mesh position={[1.05, -0.05, 0]} castShadow>
                   <sphereGeometry args={[0.32, 10, 6]} />
-                  <meshStandardMaterial color={PALETTE.leafLight} roughness={0.7} />
+                  <meshStandardMaterial color={theme.leafLight} roughness={0.7} />
                 </mesh>
               </group>
             );
           })}
+
           {/* Coconuts */}
           {[0, 1, 2].map((i) => {
             const a = (i / 3) * Math.PI * 2;
@@ -490,23 +601,24 @@ function Palm({
    Pine-style tree variety
    ============================================================ */
 function Tree({ position, scale = 1 }: { position: [number, number, number]; scale?: number }) {
+  const theme = useIslandTheme();
   return (
     <group position={position} scale={scale}>
       <mesh castShadow position={[0, 0.4, 0]}>
         <cylinderGeometry args={[0.16, 0.22, 0.8, 8]} />
-        <meshStandardMaterial color={PALETTE.trunkBark} />
+        <meshStandardMaterial color={theme.trunkBark} />
       </mesh>
       <mesh castShadow position={[0, 1.0, 0]}>
         <sphereGeometry args={[0.7, 12, 10]} />
-        <meshStandardMaterial color={PALETTE.leafMid} roughness={0.8} />
+        <meshStandardMaterial color={theme.leafMid} roughness={0.8} />
       </mesh>
       <mesh castShadow position={[0.35, 1.35, 0.1]}>
         <sphereGeometry args={[0.45, 12, 10]} />
-        <meshStandardMaterial color={PALETTE.leafLight} roughness={0.8} />
+        <meshStandardMaterial color={theme.leafLight} roughness={0.8} />
       </mesh>
       <mesh castShadow position={[-0.3, 1.35, -0.1]}>
         <sphereGeometry args={[0.42, 12, 10]} />
-        <meshStandardMaterial color={PALETTE.leafLight} roughness={0.8} />
+        <meshStandardMaterial color={theme.leafLight} roughness={0.8} />
       </mesh>
     </group>
   );
@@ -516,6 +628,7 @@ function Tree({ position, scale = 1 }: { position: [number, number, number]; sca
    Bush, mushroom, grass tuft
    ============================================================ */
 function Bush({ position }: { position: [number, number, number] }) {
+  const theme = useIslandTheme();
   return (
     <group position={position}>
       {[
@@ -526,12 +639,13 @@ function Bush({ position }: { position: [number, number, number] }) {
       ].map(([x, y, z, r], i) => (
         <mesh key={i} position={[x, y, z]} castShadow>
           <sphereGeometry args={[r, 12, 10]} />
-          <meshStandardMaterial color={i % 2 ? PALETTE.leafMid : PALETTE.leafLight} roughness={0.85} />
+          <meshStandardMaterial color={i % 2 ? theme.leafMid : theme.leafLight} roughness={0.85} />
         </mesh>
       ))}
     </group>
   );
 }
+
 
 function Mushroom({ position }: { position: [number, number, number] }) {
   return (
@@ -589,6 +703,7 @@ function Flower({ position, color, delay = 0 }: { position: [number, number, num
 }
 
 function Rock({ position, scale = 1, seed = 0 }: { position: [number, number, number]; scale?: number; seed?: number }) {
+  const theme = useIslandTheme();
   const rot = useMemo<[number, number, number]>(() => {
     const rng = mulberry32(seed + 1);
     return [rng() * Math.PI, rng() * Math.PI, rng() * Math.PI];
@@ -596,10 +711,11 @@ function Rock({ position, scale = 1, seed = 0 }: { position: [number, number, nu
   return (
     <mesh position={position} scale={scale} castShadow rotation={rot}>
       <dodecahedronGeometry args={[0.4, 0]} />
-      <meshStandardMaterial color={PALETTE.rockLight} roughness={0.95} />
+      <meshStandardMaterial color={theme.rockColor} roughness={0.95} />
     </mesh>
   );
 }
+
 
 /* ============================================================
    Lantern with glow
@@ -3152,24 +3268,205 @@ function BuildingSurround({ position, seed, buildingId }: { position: [number, n
 }
 
 /* ============================================================
+   Per-island feature centerpieces & decor
+   ============================================================ */
+
+function Volcano() {
+  const lavaRef = useRef<THREE.MeshStandardMaterial>(null!);
+  const smokeRef = useRef<THREE.Group>(null!);
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    if (lavaRef.current) lavaRef.current.emissiveIntensity = 1.2 + Math.sin(t * 2.2) * 0.4;
+    if (smokeRef.current) {
+      smokeRef.current.children.forEach((c, i) => {
+        const phase = t * 0.6 + i * 1.3;
+        c.position.y = 3.4 + ((phase % 3) * 0.8);
+        (c as THREE.Mesh).scale.setScalar(0.6 + (phase % 3) * 0.4);
+        const mat = (c as THREE.Mesh).material as THREE.MeshBasicMaterial;
+        mat.opacity = Math.max(0, 0.55 - (phase % 3) * 0.18);
+      });
+    }
+  });
+  return (
+    <group position={[0, 0.5, 0]}>
+      {/* Cone — outer dark obsidian */}
+      <mesh castShadow position={[0, 1.4, 0]}>
+        <coneGeometry args={[2.4, 2.8, 24, 1, true]} />
+        <meshStandardMaterial color="#1a0f12" roughness={0.95} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Inner cone with glowing lava lip */}
+      <mesh position={[0, 2.6, 0]}>
+        <torusGeometry args={[0.6, 0.18, 12, 24]} />
+        <meshStandardMaterial ref={lavaRef} color="#ff3a08" emissive="#ff5a18" emissiveIntensity={1.4} roughness={0.4} />
+      </mesh>
+      {/* Lava pool inside */}
+      <mesh position={[0, 2.6, 0]}>
+        <circleGeometry args={[0.6, 24]} />
+        <meshStandardMaterial color="#ff8030" emissive="#ff5018" emissiveIntensity={1.2} roughness={0.4} />
+      </mesh>
+      {/* Lava flows down slopes */}
+      {[0, 1, 2, 3].map((i) => {
+        const a = (i / 4) * Math.PI * 2 + 0.4;
+        return (
+          <mesh key={i} position={[Math.cos(a) * 1.1, 1.5, Math.sin(a) * 1.1]} rotation={[0, -a + Math.PI / 2, 0.7]}>
+            <boxGeometry args={[0.18, 1.8, 0.08]} />
+            <meshStandardMaterial color="#ff5018" emissive="#ff3008" emissiveIntensity={1.0} roughness={0.5} />
+          </mesh>
+        );
+      })}
+      {/* Obsidian rocks around base */}
+      {[0, 1, 2, 3, 4, 5].map((i) => {
+        const a = (i / 6) * Math.PI * 2;
+        return (
+          <mesh key={i} position={[Math.cos(a) * 2.6, 0.1, Math.sin(a) * 2.6]} rotation={[i, i * 0.7, 0]} castShadow>
+            <dodecahedronGeometry args={[0.32 + (i % 3) * 0.1, 0]} />
+            <meshStandardMaterial color="#1a0f14" roughness={0.9} metalness={0.3} />
+          </mesh>
+        );
+      })}
+      {/* Smoke puffs */}
+      <group ref={smokeRef}>
+        {[0, 1, 2, 3].map((i) => (
+          <mesh key={i} position={[0, 3.4 + i * 0.6, 0]}>
+            <sphereGeometry args={[0.5, 10, 8]} />
+            <meshBasicMaterial color="#3a2a2a" transparent opacity={0.45} depthWrite={false} />
+          </mesh>
+        ))}
+      </group>
+      {/* Hot glow light */}
+      <pointLight position={[0, 2.8, 0]} color="#ff5a18" intensity={2.5} distance={9} />
+    </group>
+  );
+}
+
+function CrystalSpires() {
+  const lightRef = useRef<THREE.PointLight>(null!);
+  useFrame(({ clock }) => {
+    if (lightRef.current) lightRef.current.intensity = 1.6 + Math.sin(clock.elapsedTime * 1.5) * 0.6;
+  });
+  const spires = useMemo(
+    () =>
+      [
+        { p: [0, 0, 0] as [number, number, number], h: 2.4, r: 0.45, c: "#7af6e8" },
+        { p: [0.7, 0, 0.4] as [number, number, number], h: 1.6, r: 0.3, c: "#c8a8ff" },
+        { p: [-0.8, 0, 0.3] as [number, number, number], h: 1.9, r: 0.34, c: "#ff9ce0" },
+        { p: [0.2, 0, -0.7] as [number, number, number], h: 1.3, r: 0.26, c: "#7af6e8" },
+        { p: [-0.4, 0, -0.5] as [number, number, number], h: 1.0, r: 0.22, c: "#c8a8ff" },
+      ],
+    [],
+  );
+  return (
+    <group position={[0, 0.5, 0]}>
+      {spires.map((s, i) => (
+        <mesh key={i} position={[s.p[0], s.h / 2, s.p[2]]} castShadow>
+          <coneGeometry args={[s.r, s.h, 6]} />
+          <meshStandardMaterial
+            color={s.c}
+            emissive={s.c}
+            emissiveIntensity={0.7}
+            roughness={0.15}
+            metalness={0.4}
+            transparent
+            opacity={0.92}
+          />
+        </mesh>
+      ))}
+      <pointLight ref={lightRef} position={[0, 1.4, 0]} color="#a8e0ff" intensity={1.8} distance={8} />
+      <Sparkles count={40} scale={[3, 3, 3]} position={[0, 1.2, 0]} size={3} speed={0.4} color="#c8a8ff" />
+    </group>
+  );
+}
+
+function GoldenObelisk() {
+  const ref = useRef<THREE.Group>(null!);
+  useFrame(({ clock }) => {
+    if (ref.current) ref.current.rotation.y = clock.elapsedTime * 0.2;
+  });
+  return (
+    <group position={[0, 0.5, 0]}>
+      {/* Marble base */}
+      <mesh castShadow position={[0, 0.25, 0]}>
+        <cylinderGeometry args={[1.0, 1.2, 0.5, 16]} />
+        <meshStandardMaterial color="#fff4d8" roughness={0.6} />
+      </mesh>
+      {/* Obelisk shaft */}
+      <mesh castShadow position={[0, 1.7, 0]}>
+        <boxGeometry args={[0.7, 2.4, 0.7]} />
+        <meshStandardMaterial color="#ffd24a" emissive="#a87a00" emissiveIntensity={0.25} roughness={0.3} metalness={0.85} />
+      </mesh>
+      {/* Pyramid cap */}
+      <mesh castShadow position={[0, 3.15, 0]}>
+        <coneGeometry args={[0.55, 0.6, 4]} />
+        <meshStandardMaterial color="#fff0a0" emissive="#ffae00" emissiveIntensity={0.6} roughness={0.2} metalness={0.95} />
+      </mesh>
+      {/* Floating gold coins ring */}
+      <group ref={ref}>
+        {[0, 1, 2, 3, 4, 5].map((i) => {
+          const a = (i / 6) * Math.PI * 2;
+          return (
+            <mesh key={i} position={[Math.cos(a) * 1.6, 1.8, Math.sin(a) * 1.6]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.18, 0.18, 0.05, 16]} />
+              <meshStandardMaterial color="#ffd24a" emissive="#ffae00" emissiveIntensity={0.5} roughness={0.2} metalness={0.95} />
+            </mesh>
+          );
+        })}
+      </group>
+      <pointLight position={[0, 2.4, 0]} color="#ffd070" intensity={2.0} distance={10} />
+      <Sparkles count={30} scale={[4, 3, 4]} position={[0, 1.8, 0]} size={3} speed={0.3} color="#ffd24a" />
+    </group>
+  );
+}
+
+// Themed scatter accents (replaces mushrooms on themed islands)
+function CrystalShard({ position }: { position: [number, number, number] }) {
+  const colors = ["#7af6e8", "#c8a8ff", "#ff9ce0"];
+  const idx = Math.abs(Math.round(position[0] * 7 + position[2] * 3)) % 3;
+  const c = colors[idx];
+  return (
+    <mesh position={[position[0], 0.3, position[2]]} rotation={[0.1, position[0], 0.05]} castShadow>
+      <coneGeometry args={[0.14, 0.55, 5]} />
+      <meshStandardMaterial color={c} emissive={c} emissiveIntensity={0.6} roughness={0.2} metalness={0.4} transparent opacity={0.92} />
+    </mesh>
+  );
+}
+
+
+function LavaRock({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={[position[0], 0.2, position[2]]}>
+      <mesh castShadow>
+        <dodecahedronGeometry args={[0.3, 0]} />
+        <meshStandardMaterial color="#1a0f12" roughness={0.95} />
+      </mesh>
+      <mesh position={[0, 0.05, 0]} scale={[1.05, 0.3, 1.05]}>
+        <dodecahedronGeometry args={[0.3, 0]} />
+        <meshStandardMaterial color="#ff5018" emissive="#ff3008" emissiveIntensity={0.9} roughness={0.5} />
+      </mesh>
+    </group>
+  );
+}
+
+function GoldNugget({ position }: { position: [number, number, number] }) {
+  return (
+    <mesh position={[position[0], 0.28, position[2]]} rotation={[0.2, position[0], 0.1]} castShadow>
+      <dodecahedronGeometry args={[0.22, 0]} />
+      <meshStandardMaterial color="#ffd24a" emissive="#ffae00" emissiveIntensity={0.35} roughness={0.25} metalness={0.95} />
+    </mesh>
+  );
+}
+
+/* ============================================================
    Scene
    ============================================================ */
+
+
 
 function IslandScene({ state, onPlotClick, moveMode, movingFrom, lowPower = false }: IslandViewProps) {
 
   const island = ISLANDS.find((i) => i.id === state.activeIsland)!;
-  const tint = useMemo(() => {
-    switch (island.id) {
-      case "volcano":
-        return "#6a4a3a";
-      case "crystal":
-        return "#7ad0c0";
-      case "golden":
-        return "#d8c25a";
-      default:
-        return PALETTE.grassTop;
-    }
-  }, [island.id]);
+  const theme = ISLAND_THEMES[island.id] ?? DEFAULT_THEME;
+  const tint = theme.grassTint;
+
 
   const palms = useMemo(
     () =>
@@ -3278,14 +3575,17 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom, lowPower = fals
   }, [palms, trees, decor]);
 
   return (
-    <>
-      <fog attach="fog" args={["#bfe6f5", 30, 75]} />
+    <IslandThemeContext.Provider value={theme}>
+      <fog attach="fog" args={[theme.fogColor, 30, 75]} />
       <DayNightSystem />
-      {!lowPower && <Environment preset="park" />}
+      {!lowPower && <Environment preset={island.id === "volcano" ? "sunset" : island.id === "crystal" ? "night" : "park"} />}
+      {island.id === "volcano" && <ambientLight color="#ff5a18" intensity={0.35} />}
+      {island.id === "crystal" && <ambientLight color="#a8c8ff" intensity={0.45} />}
+      {island.id === "golden" && <ambientLight color="#ffd070" intensity={0.4} />}
 
       <Ocean />
       {!lowPower && (
-        <Sparkles count={30} scale={[60, 1, 60]} position={[0, -0.15, 0]} size={3} speed={0.3} color="#ffffff" />
+        <Sparkles count={30} scale={[60, 1, 60]} position={[0, -0.15, 0]} size={3} speed={0.3} color={theme.oceanFoam} />
       )}
 
       <group scale={ISLAND_SCALE}>
@@ -3313,14 +3613,18 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom, lowPower = fals
         {decor.bushes.map((p, i) => (
           <Bush key={`b-${i}`} position={p} />
         ))}
-        {decor.mushrooms.map((p, i) => (
-          <Mushroom key={`m-${i}`} position={p} />
-        ))}
+        {/* Themed scatter accents — mushrooms on paradise, themed alternatives elsewhere */}
+        {decor.mushrooms.map((p, i) => {
+          if (island.id === "crystal") return <CrystalShard key={`m-${i}`} position={p} />;
+          if (island.id === "volcano") return <LavaRock key={`m-${i}`} position={p} />;
+          if (island.id === "golden") return <GoldNugget key={`m-${i}`} position={p} />;
+          return <Mushroom key={`m-${i}`} position={p} />;
+        })}
         {decor.lanterns.map((p, i) => (
           <Lantern key={`l-${i}`} position={p} />
         ))}
         {decor.grassTufts.map((p, i) => (
-          <GrassTuft key={`gt-${i}`} position={p} tint={PALETTE.grassMid} />
+          <GrassTuft key={`gt-${i}`} position={p} tint={theme.grassDeep} />
         ))}
         {decor.shells.map((s, i) => (
           <Shell key={`sh-${i}`} position={s.pos} color={s.color} />
@@ -3329,11 +3633,15 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom, lowPower = fals
           <Driftwood key={`dw-${i}`} position={d.pos} rotation={d.rot} />
         ))}
 
-        {/* Centerpiece decor */}
-        <Fountain position={[0, 0.45, 0]} />
+        {/* Centerpiece decor — unique per island */}
+        {island.id === "paradise" && <Fountain position={[0, 0.45, 0]} />}
+        {island.id === "volcano" && <Volcano />}
+        {island.id === "crystal" && <CrystalSpires />}
+        {island.id === "golden" && <GoldenObelisk />}
         <FlagPole position={[-6, 0.45, -1]} />
         <Bridge position={[7.2, -0.05, 0]} rotation={Math.PI / 2} />
       </NoHit>
+
 
 
       {/* Cosmetics — also non-interactive */}
@@ -3445,11 +3753,12 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom, lowPower = fals
       {!lowPower && <Crab seed={7} />}
       {/* Floating pollen / pixie dust over the island for atmosphere */}
       {!lowPower && (
-        <Sparkles count={40} scale={[14, 5, 14]} position={[0, 3, 0]} size={2} speed={0.25} color="#fff4c0" />
+        <Sparkles count={40} scale={[14, 5, 14]} position={[0, 3, 0]} size={2} speed={0.25} color={theme.sparkle} />
       )}
       <Dolphin radius={20} phase={0} speed={0.18} />
       {!lowPower && <Dolphin radius={22} phase={3} speed={-0.16} />}
-    </>
+    </IslandThemeContext.Provider>
+
   );
 }
 
