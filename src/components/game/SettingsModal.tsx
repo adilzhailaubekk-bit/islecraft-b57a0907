@@ -8,6 +8,7 @@ interface SettingsModalProps {
   onClose: () => void;
   settings: GameState["settings"];
   onUpdate: (patch: Partial<GameState["settings"]>) => void;
+  onAddGold?: (amount: number) => void;
 }
 
 type TabId = "graphics" | "sound" | "language";
@@ -18,7 +19,7 @@ const TABS: { id: TabId; label: string; emoji: string }[] = [
   { id: "language", label: "Язык", emoji: "🌐" },
 ];
 
-export function SettingsModal({ open, onClose, settings, onUpdate }: SettingsModalProps) {
+export function SettingsModal({ open, onClose, settings, onUpdate, onAddGold }: SettingsModalProps) {
   const [tab, setTab] = useState<TabId>("graphics");
 
   return (
@@ -57,6 +58,18 @@ export function SettingsModal({ open, onClose, settings, onUpdate }: SettingsMod
           </div>
         )}
       </div>
+
+      {/* Dev / cheat */}
+      {onAddGold && (
+        <div className="mt-4 pt-4 border-t-2 border-slate-100">
+          <button
+            onClick={() => onAddGold(1_000_000)}
+            className="w-full btn-3d bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold py-3 rounded-xl shadow-pop"
+          >
+            🪙 +1 000 000 золота
+          </button>
+        </div>
+      )}
     </Modal>
   );
 }

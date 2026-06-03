@@ -686,6 +686,14 @@ export function useGameStore() {
     offlineEarnings.current = null;
   }, []);
 
+  const addGold = useCallback((amount: number) => {
+    setState((p) => ({
+      ...p,
+      resources: { ...p.resources, gold: p.resources.gold + amount },
+      totalGoldEarned: p.totalGoldEarned + amount,
+    }));
+  }, []);
+
   const updateSettings = useCallback((patch: Partial<GameState["settings"]>) => {
     setState((p) => ({
       ...p,
@@ -779,5 +787,6 @@ export function useGameStore() {
     updateSettings,
     performPrestige,
     buyPrestigeUpgrade,
+    addGold,
   };
 }

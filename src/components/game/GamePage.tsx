@@ -249,6 +249,7 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
         onClose={() => setModal(null)}
         settings={game.state.settings}
         onUpdate={game.updateSettings}
+        onAddGold={game.addGold}
       />
       <PrestigeModal
         open={modal === "prestige"}
