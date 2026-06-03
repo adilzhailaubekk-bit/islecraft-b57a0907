@@ -58,6 +58,18 @@ export function SettingsModal({ open, onClose, settings, onUpdate, onAddGold }: 
           </div>
         )}
       </div>
+
+      {/* Dev / cheat */}
+      {onAddGold && (
+        <div className="mt-4 pt-4 border-t-2 border-slate-100">
+          <button
+            onClick={() => onAddGold(1_000_000)}
+            className="w-full btn-3d bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold py-3 rounded-xl shadow-pop"
+          >
+            🪙 +1 000 000 золота
+          </button>
+        </div>
+      )}
     </Modal>
   );
 }
