@@ -703,6 +703,7 @@ function Flower({ position, color, delay = 0 }: { position: [number, number, num
 }
 
 function Rock({ position, scale = 1, seed = 0 }: { position: [number, number, number]; scale?: number; seed?: number }) {
+  const theme = useIslandTheme();
   const rot = useMemo<[number, number, number]>(() => {
     const rng = mulberry32(seed + 1);
     return [rng() * Math.PI, rng() * Math.PI, rng() * Math.PI];
@@ -710,10 +711,11 @@ function Rock({ position, scale = 1, seed = 0 }: { position: [number, number, nu
   return (
     <mesh position={position} scale={scale} castShadow rotation={rot}>
       <dodecahedronGeometry args={[0.4, 0]} />
-      <meshStandardMaterial color={PALETTE.rockLight} roughness={0.95} />
+      <meshStandardMaterial color={theme.rockColor} roughness={0.95} />
     </mesh>
   );
 }
+
 
 /* ============================================================
    Lantern with glow
