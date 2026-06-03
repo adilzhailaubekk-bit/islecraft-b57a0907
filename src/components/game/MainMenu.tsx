@@ -572,7 +572,7 @@ function SecondaryBtn({
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.97 }}
       onClick={onClick}
-      className="relative flex items-center justify-center gap-2 rounded-full font-semibold text-[15px]"
+      className="relative w-full flex items-center justify-center gap-2 rounded-full font-semibold text-[15px]"
       style={{
         ...styles,
         padding: "12px 18px",
