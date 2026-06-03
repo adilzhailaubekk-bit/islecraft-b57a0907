@@ -601,23 +601,24 @@ function Palm({
    Pine-style tree variety
    ============================================================ */
 function Tree({ position, scale = 1 }: { position: [number, number, number]; scale?: number }) {
+  const theme = useIslandTheme();
   return (
     <group position={position} scale={scale}>
       <mesh castShadow position={[0, 0.4, 0]}>
         <cylinderGeometry args={[0.16, 0.22, 0.8, 8]} />
-        <meshStandardMaterial color={PALETTE.trunkBark} />
+        <meshStandardMaterial color={theme.trunkBark} />
       </mesh>
       <mesh castShadow position={[0, 1.0, 0]}>
         <sphereGeometry args={[0.7, 12, 10]} />
-        <meshStandardMaterial color={PALETTE.leafMid} roughness={0.8} />
+        <meshStandardMaterial color={theme.leafMid} roughness={0.8} />
       </mesh>
       <mesh castShadow position={[0.35, 1.35, 0.1]}>
         <sphereGeometry args={[0.45, 12, 10]} />
-        <meshStandardMaterial color={PALETTE.leafLight} roughness={0.8} />
+        <meshStandardMaterial color={theme.leafLight} roughness={0.8} />
       </mesh>
       <mesh castShadow position={[-0.3, 1.35, -0.1]}>
         <sphereGeometry args={[0.42, 12, 10]} />
-        <meshStandardMaterial color={PALETTE.leafLight} roughness={0.8} />
+        <meshStandardMaterial color={theme.leafLight} roughness={0.8} />
       </mesh>
     </group>
   );
@@ -627,6 +628,7 @@ function Tree({ position, scale = 1 }: { position: [number, number, number]; sca
    Bush, mushroom, grass tuft
    ============================================================ */
 function Bush({ position }: { position: [number, number, number] }) {
+  const theme = useIslandTheme();
   return (
     <group position={position}>
       {[
@@ -637,12 +639,13 @@ function Bush({ position }: { position: [number, number, number] }) {
       ].map(([x, y, z, r], i) => (
         <mesh key={i} position={[x, y, z]} castShadow>
           <sphereGeometry args={[r, 12, 10]} />
-          <meshStandardMaterial color={i % 2 ? PALETTE.leafMid : PALETTE.leafLight} roughness={0.85} />
+          <meshStandardMaterial color={i % 2 ? theme.leafMid : theme.leafLight} roughness={0.85} />
         </mesh>
       ))}
     </group>
   );
 }
+
 
 function Mushroom({ position }: { position: [number, number, number] }) {
   return (
