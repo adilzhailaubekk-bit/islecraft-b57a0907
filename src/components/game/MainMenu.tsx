@@ -329,10 +329,13 @@ export function MainMenu({
         <div
           className="inline-block mb-3 px-3 py-1 rounded-full font-semibold tracking-[0.18em]"
           style={{
-            background: "#ffb347",
-            color: "#6b4e1a",
+            background: "rgba(255,255,255,0.45)",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
+            color: "#ffffff",
             fontSize: "13px",
-            boxShadow: "0 8px 24px rgba(255,179,71,0.45)",
+            border: "1px solid rgba(255,255,255,0.7)",
+            boxShadow: "0 8px 24px rgba(30,80,100,0.25)",
           }}
         >
           ISLECRAFT · ТРОПИКИ
@@ -342,7 +345,7 @@ export function MainMenu({
           style={{
             fontSize: "clamp(3rem, 9vw, 6.8rem)",
             color: "#ffffff",
-            textShadow: "0 6px 28px rgba(0,0,0,0.4)",
+            textShadow: "0 6px 28px rgba(30,80,110,0.45)",
           }}
         >
           Isle
@@ -350,9 +353,9 @@ export function MainMenu({
           <span className="relative inline-block">
             <span
               className="absolute left-[-4%] right-[-4%] top-[18%] bottom-[14%] rounded-[14px] -z-10"
-              style={{ background: "#ffb347", boxShadow: "0 12px 40px rgba(255,179,71,0.5)" }}
+              style={{ background: "rgba(58,168,138,0.65)", boxShadow: "0 12px 40px rgba(58,168,138,0.35)" }}
             />
-            <span style={{ color: "#6b4e1a", position: "relative", padding: "0 0.18em" }}>craft</span>
+            <span style={{ color: "#ffffff", position: "relative", padding: "0 0.18em" }}>craft</span>
           </span>
         </h1>
       </motion.div>
