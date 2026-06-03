@@ -2,8 +2,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
-  Play, Plus, Settings, Bell, Gift, Trophy, ShoppingBag, Sparkles,
-  Swords, CalendarDays, BarChart3, LogOut, ChevronRight, Coins, TreePine, Mountain,
+  Play, Plus, Settings, Bell, Gift, Trophy, ShoppingBag,
+  Swords, CalendarDays, LogOut, ChevronRight, Coins, TreePine, Mountain,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -120,9 +120,7 @@ export function MainMenu({
     { id: "quests", label: "Quests", icon: Swords, onClick: onQuests ?? onDaily },
     { id: "ach", label: "Achievements", icon: Trophy, onClick: onAchievements ?? onLeaderboards },
     { id: "shop", label: "Shop", icon: ShoppingBag, onClick: onShop },
-    { id: "prestige", label: "Prestige", icon: Sparkles, onClick: onPrestige ?? (() => toast("Prestige доступен в игре ✨")) },
     { id: "events", label: "Events", icon: CalendarDays, onClick: onEvents ?? (() => toast("События скоро 🎉")) },
-    { id: "lb", label: "Leaderboards", icon: BarChart3, onClick: onLeaderboards },
   ];
 
   return (
