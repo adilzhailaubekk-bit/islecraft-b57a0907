@@ -421,17 +421,17 @@ function IslandBase({ grassTint }: { grassTint: string }) {
       {/* Deep underwater dirt */}
       <mesh position={[0, -1.9, 0]} receiveShadow>
         <cylinderGeometry args={[10, 11.8, 1.8, 64]} />
-        <meshStandardMaterial color={PALETTE.dirt} roughness={1} />
+        <meshStandardMaterial color={theme.dirt} roughness={1} />
       </mesh>
       {/* Sand beach (light) */}
       <mesh position={[0, -0.25, 0]} receiveShadow castShadow>
         <cylinderGeometry args={[8.9, 9.8, 0.95, 80]} />
-        <meshStandardMaterial color={PALETTE.sandLight} roughness={0.95} />
+        <meshStandardMaterial color={theme.sandLight} roughness={0.95} />
       </mesh>
       {/* Sand darker rim */}
       <mesh position={[0, -0.05, 0]} receiveShadow>
         <cylinderGeometry args={[8.2, 8.9, 0.25, 80]} />
-        <meshStandardMaterial color={PALETTE.sandDark} roughness={0.95} />
+        <meshStandardMaterial color={theme.sandDark} roughness={0.95} />
       </mesh>
       {/* Grass top */}
       <mesh position={[0, 0.2, 0]} receiveShadow castShadow>
@@ -441,8 +441,9 @@ function IslandBase({ grassTint }: { grassTint: string }) {
       {/* Subtle deeper grass shade */}
       <mesh position={[0, 0.45, 0]} receiveShadow>
         <cylinderGeometry args={[7.1, 7.4, 0.12, 80]} />
-        <meshStandardMaterial color={PALETTE.grassDeep} roughness={0.9} />
+        <meshStandardMaterial color={theme.grassDeep} roughness={0.9} />
       </mesh>
+
       {/* Rocky cliff accents removed for cleaner look */}
     </group>
   );
