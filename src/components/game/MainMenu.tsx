@@ -523,6 +523,92 @@ export function MainMenu({
       >
         v1.0 · Islecraft
       </motion.div>
+
+      {/* CONFIRM NEW GAME MODAL */}
+      <AnimatePresence>
+        {confirmNew && (
+          <motion.div
+            key="confirm-new"
+            className="fixed inset-0 z-50 flex items-center justify-center px-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <motion.div
+              className="absolute inset-0"
+              style={{ background: "rgba(10,20,35,0.55)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}
+              onClick={() => setConfirmNew(false)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            />
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              initial={{ opacity: 0, y: 20, scale: 0.94 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.96 }}
+              transition={{ type: "spring", stiffness: 320, damping: 26 }}
+              className="relative w-full max-w-md p-6 sm:p-7"
+              style={{
+                background: "rgba(255,255,255,0.92)",
+                backdropFilter: "blur(20px)",
+                WebkitBackdropFilter: "blur(20px)",
+                border: "1px solid rgba(255,255,255,0.9)",
+                borderRadius: "28px",
+                boxShadow: "0 30px 80px rgba(10,20,35,0.35)",
+              }}
+            >
+              <div className="flex items-start gap-4 mb-4">
+                <div
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0"
+                  style={{ background: "#ffe3e3" }}
+                >
+                  ⚠️
+                </div>
+                <div className="flex-1">
+                  <h2 className="font-semibold text-[22px] leading-tight" style={{ color: "#1a1a2e" }}>
+                    Вы уверены?
+                  </h2>
+                  <p className="mt-2 text-[15px] leading-relaxed" style={{ color: "#4b5063" }}>
+                    У вас уже есть сохранённая игра. Создание новой игры приведёт к удалению текущего прогресса. Это действие нельзя отменить.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2.5 mt-5">
+                <motion.button
+                  whileHover={{ y: -1 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setConfirmNew(false)}
+                  className="flex-1 rounded-full font-semibold text-[15px] py-3 px-5"
+                  style={{
+                    background: "rgba(255,255,255,0.9)",
+                    color: "#4b5063",
+                    border: "1.5px solid #e4e6ec",
+                  }}
+                >
+                  ❌ Отмена
+                </motion.button>
+                <motion.button
+                  whileHover={{ y: -1 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={confirmNewGame}
+                  className="flex-1 rounded-full font-semibold text-[15px] py-3 px-5"
+                  style={{
+                    background: "#ff4d57",
+                    color: "#ffffff",
+                    border: "1.5px solid #ff4d57",
+                    boxShadow: "0 10px 24px rgba(255,77,87,0.4)",
+                  }}
+                >
+                  ✅ Создать новую игру
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
