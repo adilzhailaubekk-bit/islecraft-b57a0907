@@ -291,10 +291,10 @@ interface ResourceBarProps {
 }
 
 export function ResourceBar({ resources, rates }: ResourceBarProps) {
-  const keys: (keyof Resources)[] = ["gold", "wood", "stone", "energy"];
+  const keys: (keyof Resources)[] = ["gold", "wood", "stone"];
   const maxRate = Math.max(0.0001, ...keys.map((k) => rates[k] || 0));
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 w-full">
+    <div className="grid grid-cols-3 gap-1.5 sm:gap-3 w-full">
       {keys.map((k) => (
         <ResourceCell
           key={k}
