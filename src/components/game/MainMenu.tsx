@@ -238,7 +238,7 @@ export function MainMenu({
             <ellipse cx="450" cy="170" rx="26" ry="14" fill="#8a96aa" />
             <g transform="translate(220 105)">
               <rect x="0" y="0" width="28" height="24" fill="#f5d29a" stroke="#8a5a2a" strokeWidth="1.5" />
-              <polygon points="-2,0 30,0 14,-14" fill="#c8523a" stroke="#7a3220" strokeWidth="1.5" />
+              <polygon points="-2,0 30,0 14,-14" fill="#e8a020" stroke="#8a6a10" strokeWidth="1.5" />
             </g>
             <g transform="translate(300 110)">
               <rect x="0" y="0" width="22" height="20" fill="#f5d29a" stroke="#8a5a2a" strokeWidth="1.5" />
@@ -304,7 +304,7 @@ export function MainMenu({
         <div className="hidden md:flex items-center gap-2 ml-1">
           <ResChip icon={<Coins className="w-4 h-4" style={{ color: "#7a4a10" }} />} value={fmt(snap?.gold ?? 0)} bg="#fde8c4" />
           <ResChip icon={<TreePine className="w-4 h-4" style={{ color: "#0e6b63" }} />} value={fmt(snap?.wood ?? 0)} bg="#cdf3ee" />
-          <ResChip icon={<Mountain className="w-4 h-4" style={{ color: "#8a3a1a" }} />} value={fmt(snap?.stone ?? 0)} bg="#ffd4c2" />
+          <ResChip icon={<Mountain className="w-4 h-4" style={{ color: "#6b4e1a" }} />} value={fmt(snap?.stone ?? 0)} bg="#fff1bd" />
         </div>
 
         <div className="flex-1" />
@@ -330,7 +330,7 @@ export function MainMenu({
           className="inline-block mb-3 px-3 py-1 rounded-full font-semibold tracking-[0.18em]"
           style={{
             background: "#ffb347",
-            color: "#0c3a5b",
+            color: "#6b4e1a",
             fontSize: "11px",
             boxShadow: "0 8px 24px rgba(255,179,71,0.45)",
           }}
@@ -352,7 +352,7 @@ export function MainMenu({
               className="absolute left-[-4%] right-[-4%] top-[18%] bottom-[14%] rounded-[14px] -z-10"
               style={{ background: "#ffb347", boxShadow: "0 12px 40px rgba(255,179,71,0.5)" }}
             />
-            <span style={{ color: "#0c3a5b", position: "relative", padding: "0 0.18em" }}>tycoon</span>
+            <span style={{ color: "#6b4e1a", position: "relative", padding: "0 0.18em" }}>tycoon</span>
           </span>
         </h1>
       </motion.div>
@@ -376,16 +376,18 @@ export function MainMenu({
             title={b.label}
             className="group relative w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center"
             style={{
-              background: "#ffffff",
-              border: "1px solid #e0e2e8",
-              color: "#0c3a5b",
-              boxShadow: "0 6px 18px rgba(12,58,91,0.18)",
+              background: "rgba(255,255,255,0.55)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              border: "1px solid rgba(255,255,255,0.9)",
+              color: "#6b4e1a",
+              boxShadow: "0 6px 18px rgba(107,78,26,0.15)",
             }}
           >
             <b.icon className="w-[18px] h-[18px] sm:w-5 sm:h-5" strokeWidth={2.2} />
             <span
               className="absolute left-full ml-2 px-3 py-1.5 text-[12px] font-semibold rounded-full whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none hidden sm:block"
-              style={{ background: "#e76f51", color: "#ffffff" }}
+              style={{ background: "#ffd84a", color: "#6b4e1a" }}
             >
               {b.label}
             </span>
@@ -410,10 +412,12 @@ export function MainMenu({
                 exit={{ opacity: 0, y: 14 }}
                 className="mb-4 p-4 sm:p-5"
                 style={{
-                  background: "#ffffff",
-                  border: "1px solid #eef0f3",
+                  background: "rgba(255,255,255,0.65)",
+                  backdropFilter: "blur(16px)",
+                  WebkitBackdropFilter: "blur(16px)",
+                  border: "1px solid rgba(255,255,255,0.9)",
                   borderRadius: "28px",
-                  boxShadow: "0 20px 60px rgba(12,58,91,0.22)",
+                  boxShadow: "0 20px 60px rgba(107,78,26,0.18)",
                 }}
               >
                 <div className="flex items-center justify-between mb-3">
@@ -436,12 +440,12 @@ export function MainMenu({
                     🏝️
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold capitalize truncate text-[15px]" style={{ color: "#0c3a5b" }}>
+                    <div className="font-semibold capitalize truncate text-[15px]" style={{ color: "#6b4e1a" }}>
                       {snap.islandName}
                     </div>
                     <div className="text-[12px] mt-0.5" style={{ color: "#6b6f7e" }}>
-                      Зданий <b style={{ color: "#0c3a5b" }}>{snap.buildings}</b>/{snap.plots} · Уровень{" "}
-                      <b style={{ color: "#0c3a5b" }}>{snap.level}</b>
+                      Зданий <b style={{ color: "#6b4e1a" }}>{snap.buildings}</b>/{snap.plots} · Уровень{" "}
+                      <b style={{ color: "#6b4e1a" }}>{snap.level}</b>
                     </div>
                     <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ background: "#eef0f3" }}>
                       <motion.div
@@ -449,7 +453,7 @@ export function MainMenu({
                         animate={{ width: `${Math.min(100, (snap.buildings / Math.max(1, snap.plots)) * 100)}%` }}
                         transition={{ duration: 0.8, delay: 0.5 }}
                         className="h-full"
-                        style={{ background: "#2a9d8f" }}
+                        style={{ background: "#ffd84a" }}
                       />
                     </div>
                   </div>
@@ -467,22 +471,25 @@ export function MainMenu({
             onClick={hasSave ? onPlay : onNewGame}
             className="relative w-full overflow-hidden flex items-center justify-center gap-3"
             style={{
-              background: "linear-gradient(135deg, #f4a261 0%, #e76f51 100%)",
-              color: "#ffffff",
+              background: "rgba(255, 255, 255, 0.55)",
+              backdropFilter: "blur(14px)",
+              WebkitBackdropFilter: "blur(14px)",
+              color: "#6b4e1a",
+              border: "1.5px solid rgba(255,216,74,0.9)",
               borderRadius: "9999px",
               padding: "20px 28px",
               fontSize: "17px",
               fontWeight: 600,
               letterSpacing: "-0.01em",
               boxShadow: hoverPlay
-                ? "0 20px 50px rgba(231,111,81,0.45), 0 0 0 4px rgba(244,162,97,0.45)"
-                : "0 16px 40px rgba(231,111,81,0.4)",
+                ? "0 20px 50px rgba(245,184,32,0.45), 0 0 0 4px rgba(255,216,74,0.45)"
+                : "0 16px 40px rgba(245,184,32,0.4)",
               transition: "box-shadow 0.25s ease",
             }}
           >
             <span
               className="flex items-center justify-center rounded-full"
-              style={{ width: 32, height: 32, background: "#fde8c4", color: "#e76f51" }}
+              style={{ width: 32, height: 32, background: "#ffd84a", color: "#6b4e1a" }}
             >
               <Play className="w-4 h-4 fill-current" strokeWidth={0} />
             </span>
@@ -523,7 +530,7 @@ function ResChip({ icon, value, bg }: { icon: React.ReactNode; value: string; bg
   return (
     <div
       className="flex items-center gap-1.5 px-3 h-9 rounded-full"
-      style={{ background: bg, color: "#0c3a5b", border: "1px solid rgba(12,58,91,0.06)" }}
+      style={{ background: bg, color: "#6b4e1a", border: "1px solid rgba(255,255,255,0.8)" }}
     >
       {icon}
       <span className="text-[13px] font-bold tabular-nums">{value}</span>
@@ -540,10 +547,12 @@ function IconChip({ children, onClick, title }: { children: React.ReactNode; onC
       title={title}
       className="relative w-9 h-9 rounded-full flex items-center justify-center"
       style={{
-        background: "#ffffff",
-        border: "1px solid #e0e2e8",
-        color: "#0c3a5b",
-        boxShadow: "0 4px 12px rgba(12,58,91,0.14)",
+        background: "rgba(255,255,255,0.6)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
+        border: "1px solid rgba(255,255,255,0.9)",
+        color: "#6b4e1a",
+        boxShadow: "0 4px 12px rgba(107,78,26,0.12)",
       }}
     >
       {children}
@@ -564,8 +573,8 @@ function SecondaryBtn({
 }) {
     const styles =
       variant === "yellow"
-        ? { background: "#2a9d8f", color: "#ffffff", border: "1px solid #21867a" }
-        : { background: "#fff8f0", color: "#e76f51", border: "1px solid #f4a261" };
+        ? { background: "rgba(255,216,74,0.75)", color: "#6b4e1a", border: "1.5px solid rgba(255,255,255,0.9)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)" }
+        : { background: "rgba(255,255,255,0.55)", color: "#6b4e1a", border: "1.5px solid rgba(255,216,74,0.9)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)" };
   return (
     <motion.button
       whileHover={{ y: -2 }}
@@ -575,7 +584,7 @@ function SecondaryBtn({
       style={{
         ...styles,
         padding: "12px 18px",
-        boxShadow: "0 6px 16px rgba(12,58,91,0.18)",
+        boxShadow: "0 6px 16px rgba(107,78,26,0.18)",
       }}
     >
       {icon}
@@ -595,9 +604,11 @@ function ProfileChip({ snap }: { snap: SaveSnap | null }) {
     <div
       className="flex items-center gap-2.5 pl-1 pr-3 py-1 rounded-full"
       style={{
-        background: "#ffffff",
-        border: "1px solid #e0e2e8",
-        boxShadow: "0 6px 18px rgba(12,58,91,0.18)",
+        background: "rgba(255,255,255,0.6)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        border: "1px solid rgba(255,255,255,0.9)",
+        boxShadow: "0 6px 18px rgba(107,78,26,0.15)",
       }}
     >
       <div className="relative">
@@ -606,20 +617,20 @@ function ProfileChip({ snap }: { snap: SaveSnap | null }) {
         ) : (
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[13px]"
-            style={{ background: "#ffb347", color: "#0c3a5b" }}
+            style={{ background: "#ffb347", color: "#6b4e1a" }}
           >
             {name.charAt(0).toUpperCase()}
           </div>
         )}
         <div
           className="absolute -bottom-1 -right-1 min-w-[20px] h-[16px] px-1 rounded-full text-[10px] font-extrabold flex items-center justify-center"
-          style={{ background: "#e76f51", color: "#ffffff", border: "2px solid #ffffff" }}
+          style={{ background: "#ffd84a", color: "#6b4e1a", border: "2px solid #ffffff" }}
         >
           {level}
         </div>
       </div>
       <div className="hidden sm:flex flex-col min-w-0">
-        <div className="text-[12px] font-bold truncate max-w-[110px] leading-tight" style={{ color: "#0c3a5b" }}>
+        <div className="text-[12px] font-bold truncate max-w-[110px] leading-tight" style={{ color: "#6b4e1a" }}>
           {name}
         </div>
         <div className="flex items-center gap-1.5">
@@ -629,7 +640,7 @@ function ProfileChip({ snap }: { snap: SaveSnap | null }) {
               animate={{ width: `${xpPct}%` }}
               transition={{ duration: 0.8, delay: 0.4 }}
               className="h-full"
-              style={{ background: "#2a9d8f" }}
+              style={{ background: "#ffd84a" }}
             />
           </div>
           <span className="text-[9px] font-bold tabular-nums" style={{ color: "#8e91a0" }}>
@@ -649,7 +660,7 @@ function AuthChip() {
       <Link
         to="/login"
         className="flex items-center gap-1.5 px-4 h-9 rounded-full text-[12px] font-semibold"
-        style={{ background: "#2a9d8f", color: "#ffffff" }}
+        style={{ background: "rgba(255,216,74,0.8)", color: "#6b4e1a", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.8)" }}
       >
         Войти
       </Link>
@@ -666,10 +677,12 @@ function AuthChip() {
       title="Выйти"
       className="w-9 h-9 rounded-full flex items-center justify-center"
       style={{
-        background: "#ffffff",
-        border: "1px solid #e0e2e8",
-        color: "#8a3a1a",
-        boxShadow: "0 4px 12px rgba(12,58,91,0.14)",
+        background: "rgba(255,255,255,0.6)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
+        border: "1px solid rgba(255,255,255,0.9)",
+        color: "#6b4e1a",
+        boxShadow: "0 4px 12px rgba(107,78,26,0.12)",
       }}
     >
       <LogOut className="w-4 h-4" />
