@@ -192,7 +192,7 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
         plotIndex={plotIndex}
         state={game.state}
         onBuild={game.buildAtPlot}
-        onUpgrade={game.buyOrUpgrade}
+        onUpgrade={() => game.upgradeAtPlot(plotIndex)}
       />
 
       <ShopModal
