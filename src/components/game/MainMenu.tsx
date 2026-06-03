@@ -116,17 +116,17 @@ export function MainMenu({
   }, [t]);
 
   const sideButtons = [
-    { id: "daily", label: "Daily", icon: Gift, color: "from-pink-500 to-rose-600", onClick: onDaily, badge: hasSave },
-    { id: "quests", label: "Quests", icon: Swords, color: "from-amber-500 to-orange-600", onClick: onQuests ?? onDaily },
-    { id: "ach", label: "Achievements", icon: Trophy, color: "from-yellow-400 to-amber-600", onClick: onAchievements ?? onLeaderboards },
-    { id: "shop", label: "Shop", icon: ShoppingBag, color: "from-emerald-500 to-teal-600", onClick: onShop },
-    { id: "prestige", label: "Prestige", icon: Sparkles, color: "from-fuchsia-500 to-violet-700", onClick: onPrestige ?? (() => toast("Prestige доступен в игре ✨")) },
-    { id: "events", label: "Events", icon: CalendarDays, color: "from-sky-500 to-indigo-600", onClick: onEvents ?? (() => toast("События скоро 🎉")) },
-    { id: "lb", label: "Leaderboards", icon: BarChart3, color: "from-violet-500 to-purple-700", onClick: onLeaderboards },
+    { id: "daily", label: "Daily", icon: Gift, onClick: onDaily },
+    { id: "quests", label: "Quests", icon: Swords, onClick: onQuests ?? onDaily },
+    { id: "ach", label: "Achievements", icon: Trophy, onClick: onAchievements ?? onLeaderboards },
+    { id: "shop", label: "Shop", icon: ShoppingBag, onClick: onShop },
+    { id: "prestige", label: "Prestige", icon: Sparkles, onClick: onPrestige ?? (() => toast("Prestige доступен в игре ✨")) },
+    { id: "events", label: "Events", icon: CalendarDays, onClick: onEvents ?? (() => toast("События скоро 🎉")) },
+    { id: "lb", label: "Leaderboards", icon: BarChart3, onClick: onLeaderboards },
   ];
 
   return (
-    <div className="fixed inset-0 overflow-hidden select-none text-white font-display">
+    <div className="fixed inset-0 overflow-hidden select-none" style={{ fontFamily: "'Manrope', system-ui, sans-serif" }}>
       {/* === Animated sky === */}
       <motion.div
         className="absolute inset-0 transition-colors"
@@ -236,7 +236,6 @@ export function MainMenu({
             <ellipse cx="280" cy="135" rx="180" ry="52" fill="url(#grass)" />
             <ellipse cx="120" cy="168" rx="22" ry="12" fill="#8a96aa" />
             <ellipse cx="450" cy="170" rx="26" ry="14" fill="#8a96aa" />
-            {/* Tiny buildings */}
             <g transform="translate(220 105)">
               <rect x="0" y="0" width="28" height="24" fill="#f5d29a" stroke="#8a5a2a" strokeWidth="1.5" />
               <polygon points="-2,0 30,0 14,-14" fill="#c8523a" stroke="#7a3220" strokeWidth="1.5" />
@@ -288,134 +287,169 @@ export function MainMenu({
         </motion.div>
       ))}
 
-      {/* Vignette */}
-      <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at center, transparent 45%, rgba(0,0,10,0.55) 100%)" }} />
+      {/* Soft canvas-tone vignette (lighter so Miro UI reads cleanly) */}
+      <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at center, transparent 50%, rgba(0,0,20,0.35) 100%)" }} />
 
-      {/* ============ FOREGROUND UI ============ */}
+      {/* ============ FOREGROUND UI — Miro design tokens ============ */}
 
       {/* TOP BAR */}
       <motion.div
-        initial={{ y: -30, opacity: 0 }}
+        initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6, ease: [0.2, 0.9, 0.3, 1] }}
-        className="absolute top-[max(0.75rem,env(safe-area-inset-top))] left-2 right-2 sm:top-5 sm:left-5 sm:right-5 z-30 flex items-center gap-1.5 sm:gap-3"
+        transition={{ duration: 0.5, ease: [0.2, 0.9, 0.3, 1] }}
+        className="absolute top-[max(0.75rem,env(safe-area-inset-top))] left-3 right-3 sm:top-5 sm:left-6 sm:right-6 z-30 flex items-center gap-2 sm:gap-3"
       >
         <ProfileChip snap={snap} />
 
-        {/* Resources */}
-        <div className="hidden md:flex items-center gap-2 ml-2">
-          <ResChip icon={<Coins className="w-4 h-4 text-amber-300" />} value={fmt(snap?.gold ?? 0)} accent="from-amber-400/30 to-amber-600/10" />
-          <ResChip icon={<TreePine className="w-4 h-4 text-emerald-300" />} value={fmt(snap?.wood ?? 0)} accent="from-emerald-400/30 to-emerald-600/10" />
-          <ResChip icon={<Mountain className="w-4 h-4 text-slate-200" />} value={fmt(snap?.stone ?? 0)} accent="from-slate-300/30 to-slate-500/10" />
+        <div className="hidden md:flex items-center gap-2 ml-1">
+          <ResChip icon={<Coins className="w-4 h-4" style={{ color: "#746019" }} />} value={fmt(snap?.gold ?? 0)} bg="#fff4c4" />
+          <ResChip icon={<TreePine className="w-4 h-4" style={{ color: "#187574" }} />} value={fmt(snap?.wood ?? 0)} bg="#c3faf5" />
+          <ResChip icon={<Mountain className="w-4 h-4" style={{ color: "#600000" }} />} value={fmt(snap?.stone ?? 0)} bg="#ffc6c6" />
         </div>
 
         <div className="flex-1" />
 
         <IconChip onClick={() => toast("Уведомлений нет 🔔")} title="Уведомления">
-          <Bell className="w-4 h-4" />
-          {hasSave && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-black/30" />}
+          <Bell className="w-[18px] h-[18px]" strokeWidth={2.2} />
+          {hasSave && <span className="absolute top-1 right-1 w-2 h-2 rounded-full" style={{ background: "#ff4747" }} />}
         </IconChip>
         <IconChip onClick={onSettings} title="Настройки">
-          <Settings className="w-4 h-4" />
+          <Settings className="w-[18px] h-[18px]" strokeWidth={2.2} />
         </IconChip>
         <AuthChip />
       </motion.div>
 
-      {/* TITLE */}
+      {/* TITLE — Miro-style wordmark with yellow sticky highlight */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.85, y: -10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.9, delay: 0.15, ease: [0.2, 0.9, 0.3, 1.1] }}
-        className="absolute top-[14%] sm:top-[16%] left-0 right-0 z-20 text-center pointer-events-none px-4"
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, delay: 0.15, ease: [0.2, 0.9, 0.3, 1.1] }}
+        className="absolute top-[13%] sm:top-[15%] left-0 right-0 z-20 text-center pointer-events-none px-4"
       >
-        <h1
-          className="font-extrabold leading-none tracking-tight"
-          style={{
-            fontSize: "clamp(2.4rem, 7vw, 5rem)",
-            color: "#fff5d6",
-            textShadow: "0 2px 0 #b8761c, 0 4px 0 #8a5414, 0 6px 0 #6b3e0f, 0 10px 22px rgba(0,0,0,0.5), 0 0 40px rgba(255,210,90,0.45)",
-            WebkitTextStroke: "1.5px #6b3e0f",
-          }}
-        >
-          LOST ISLES
-        </h1>
         <div
-          className="mt-1 font-bold"
+          className="inline-block mb-3 px-3 py-1 rounded-full font-semibold tracking-[0.18em]"
           style={{
-            fontSize: "clamp(1rem, 3vw, 1.8rem)",
-            color: "#ffd24a",
-            letterSpacing: "0.5em",
-            textShadow: "0 2px 0 #6b3e0f, 0 4px 10px rgba(0,0,0,0.4)",
+            background: "#ffd02f",
+            color: "#1c1c1e",
+            fontSize: "11px",
+            boxShadow: "0 8px 24px rgba(255,208,47,0.4)",
           }}
         >
-          T Y C O O N
+          ISLAND TYCOON · 2026
         </div>
+        <h1
+          className="font-semibold leading-[1.02] tracking-[-0.04em]"
+          style={{
+            fontSize: "clamp(2.6rem, 8vw, 6rem)",
+            color: "#ffffff",
+            textShadow: "0 6px 28px rgba(0,0,0,0.4)",
+          }}
+        >
+          Lost Isles
+          <br />
+          <span className="relative inline-block">
+            <span
+              className="absolute left-[-4%] right-[-4%] top-[18%] bottom-[14%] rounded-[14px] -z-10"
+              style={{ background: "#ffd02f", boxShadow: "0 12px 40px rgba(255,208,47,0.5)" }}
+            />
+            <span style={{ color: "#1c1c1e", position: "relative", padding: "0 0.18em" }}>tycoon</span>
+          </span>
+        </h1>
       </motion.div>
 
-      {/* SIDE QUICK MENU */}
+      {/* SIDE QUICK MENU — circular white icons on hairline */}
       <motion.div
-        initial={{ x: -60, opacity: 0 }}
+        initial={{ x: -40, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.3 }}
-        className="absolute left-2 sm:left-5 top-[42%] sm:top-1/2 -translate-y-1/2 z-30 flex flex-col gap-1.5 sm:gap-2"
+        transition={{ duration: 0.5, delay: 0.3 }}
+        className="absolute left-3 sm:left-6 top-[44%] sm:top-1/2 -translate-y-1/2 z-30 flex flex-col gap-2 sm:gap-2.5"
       >
         {sideButtons.map((b, i) => (
           <motion.button
             key={b.id}
-            initial={{ x: -40, opacity: 0 }}
+            initial={{ x: -24, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.35 + i * 0.05 }}
-            whileHover={{ scale: 1.08, x: 4 }}
+            transition={{ delay: 0.35 + i * 0.04 }}
+            whileHover={{ scale: 1.06, x: 2 }}
             whileTap={{ scale: 0.94 }}
             onClick={b.onClick}
             title={b.label}
-            className="group relative w-10 h-10 sm:w-14 sm:h-14 rounded-2xl border border-white/25 backdrop-blur-xl bg-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] flex items-center justify-center overflow-hidden"
+            className="group relative w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center"
+            style={{
+              background: "#ffffff",
+              border: "1px solid #e0e2e8",
+              color: "#1c1c1e",
+              boxShadow: "0 6px 18px rgba(28,28,30,0.18)",
+            }}
           >
-            <div className={`absolute inset-0 bg-gradient-to-br ${b.color} opacity-70 group-hover:opacity-100 transition-opacity`} />
-            <b.icon className="relative w-4 h-4 sm:w-6 sm:h-6 drop-shadow" />
-            <div className="absolute inset-0 ring-1 ring-inset ring-white/20 rounded-2xl" />
-            <span className="absolute left-full ml-2 px-2.5 py-1 text-[11px] font-bold rounded-md bg-black/70 backdrop-blur whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none hidden sm:block">
+            <b.icon className="w-[18px] h-[18px] sm:w-5 sm:h-5" strokeWidth={2.2} />
+            <span
+              className="absolute left-full ml-2 px-3 py-1.5 text-[12px] font-semibold rounded-full whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none hidden sm:block"
+              style={{ background: "#1c1c1e", color: "#ffffff" }}
+            >
               {b.label}
             </span>
           </motion.button>
         ))}
       </motion.div>
 
-      {/* CENTER — PLAY */}
+      {/* CENTER — PLAY card */}
       <div className="absolute inset-0 z-20 flex items-end sm:items-center justify-center pointer-events-none">
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.4 }}
-          className="pointer-events-auto w-full max-w-md px-5 pb-8 sm:pb-0 sm:mt-24"
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="pointer-events-auto w-full max-w-md px-5 pb-8 sm:pb-0 sm:mt-28"
         >
-          {/* Save card */}
+          {/* Save snapshot — clean white feature card */}
           <AnimatePresence>
             {snap && hasSave && (
               <motion.div
-                initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 20 }}
-                className="mb-4 rounded-2xl border border-white/20 bg-white/10 backdrop-blur-2xl p-3.5 shadow-[0_10px_40px_rgba(0,0,0,0.4)]"
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 14 }}
+                className="mb-4 p-4 sm:p-5"
+                style={{
+                  background: "#ffffff",
+                  border: "1px solid #eef0f3",
+                  borderRadius: "28px",
+                  boxShadow: "0 20px 60px rgba(5,0,56,0.22)",
+                }}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-[11px] uppercase tracking-widest text-white/70 font-bold">Последнее сохранение</div>
-                  <div className="text-[11px] font-bold text-emerald-300">● Сохранено</div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-[11px] uppercase tracking-[0.12em] font-semibold" style={{ color: "#8e91a0" }}>
+                    Последнее сохранение
+                  </div>
+                  <div
+                    className="text-[11px] font-semibold flex items-center gap-1.5 px-2 py-0.5 rounded-full"
+                    style={{ background: "#e6f7ef", color: "#00b473" }}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#00b473" }} />
+                    Синхронизировано
+                  </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="text-3xl">🏝️</div>
+                  <div
+                    className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0"
+                    style={{ background: "#fff4c4" }}
+                  >
+                    🏝️
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-bold capitalize truncate">{snap.islandName}</div>
-                    <div className="text-xs text-white/70">
-                      Зданий: <b className="text-white">{snap.buildings}</b> / {snap.plots} · Уровень{" "}
-                      <b className="text-white">{snap.level}</b>
+                    <div className="font-semibold capitalize truncate text-[15px]" style={{ color: "#1c1c1e" }}>
+                      {snap.islandName}
                     </div>
-                    <div className="mt-1.5 h-1.5 bg-black/30 rounded-full overflow-hidden">
+                    <div className="text-[12px] mt-0.5" style={{ color: "#6b6f7e" }}>
+                      Зданий <b style={{ color: "#1c1c1e" }}>{snap.buildings}</b>/{snap.plots} · Уровень{" "}
+                      <b style={{ color: "#1c1c1e" }}>{snap.level}</b>
+                    </div>
+                    <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ background: "#eef0f3" }}>
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${Math.min(100, (snap.buildings / Math.max(1, snap.plots)) * 100)}%` }}
-                        transition={{ duration: 0.8, delay: 0.6 }}
-                        className="h-full bg-gradient-to-r from-emerald-400 to-teal-500"
+                        transition={{ duration: 0.8, delay: 0.5 }}
+                        className="h-full"
+                        style={{ background: "#4262ff" }}
                       />
                     </div>
                   </div>
@@ -424,50 +458,46 @@ export function MainMenu({
             )}
           </AnimatePresence>
 
-          {/* PLAY button */}
+          {/* PRIMARY PLAY — black pill (Miro signature) */}
           <motion.button
             onMouseEnter={() => setHoverPlay(true)}
             onMouseLeave={() => setHoverPlay(false)}
-            whileTap={{ scale: 0.97 }}
+            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.98 }}
             onClick={hasSave ? onPlay : onNewGame}
-            className="relative w-full overflow-hidden rounded-3xl py-5 border-2 border-white/40 shadow-[0_12px_40px_rgba(0,0,0,0.5)]"
+            className="relative w-full overflow-hidden flex items-center justify-center gap-3"
             style={{
-              background: "linear-gradient(135deg, #22d39a 0%, #11a87b 50%, #0a7a5e 100%)",
+              background: "#1c1c1e",
+              color: "#ffffff",
+              borderRadius: "9999px",
+              padding: "20px 28px",
+              fontSize: "17px",
+              fontWeight: 600,
+              letterSpacing: "-0.01em",
+              boxShadow: hoverPlay
+                ? "0 20px 50px rgba(5,0,56,0.45), 0 0 0 4px rgba(255,208,47,0.4)"
+                : "0 16px 40px rgba(5,0,56,0.4)",
+              transition: "box-shadow 0.25s ease",
             }}
           >
-            {/* Glow */}
-            <motion.div
-              className="absolute -inset-2 rounded-3xl pointer-events-none"
-              style={{ background: "radial-gradient(ellipse at center, rgba(80,255,180,0.55), transparent 70%)" }}
-              animate={{ opacity: hoverPlay ? 0.9 : 0.4, scale: hoverPlay ? 1.05 : 1 }}
-              transition={{ duration: 0.4 }}
-            />
-            {/* Shine sweep */}
-            <motion.div
-              className="absolute inset-0 pointer-events-none"
-              style={{ background: "linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.45) 50%, transparent 65%)" }}
-              initial={{ x: "-120%" }}
-              animate={{ x: "120%" }}
-              transition={{ duration: 2.4, repeat: Infinity, repeatDelay: 1.2, ease: "easeInOut" }}
-            />
-            <span className="relative flex items-center justify-center gap-3 text-white font-extrabold text-2xl tracking-wider drop-shadow">
-              <Play className="w-7 h-7 fill-white" />
-              {hasSave ? "ПРОДОЛЖИТЬ" : "ИГРАТЬ"}
+            <span
+              className="flex items-center justify-center rounded-full"
+              style={{ width: 32, height: 32, background: "#ffd02f", color: "#1c1c1e" }}
+            >
+              <Play className="w-4 h-4 fill-current" strokeWidth={0} />
             </span>
-            {hasSave && (
-              <span className="relative block mt-1 text-xs text-white/85 font-semibold">
-                Тапни, чтобы вернуться на остров →
-              </span>
-            )}
+            <span>{hasSave ? "Продолжить игру" : "Начать играть"}</span>
+            <ChevronRight className="w-5 h-5 opacity-70" />
           </motion.button>
 
-          {/* Secondary actions */}
+          {/* Secondary — outlined + yellow pill */}
           <div className="mt-3 grid grid-cols-2 gap-2.5">
-            <SecondaryBtn icon={<Plus className="w-4 h-4" />} label="Новая игра" onClick={onNewGame} />
+            <SecondaryBtn icon={<Plus className="w-4 h-4" strokeWidth={2.4} />} label="Новая игра" onClick={onNewGame} />
             <SecondaryBtn
-              icon={<ChevronRight className="w-4 h-4" />}
-              label={hasSave ? "Прогресс острова" : "Открыть архипелаг"}
+              icon={<ChevronRight className="w-4 h-4" strokeWidth={2.4} />}
+              label={hasSave ? "Архипелаг" : "Открыть мир"}
               onClick={hasSave ? onPlay : onNewGame}
+              variant="yellow"
             />
           </div>
         </motion.div>
@@ -476,9 +506,10 @@ export function MainMenu({
       {/* Footer */}
       <motion.div
         initial={{ opacity: 0 }}
-        animate={{ opacity: 0.6 }}
-        transition={{ delay: 1.2 }}
-        className="absolute bottom-2 right-3 text-white/70 text-[10px] font-bold tracking-wider"
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.0 }}
+        className="absolute bottom-3 right-4 text-[10px] font-semibold tracking-[0.14em] uppercase"
+        style={{ color: "rgba(255,255,255,0.75)" }}
       >
         v1.0 · Lost Isles Tycoon
       </motion.div>
@@ -486,13 +517,16 @@ export function MainMenu({
   );
 }
 
-/* ---------- subcomponents ---------- */
+/* ---------- subcomponents (Miro design tokens) ---------- */
 
-function ResChip({ icon, value, accent }: { icon: React.ReactNode; value: string; accent: string }) {
+function ResChip({ icon, value, bg }: { icon: React.ReactNode; value: string; bg: string }) {
   return (
-    <div className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/20 backdrop-blur-xl bg-gradient-to-br ${accent} shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]`}>
+    <div
+      className="flex items-center gap-1.5 px-3 h-9 rounded-full"
+      style={{ background: bg, color: "#1c1c1e", border: "1px solid rgba(28,28,30,0.06)" }}
+    >
       {icon}
-      <span className="text-xs font-extrabold tabular-nums">{value}</span>
+      <span className="text-[13px] font-bold tabular-nums">{value}</span>
     </div>
   );
 }
@@ -500,24 +534,49 @@ function ResChip({ icon, value, accent }: { icon: React.ReactNode; value: string
 function IconChip({ children, onClick, title }: { children: React.ReactNode; onClick?: () => void; title?: string }) {
   return (
     <motion.button
-      whileHover={{ scale: 1.08 }}
-      whileTap={{ scale: 0.92 }}
+      whileHover={{ scale: 1.06 }}
+      whileTap={{ scale: 0.94 }}
       onClick={onClick}
       title={title}
-      className="relative w-9 h-9 rounded-full border border-white/25 bg-white/10 backdrop-blur-xl flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]"
+      className="relative w-9 h-9 rounded-full flex items-center justify-center"
+      style={{
+        background: "#ffffff",
+        border: "1px solid #e0e2e8",
+        color: "#1c1c1e",
+        boxShadow: "0 4px 12px rgba(28,28,30,0.14)",
+      }}
     >
       {children}
     </motion.button>
   );
 }
 
-function SecondaryBtn({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
+function SecondaryBtn({
+  icon,
+  label,
+  onClick,
+  variant = "outline",
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  variant?: "outline" | "yellow";
+}) {
+  const styles =
+    variant === "yellow"
+      ? { background: "#ffd02f", color: "#1c1c1e", border: "1px solid #f0bf1a" }
+      : { background: "#ffffff", color: "#1c1c1e", border: "1px solid #c7cad5" };
   return (
     <motion.button
-      whileHover={{ scale: 1.03, y: -1 }}
-      whileTap={{ scale: 0.96 }}
+      whileHover={{ y: -2 }}
+      whileTap={{ scale: 0.97 }}
       onClick={onClick}
-      className="relative flex items-center justify-center gap-2 py-2.5 rounded-xl border border-white/25 bg-white/10 backdrop-blur-xl text-xs font-bold text-white/95 shadow-[0_6px_18px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.2)] hover:bg-white/15 transition-colors"
+      className="relative flex items-center justify-center gap-2 rounded-full font-semibold text-[13px]"
+      style={{
+        ...styles,
+        padding: "12px 18px",
+        boxShadow: "0 6px 16px rgba(5,0,56,0.18)",
+      }}
     >
       {icon}
       <span>{label}</span>
@@ -533,31 +592,49 @@ function ProfileChip({ snap }: { snap: SaveSnap | null }) {
   const xpPct = snap ? Math.min(100, (snap.xp / Math.max(1, snap.xpNext)) * 100) : 0;
 
   return (
-    <div className="flex items-center gap-2.5 pl-1 pr-3 py-1 rounded-full border border-white/25 bg-white/10 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_6px_18px_rgba(0,0,0,0.3)]">
+    <div
+      className="flex items-center gap-2.5 pl-1 pr-3 py-1 rounded-full"
+      style={{
+        background: "#ffffff",
+        border: "1px solid #e0e2e8",
+        boxShadow: "0 6px 18px rgba(28,28,30,0.18)",
+      }}
+    >
       <div className="relative">
         {avatar ? (
-          <img src={avatar} alt="" className="w-9 h-9 rounded-full border-2 border-emerald-300" />
+          <img src={avatar} alt="" className="w-8 h-8 rounded-full" style={{ border: "2px solid #ffd02f" }} />
         ) : (
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center font-extrabold text-sm border-2 border-white/40">
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[13px]"
+            style={{ background: "#ffd02f", color: "#1c1c1e" }}
+          >
             {name.charAt(0).toUpperCase()}
           </div>
         )}
-        <div className="absolute -bottom-1 -right-1 min-w-[22px] h-[18px] px-1 rounded-md bg-gradient-to-br from-amber-400 to-orange-600 text-[10px] font-extrabold flex items-center justify-center border border-white/40 shadow">
+        <div
+          className="absolute -bottom-1 -right-1 min-w-[20px] h-[16px] px-1 rounded-full text-[10px] font-extrabold flex items-center justify-center"
+          style={{ background: "#1c1c1e", color: "#ffd02f", border: "2px solid #ffffff" }}
+        >
           {level}
         </div>
       </div>
       <div className="hidden sm:flex flex-col min-w-0">
-        <div className="text-xs font-extrabold truncate max-w-[100px] sm:max-w-[120px] leading-tight">{name}</div>
+        <div className="text-[12px] font-bold truncate max-w-[110px] leading-tight" style={{ color: "#1c1c1e" }}>
+          {name}
+        </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-16 sm:w-24 h-1.5 bg-black/40 rounded-full overflow-hidden">
+          <div className="w-20 h-1.5 rounded-full overflow-hidden" style={{ background: "#eef0f3" }}>
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${xpPct}%` }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="h-full bg-gradient-to-r from-cyan-300 to-blue-500"
+              className="h-full"
+              style={{ background: "#4262ff" }}
             />
           </div>
-          <span className="text-[9px] font-bold text-white/70 tabular-nums">{Math.round(xpPct)}%</span>
+          <span className="text-[9px] font-bold tabular-nums" style={{ color: "#8e91a0" }}>
+            {Math.round(xpPct)}%
+          </span>
         </div>
       </div>
     </div>
@@ -571,22 +648,29 @@ function AuthChip() {
     return (
       <Link
         to="/login"
-        className="flex items-center gap-1.5 px-3 h-9 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-xs font-extrabold border border-white/40 shadow-lg transition"
+        className="flex items-center gap-1.5 px-4 h-9 rounded-full text-[12px] font-semibold"
+        style={{ background: "#1c1c1e", color: "#ffffff" }}
       >
-        ☁️ Войти
+        Войти
       </Link>
     );
   }
   return (
     <motion.button
-      whileHover={{ scale: 1.08 }}
-      whileTap={{ scale: 0.92 }}
+      whileHover={{ scale: 1.06 }}
+      whileTap={{ scale: 0.94 }}
       onClick={async () => {
         await supabase.auth.signOut();
         toast.success("Вы вышли из аккаунта");
       }}
       title="Выйти"
-      className="w-9 h-9 rounded-full border border-white/25 bg-rose-500/20 hover:bg-rose-500/40 backdrop-blur-xl flex items-center justify-center"
+      className="w-9 h-9 rounded-full flex items-center justify-center"
+      style={{
+        background: "#ffffff",
+        border: "1px solid #e0e2e8",
+        color: "#600000",
+        boxShadow: "0 4px 12px rgba(28,28,30,0.14)",
+      }}
     >
       <LogOut className="w-4 h-4" />
     </motion.button>
