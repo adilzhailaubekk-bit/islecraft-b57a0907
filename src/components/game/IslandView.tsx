@@ -336,6 +336,7 @@ function NoHit({ children }: { children: React.ReactNode }) {
    Ocean — bright tropical water with foam ring
    ============================================================ */
 function Ocean() {
+  const theme = useIslandTheme();
   const ref = useRef<THREE.Mesh>(null!);
   // Lower segment count for perf; still smooth-looking waves
   const geom = useMemo(() => new THREE.PlaneGeometry(180, 180, 56, 56), []);
@@ -356,7 +357,6 @@ function Ocean() {
         Math.cos(y * 0.28 + t * 0.85) * 0.18;
     }
     geom.attributes.position.needsUpdate = true;
-    // Skip expensive per-frame normal recompute — flat normals + light fakes it
   });
 
   return (
@@ -364,37 +364,38 @@ function Ocean() {
       {/* Deep base layer adds rich blue depth under the surface */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.1, 0]}>
         <circleGeometry args={[90, 64]} />
-        <meshBasicMaterial color={PALETTE.oceanDeep} />
+        <meshBasicMaterial color={theme.oceanDeep} />
       </mesh>
       {/* Mid gradient ring */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.7, 0]}>
         <ringGeometry args={[10, 40, 64]} />
-        <meshBasicMaterial color={PALETTE.oceanMid} transparent opacity={0.7} />
+        <meshBasicMaterial color={theme.oceanMid} transparent opacity={0.7} />
       </mesh>
       {/* Animated transparent surface */}
       <mesh ref={ref} geometry={geom} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.4, 0]} receiveShadow>
         <meshStandardMaterial
-          color={PALETTE.oceanShallow}
+          color={theme.oceanShallow}
           roughness={0.2}
           metalness={0.15}
           transparent
           opacity={0.78}
-          emissive={PALETTE.oceanShallow}
+          emissive={theme.oceanShallow}
           emissiveIntensity={0.08}
         />
       </mesh>
       {/* Foam rings around the island */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.22, 0]}>
         <ringGeometry args={[8.7, 9.9, 64]} />
-        <meshBasicMaterial color={PALETTE.oceanFoam} transparent opacity={0.6} />
+        <meshBasicMaterial color={theme.oceanFoam} transparent opacity={0.6} />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.21, 0]}>
         <ringGeometry args={[9.9, 11.4, 64]} />
-        <meshBasicMaterial color={PALETTE.oceanFoam} transparent opacity={0.28} />
+        <meshBasicMaterial color={theme.oceanFoam} transparent opacity={0.28} />
       </mesh>
     </group>
   );
 }
+
 
 /* ============================================================
    Island base — multi-tier with rocky cliffs
