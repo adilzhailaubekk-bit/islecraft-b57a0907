@@ -3575,14 +3575,17 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom, lowPower = fals
   }, [palms, trees, decor]);
 
   return (
-    <>
-      <fog attach="fog" args={["#bfe6f5", 30, 75]} />
+    <IslandThemeContext.Provider value={theme}>
+      <fog attach="fog" args={[theme.fogColor, 30, 75]} />
       <DayNightSystem />
-      {!lowPower && <Environment preset="park" />}
+      {!lowPower && <Environment preset={island.id === "volcano" ? "sunset" : island.id === "crystal" ? "night" : "park"} />}
+      {island.id === "volcano" && <ambientLight color="#ff5a18" intensity={0.35} />}
+      {island.id === "crystal" && <ambientLight color="#a8c8ff" intensity={0.45} />}
+      {island.id === "golden" && <ambientLight color="#ffd070" intensity={0.4} />}
 
       <Ocean />
       {!lowPower && (
-        <Sparkles count={30} scale={[60, 1, 60]} position={[0, -0.15, 0]} size={3} speed={0.3} color="#ffffff" />
+        <Sparkles count={30} scale={[60, 1, 60]} position={[0, -0.15, 0]} size={3} speed={0.3} color={theme.oceanFoam} />
       )}
 
       <group scale={ISLAND_SCALE}>
@@ -3610,14 +3613,18 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom, lowPower = fals
         {decor.bushes.map((p, i) => (
           <Bush key={`b-${i}`} position={p} />
         ))}
-        {decor.mushrooms.map((p, i) => (
-          <Mushroom key={`m-${i}`} position={p} />
-        ))}
+        {/* Themed scatter accents — mushrooms on paradise, themed alternatives elsewhere */}
+        {decor.mushrooms.map((p, i) => {
+          if (island.id === "crystal") return <CrystalShard key={`m-${i}`} position={p} />;
+          if (island.id === "volcano") return <LavaRock key={`m-${i}`} position={p} />;
+          if (island.id === "golden") return <GoldNugget key={`m-${i}`} position={p} />;
+          return <Mushroom key={`m-${i}`} position={p} />;
+        })}
         {decor.lanterns.map((p, i) => (
           <Lantern key={`l-${i}`} position={p} />
         ))}
         {decor.grassTufts.map((p, i) => (
-          <GrassTuft key={`gt-${i}`} position={p} tint={PALETTE.grassMid} />
+          <GrassTuft key={`gt-${i}`} position={p} tint={theme.grassDeep} />
         ))}
         {decor.shells.map((s, i) => (
           <Shell key={`sh-${i}`} position={s.pos} color={s.color} />
@@ -3626,11 +3633,15 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom, lowPower = fals
           <Driftwood key={`dw-${i}`} position={d.pos} rotation={d.rot} />
         ))}
 
-        {/* Centerpiece decor */}
-        <Fountain position={[0, 0.45, 0]} />
+        {/* Centerpiece decor — unique per island */}
+        {island.id === "paradise" && <Fountain position={[0, 0.45, 0]} />}
+        {island.id === "volcano" && <Volcano />}
+        {island.id === "crystal" && <CrystalSpires />}
+        {island.id === "golden" && <GoldenObelisk />}
         <FlagPole position={[-6, 0.45, -1]} />
         <Bridge position={[7.2, -0.05, 0]} rotation={Math.PI / 2} />
       </NoHit>
+
 
 
       {/* Cosmetics — also non-interactive */}
