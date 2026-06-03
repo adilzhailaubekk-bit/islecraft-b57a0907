@@ -3420,7 +3420,8 @@ function GoldenObelisk() {
 // Themed scatter accents (replaces mushrooms on themed islands)
 function CrystalShard({ position }: { position: [number, number, number] }) {
   const colors = ["#7af6e8", "#c8a8ff", "#ff9ce0"];
-  const c = colors[(position[0] * 7 + position[2] * 3) | 0 % 3 < 0 ? 0 : Math.abs(((position[0] * 7 + position[2] * 3) | 0) % 3)];
+  const idx = Math.abs(Math.round(position[0] * 7 + position[2] * 3)) % 3;
+  const c = colors[idx];
   return (
     <mesh position={[position[0], 0.3, position[2]]} rotation={[0.1, position[0], 0.05]} castShadow>
       <coneGeometry args={[0.14, 0.55, 5]} />
@@ -3428,6 +3429,7 @@ function CrystalShard({ position }: { position: [number, number, number] }) {
     </mesh>
   );
 }
+
 
 function LavaRock({ position }: { position: [number, number, number] }) {
   return (
