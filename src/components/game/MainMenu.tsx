@@ -385,7 +385,7 @@ export function MainMenu({
             <b.icon className="w-[18px] h-[18px] sm:w-5 sm:h-5" strokeWidth={2.2} />
             <span
               className="absolute left-full ml-2 px-3 py-1.5 text-[12px] font-semibold rounded-full whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none hidden sm:block"
-              style={{ background: "#0c3a5b", color: "#ffffff" }}
+              style={{ background: "#e76f51", color: "#ffffff" }}
             >
               {b.label}
             </span>
@@ -449,7 +449,7 @@ export function MainMenu({
                         animate={{ width: `${Math.min(100, (snap.buildings / Math.max(1, snap.plots)) * 100)}%` }}
                         transition={{ duration: 0.8, delay: 0.5 }}
                         className="h-full"
-                        style={{ background: "#13a89e" }}
+                        style={{ background: "#2a9d8f" }}
                       />
                     </div>
                   </div>
@@ -467,7 +467,7 @@ export function MainMenu({
             onClick={hasSave ? onPlay : onNewGame}
             className="relative w-full overflow-hidden flex items-center justify-center gap-3"
             style={{
-              background: "#0c3a5b",
+              background: "linear-gradient(135deg, #f4a261 0%, #e76f51 100%)",
               color: "#ffffff",
               borderRadius: "9999px",
               padding: "20px 28px",
@@ -475,14 +475,14 @@ export function MainMenu({
               fontWeight: 600,
               letterSpacing: "-0.01em",
               boxShadow: hoverPlay
-                ? "0 20px 50px rgba(12,58,91,0.45), 0 0 0 4px rgba(255,179,71,0.45)"
-                : "0 16px 40px rgba(12,58,91,0.4)",
+                ? "0 20px 50px rgba(231,111,81,0.45), 0 0 0 4px rgba(244,162,97,0.45)"
+                : "0 16px 40px rgba(231,111,81,0.4)",
               transition: "box-shadow 0.25s ease",
             }}
           >
             <span
               className="flex items-center justify-center rounded-full"
-              style={{ width: 32, height: 32, background: "#ffb347", color: "#0c3a5b" }}
+              style={{ width: 32, height: 32, background: "#fde8c4", color: "#e76f51" }}
             >
               <Play className="w-4 h-4 fill-current" strokeWidth={0} />
             </span>
@@ -562,10 +562,10 @@ function SecondaryBtn({
   onClick: () => void;
   variant?: "outline" | "yellow";
 }) {
-  const styles =
-    variant === "yellow"
-      ? { background: "#ffb347", color: "#0c3a5b", border: "1px solid #e89a2b" }
-      : { background: "#ffffff", color: "#0c3a5b", border: "1px solid #c7cad5" };
+    const styles =
+      variant === "yellow"
+        ? { background: "#2a9d8f", color: "#ffffff", border: "1px solid #21867a" }
+        : { background: "#fff8f0", color: "#e76f51", border: "1px solid #f4a261" };
   return (
     <motion.button
       whileHover={{ y: -2 }}
@@ -613,7 +613,7 @@ function ProfileChip({ snap }: { snap: SaveSnap | null }) {
         )}
         <div
           className="absolute -bottom-1 -right-1 min-w-[20px] h-[16px] px-1 rounded-full text-[10px] font-extrabold flex items-center justify-center"
-          style={{ background: "#0c3a5b", color: "#ffb347", border: "2px solid #ffffff" }}
+          style={{ background: "#e76f51", color: "#ffffff", border: "2px solid #ffffff" }}
         >
           {level}
         </div>
@@ -629,7 +629,7 @@ function ProfileChip({ snap }: { snap: SaveSnap | null }) {
               animate={{ width: `${xpPct}%` }}
               transition={{ duration: 0.8, delay: 0.4 }}
               className="h-full"
-              style={{ background: "#13a89e" }}
+              style={{ background: "#2a9d8f" }}
             />
           </div>
           <span className="text-[9px] font-bold tabular-nums" style={{ color: "#8e91a0" }}>
@@ -649,7 +649,7 @@ function AuthChip() {
       <Link
         to="/login"
         className="flex items-center gap-1.5 px-4 h-9 rounded-full text-[12px] font-semibold"
-        style={{ background: "#0c3a5b", color: "#ffffff" }}
+        style={{ background: "#2a9d8f", color: "#ffffff" }}
       >
         Войти
       </Link>
