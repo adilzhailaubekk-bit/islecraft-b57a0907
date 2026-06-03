@@ -12,7 +12,7 @@ import { DailyModal } from "@/components/game/DailyModal";
 import { OfflineModal } from "@/components/game/OfflineModal";
 import { SettingsModal } from "@/components/game/SettingsModal";
 import { PrestigeModal } from "@/components/game/PrestigeModal";
-import { LevelBadge } from "@/components/game/LevelBadge";
+
 import { fmt } from "@/game/format";
 import { canPrestige } from "@/game/prestige";
 
