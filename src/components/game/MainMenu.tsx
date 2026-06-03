@@ -495,15 +495,9 @@ export function MainMenu({
             <ChevronRight className="w-6 h-6 opacity-70" />
           </motion.button>
 
-          {/* Secondary — outlined + yellow pill */}
-          <div className="mt-3 grid grid-cols-2 gap-2.5">
+          {/* Secondary — full width like primary */}
+          <div className="mt-3 w-full">
             <SecondaryBtn icon={<Plus className="w-5 h-5" strokeWidth={2.4} />} label="Новая игра" onClick={onNewGame} />
-            <SecondaryBtn
-              icon={<ChevronRight className="w-5 h-5" strokeWidth={2.4} />}
-              label={hasSave ? "Архипелаг" : "Открыть мир"}
-              onClick={hasSave ? onPlay : onNewGame}
-              variant="yellow"
-            />
           </div>
         </motion.div>
       </div>
@@ -578,7 +572,7 @@ function SecondaryBtn({
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.97 }}
       onClick={onClick}
-      className="relative flex items-center justify-center gap-2 rounded-full font-semibold text-[15px]"
+      className="relative w-full flex items-center justify-center gap-2 rounded-full font-semibold text-[15px]"
       style={{
         ...styles,
         padding: "12px 18px",
