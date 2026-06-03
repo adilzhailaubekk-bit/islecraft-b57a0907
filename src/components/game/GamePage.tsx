@@ -167,6 +167,14 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
               </motion.button>
             );
           })}
+          <motion.div
+            whileHover={{ y: -4 }}
+            className="btn-3d relative sm:flex-1 bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-500 text-white rounded-2xl py-2.5 sm:py-5 px-1 sm:px-3 flex flex-col items-center justify-center gap-0.5 sm:gap-2 font-display font-bold min-h-[60px] sm:min-h-0"
+            title={`Уровень ${game.state.level}`}
+          >
+            <span className="text-2xl sm:text-4xl drop-shadow leading-none">⭐</span>
+            <span className="text-[10px] sm:text-sm text-shadow-soft leading-tight">Ур. {game.state.level}</span>
+          </motion.div>
           <motion.button
             whileHover={{ y: -4 }}
             whileTap={{ scale: 0.94 }}
