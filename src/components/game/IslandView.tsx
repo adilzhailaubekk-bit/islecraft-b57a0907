@@ -3268,8 +3268,196 @@ function BuildingSurround({ position, seed, buildingId }: { position: [number, n
 }
 
 /* ============================================================
+   Per-island feature centerpieces & decor
+   ============================================================ */
+
+function Volcano() {
+  const lavaRef = useRef<THREE.MeshStandardMaterial>(null!);
+  const smokeRef = useRef<THREE.Group>(null!);
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    if (lavaRef.current) lavaRef.current.emissiveIntensity = 1.2 + Math.sin(t * 2.2) * 0.4;
+    if (smokeRef.current) {
+      smokeRef.current.children.forEach((c, i) => {
+        const phase = t * 0.6 + i * 1.3;
+        c.position.y = 3.4 + ((phase % 3) * 0.8);
+        (c as THREE.Mesh).scale.setScalar(0.6 + (phase % 3) * 0.4);
+        const mat = (c as THREE.Mesh).material as THREE.MeshBasicMaterial;
+        mat.opacity = Math.max(0, 0.55 - (phase % 3) * 0.18);
+      });
+    }
+  });
+  return (
+    <group position={[0, 0.5, 0]}>
+      {/* Cone — outer dark obsidian */}
+      <mesh castShadow position={[0, 1.4, 0]}>
+        <coneGeometry args={[2.4, 2.8, 24, 1, true]} />
+        <meshStandardMaterial color="#1a0f12" roughness={0.95} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Inner cone with glowing lava lip */}
+      <mesh position={[0, 2.6, 0]}>
+        <torusGeometry args={[0.6, 0.18, 12, 24]} />
+        <meshStandardMaterial ref={lavaRef} color="#ff3a08" emissive="#ff5a18" emissiveIntensity={1.4} roughness={0.4} />
+      </mesh>
+      {/* Lava pool inside */}
+      <mesh position={[0, 2.6, 0]}>
+        <circleGeometry args={[0.6, 24]} />
+        <meshStandardMaterial color="#ff8030" emissive="#ff5018" emissiveIntensity={1.2} roughness={0.4} />
+      </mesh>
+      {/* Lava flows down slopes */}
+      {[0, 1, 2, 3].map((i) => {
+        const a = (i / 4) * Math.PI * 2 + 0.4;
+        return (
+          <mesh key={i} position={[Math.cos(a) * 1.1, 1.5, Math.sin(a) * 1.1]} rotation={[0, -a + Math.PI / 2, 0.7]}>
+            <boxGeometry args={[0.18, 1.8, 0.08]} />
+            <meshStandardMaterial color="#ff5018" emissive="#ff3008" emissiveIntensity={1.0} roughness={0.5} />
+          </mesh>
+        );
+      })}
+      {/* Obsidian rocks around base */}
+      {[0, 1, 2, 3, 4, 5].map((i) => {
+        const a = (i / 6) * Math.PI * 2;
+        return (
+          <mesh key={i} position={[Math.cos(a) * 2.6, 0.1, Math.sin(a) * 2.6]} rotation={[i, i * 0.7, 0]} castShadow>
+            <dodecahedronGeometry args={[0.32 + (i % 3) * 0.1, 0]} />
+            <meshStandardMaterial color="#1a0f14" roughness={0.9} metalness={0.3} />
+          </mesh>
+        );
+      })}
+      {/* Smoke puffs */}
+      <group ref={smokeRef}>
+        {[0, 1, 2, 3].map((i) => (
+          <mesh key={i} position={[0, 3.4 + i * 0.6, 0]}>
+            <sphereGeometry args={[0.5, 10, 8]} />
+            <meshBasicMaterial color="#3a2a2a" transparent opacity={0.45} depthWrite={false} />
+          </mesh>
+        ))}
+      </group>
+      {/* Hot glow light */}
+      <pointLight position={[0, 2.8, 0]} color="#ff5a18" intensity={2.5} distance={9} />
+    </group>
+  );
+}
+
+function CrystalSpires() {
+  const lightRef = useRef<THREE.PointLight>(null!);
+  useFrame(({ clock }) => {
+    if (lightRef.current) lightRef.current.intensity = 1.6 + Math.sin(clock.elapsedTime * 1.5) * 0.6;
+  });
+  const spires = useMemo(
+    () =>
+      [
+        { p: [0, 0, 0] as [number, number, number], h: 2.4, r: 0.45, c: "#7af6e8" },
+        { p: [0.7, 0, 0.4] as [number, number, number], h: 1.6, r: 0.3, c: "#c8a8ff" },
+        { p: [-0.8, 0, 0.3] as [number, number, number], h: 1.9, r: 0.34, c: "#ff9ce0" },
+        { p: [0.2, 0, -0.7] as [number, number, number], h: 1.3, r: 0.26, c: "#7af6e8" },
+        { p: [-0.4, 0, -0.5] as [number, number, number], h: 1.0, r: 0.22, c: "#c8a8ff" },
+      ],
+    [],
+  );
+  return (
+    <group position={[0, 0.5, 0]}>
+      {spires.map((s, i) => (
+        <mesh key={i} position={[s.p[0], s.h / 2, s.p[2]]} castShadow>
+          <coneGeometry args={[s.r, s.h, 6]} />
+          <meshStandardMaterial
+            color={s.c}
+            emissive={s.c}
+            emissiveIntensity={0.7}
+            roughness={0.15}
+            metalness={0.4}
+            transparent
+            opacity={0.92}
+          />
+        </mesh>
+      ))}
+      <pointLight ref={lightRef} position={[0, 1.4, 0]} color="#a8e0ff" intensity={1.8} distance={8} />
+      <Sparkles count={40} scale={[3, 3, 3]} position={[0, 1.2, 0]} size={3} speed={0.4} color="#c8a8ff" />
+    </group>
+  );
+}
+
+function GoldenObelisk() {
+  const ref = useRef<THREE.Group>(null!);
+  useFrame(({ clock }) => {
+    if (ref.current) ref.current.rotation.y = clock.elapsedTime * 0.2;
+  });
+  return (
+    <group position={[0, 0.5, 0]}>
+      {/* Marble base */}
+      <mesh castShadow position={[0, 0.25, 0]}>
+        <cylinderGeometry args={[1.0, 1.2, 0.5, 16]} />
+        <meshStandardMaterial color="#fff4d8" roughness={0.6} />
+      </mesh>
+      {/* Obelisk shaft */}
+      <mesh castShadow position={[0, 1.7, 0]}>
+        <boxGeometry args={[0.7, 2.4, 0.7]} />
+        <meshStandardMaterial color="#ffd24a" emissive="#a87a00" emissiveIntensity={0.25} roughness={0.3} metalness={0.85} />
+      </mesh>
+      {/* Pyramid cap */}
+      <mesh castShadow position={[0, 3.15, 0]}>
+        <coneGeometry args={[0.55, 0.6, 4]} />
+        <meshStandardMaterial color="#fff0a0" emissive="#ffae00" emissiveIntensity={0.6} roughness={0.2} metalness={0.95} />
+      </mesh>
+      {/* Floating gold coins ring */}
+      <group ref={ref}>
+        {[0, 1, 2, 3, 4, 5].map((i) => {
+          const a = (i / 6) * Math.PI * 2;
+          return (
+            <mesh key={i} position={[Math.cos(a) * 1.6, 1.8, Math.sin(a) * 1.6]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.18, 0.18, 0.05, 16]} />
+              <meshStandardMaterial color="#ffd24a" emissive="#ffae00" emissiveIntensity={0.5} roughness={0.2} metalness={0.95} />
+            </mesh>
+          );
+        })}
+      </group>
+      <pointLight position={[0, 2.4, 0]} color="#ffd070" intensity={2.0} distance={10} />
+      <Sparkles count={30} scale={[4, 3, 4]} position={[0, 1.8, 0]} size={3} speed={0.3} color="#ffd24a" />
+    </group>
+  );
+}
+
+// Themed scatter accents (replaces mushrooms on themed islands)
+function CrystalShard({ position }: { position: [number, number, number] }) {
+  const colors = ["#7af6e8", "#c8a8ff", "#ff9ce0"];
+  const c = colors[(position[0] * 7 + position[2] * 3) | 0 % 3 < 0 ? 0 : Math.abs(((position[0] * 7 + position[2] * 3) | 0) % 3)];
+  return (
+    <mesh position={[position[0], 0.3, position[2]]} rotation={[0.1, position[0], 0.05]} castShadow>
+      <coneGeometry args={[0.14, 0.55, 5]} />
+      <meshStandardMaterial color={c} emissive={c} emissiveIntensity={0.6} roughness={0.2} metalness={0.4} transparent opacity={0.92} />
+    </mesh>
+  );
+}
+
+function LavaRock({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={[position[0], 0.2, position[2]]}>
+      <mesh castShadow>
+        <dodecahedronGeometry args={[0.3, 0]} />
+        <meshStandardMaterial color="#1a0f12" roughness={0.95} />
+      </mesh>
+      <mesh position={[0, 0.05, 0]} scale={[1.05, 0.3, 1.05]}>
+        <dodecahedronGeometry args={[0.3, 0]} />
+        <meshStandardMaterial color="#ff5018" emissive="#ff3008" emissiveIntensity={0.9} roughness={0.5} />
+      </mesh>
+    </group>
+  );
+}
+
+function GoldNugget({ position }: { position: [number, number, number] }) {
+  return (
+    <mesh position={[position[0], 0.28, position[2]]} rotation={[0.2, position[0], 0.1]} castShadow>
+      <dodecahedronGeometry args={[0.22, 0]} />
+      <meshStandardMaterial color="#ffd24a" emissive="#ffae00" emissiveIntensity={0.35} roughness={0.25} metalness={0.95} />
+    </mesh>
+  );
+}
+
+/* ============================================================
    Scene
    ============================================================ */
+
+
 
 function IslandScene({ state, onPlotClick, moveMode, movingFrom, lowPower = false }: IslandViewProps) {
 
