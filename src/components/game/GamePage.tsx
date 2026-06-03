@@ -12,7 +12,7 @@ import { DailyModal } from "@/components/game/DailyModal";
 import { OfflineModal } from "@/components/game/OfflineModal";
 import { SettingsModal } from "@/components/game/SettingsModal";
 import { PrestigeModal } from "@/components/game/PrestigeModal";
-import { LevelBadge } from "@/components/game/LevelBadge";
+
 import { fmt } from "@/game/format";
 import { canPrestige } from "@/game/prestige";
 
@@ -64,14 +64,9 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
 
   return (
     <div className="fixed inset-0 flex flex-col overflow-hidden bg-gradient-sky">
-      {/* TOP HUD */}
-      <div className="relative z-10 p-2 sm:p-4 space-y-2">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <LevelBadge level={game.state.level} xp={game.state.xp} />
-          <div className="flex-1">
-            <ResourceBar resources={game.state.resources} rates={game.rates} />
-          </div>
-        </div>
+      {/* TOP HUD — resources in a single row */}
+      <div className="relative z-10 px-2 pt-2 sm:px-4 sm:pt-3 space-y-1.5">
+        <ResourceBar resources={game.state.resources} rates={game.rates} />
 
         {/* Active boosts */}
         <AnimatePresence>
@@ -172,6 +167,14 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
               </motion.button>
             );
           })}
+          <motion.div
+            whileHover={{ y: -4 }}
+            className="btn-3d relative sm:flex-1 bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-500 text-white rounded-2xl py-2.5 sm:py-5 px-1 sm:px-3 flex flex-col items-center justify-center gap-0.5 sm:gap-2 font-display font-bold min-h-[60px] sm:min-h-0"
+            title={`Уровень ${game.state.level}`}
+          >
+            <span className="text-2xl sm:text-4xl drop-shadow leading-none">⭐</span>
+            <span className="text-[10px] sm:text-sm text-shadow-soft leading-tight">Ур. {game.state.level}</span>
+          </motion.div>
           <motion.button
             whileHover={{ y: -4 }}
             whileTap={{ scale: 0.94 }}

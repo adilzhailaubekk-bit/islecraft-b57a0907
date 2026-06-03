@@ -291,10 +291,10 @@ interface ResourceBarProps {
 }
 
 export function ResourceBar({ resources, rates }: ResourceBarProps) {
-  const keys: (keyof Resources)[] = ["gold", "wood", "stone", "energy"];
+  const keys: (keyof Resources)[] = ["gold", "wood", "stone"];
   const maxRate = Math.max(0.0001, ...keys.map((k) => rates[k] || 0));
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 w-full">
+    <div className="grid grid-cols-3 gap-1.5 sm:gap-3 w-full">
       {keys.map((k) => (
         <ResourceCell
           key={k}
@@ -348,7 +348,7 @@ function ResourceCell({
       onHoverEnd={() => setHover(false)}
       animate={{ scale: bump ? [1, 1.05, 1] : 1, y: hover ? -2 : 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className={`relative bg-gradient-to-br ${theme.cell} backdrop-blur-xl rounded-2xl px-2.5 sm:px-3.5 py-2 sm:py-2.5 border ${theme.border} flex items-center gap-2 sm:gap-3 overflow-hidden`}
+      className={`relative bg-gradient-to-br ${theme.cell} backdrop-blur-xl rounded-2xl px-1.5 sm:px-3.5 py-1.5 sm:py-2.5 border ${theme.border} flex items-center gap-1.5 sm:gap-3 overflow-hidden`}
       style={{
         boxShadow:
           theme.glow +
@@ -391,7 +391,7 @@ function ResourceCell({
 
       {/* Icon disc */}
       <motion.div
-        className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center flex-shrink-0"
+        className="relative w-9 h-9 sm:w-14 sm:h-14 rounded-full flex items-center justify-center flex-shrink-0"
         animate={
           active
             ? {
@@ -459,7 +459,7 @@ function ResourceCell({
         </div>
 
         <div
-          className={`font-display font-black text-lg sm:text-2xl leading-tight tabular-nums truncate ${theme.text}`}
+          className={`font-display font-black text-sm sm:text-2xl leading-tight tabular-nums truncate ${theme.text}`}
           style={{
             textShadow:
               "0 1px 0 rgba(255,255,255,0.85), 0 2px 6px rgba(0,0,0,0.08)",
