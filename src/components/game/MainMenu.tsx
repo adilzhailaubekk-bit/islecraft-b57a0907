@@ -75,6 +75,17 @@ export function MainMenu({
   const [mounted, setMounted] = useState(false);
   const [snap, setSnap] = useState<SaveSnap | null>(null);
   const [hoverPlay, setHoverPlay] = useState(false);
+  const [confirmNew, setConfirmNew] = useState(false);
+
+  const requestNewGame = () => {
+    if (hasSave) setConfirmNew(true);
+    else onNewGame();
+  };
+  const confirmNewGame = () => {
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
+    setConfirmNew(false);
+    onNewGame();
+  };
 
   useEffect(() => {
     setMounted(true);
