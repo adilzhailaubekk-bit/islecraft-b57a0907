@@ -72,6 +72,111 @@ const PALETTE = {
 };
 
 /* ============================================================
+   Per-island theme system. Lets every primitive (palm, rock,
+   ocean, beach) pick up unique colors for a given island.
+   ============================================================ */
+type IslandTheme = {
+  grassTint: string;
+  grassDeep: string;
+  sandLight: string;
+  sandDark: string;
+  dirt: string;
+  rockColor: string;
+  trunkBark: string;
+  leafLight: string;
+  leafMid: string;
+  oceanShallow: string;
+  oceanMid: string;
+  oceanDeep: string;
+  oceanFoam: string;
+  fogColor: string;
+  sparkle: string;
+  ambient: string;
+};
+
+const DEFAULT_THEME: IslandTheme = {
+  grassTint: PALETTE.grassTop,
+  grassDeep: PALETTE.grassDeep,
+  sandLight: PALETTE.sandLight,
+  sandDark: PALETTE.sandDark,
+  dirt: PALETTE.dirt,
+  rockColor: PALETTE.rockLight,
+  trunkBark: PALETTE.trunkBark,
+  leafLight: PALETTE.leafLight,
+  leafMid: PALETTE.leafMid,
+  oceanShallow: PALETTE.oceanShallow,
+  oceanMid: PALETTE.oceanMid,
+  oceanDeep: PALETTE.oceanDeep,
+  oceanFoam: PALETTE.oceanFoam,
+  fogColor: "#bfe6f5",
+  sparkle: "#fff4c0",
+  ambient: "#ffffff",
+};
+
+const ISLAND_THEMES: Record<string, IslandTheme> = {
+  paradise: DEFAULT_THEME,
+  volcano: {
+    grassTint: "#5a3528",
+    grassDeep: "#321a10",
+    sandLight: "#3a2620",
+    sandDark: "#1f120c",
+    dirt: "#15080a",
+    rockColor: "#2c1f26",
+    trunkBark: "#3a1a10",
+    leafLight: "#e26a2c",
+    leafMid: "#7a3018",
+    oceanShallow: "#5a2a44",
+    oceanMid: "#2c1430",
+    oceanDeep: "#0d0612",
+    oceanFoam: "#ffb070",
+    fogColor: "#8a3a26",
+    sparkle: "#ff8a3c",
+    ambient: "#ff5a28",
+  },
+  crystal: {
+    grassTint: "#7fd9c8",
+    grassDeep: "#358ea0",
+    sandLight: "#f4faff",
+    sandDark: "#c5d8f2",
+    dirt: "#3a4a7a",
+    rockColor: "#aac8ef",
+    trunkBark: "#54467a",
+    leafLight: "#d6b6ff",
+    leafMid: "#7a5ad8",
+    oceanShallow: "#7ef6e8",
+    oceanMid: "#3cc2d8",
+    oceanDeep: "#175088",
+    oceanFoam: "#eafaff",
+    fogColor: "#cdeaf5",
+    sparkle: "#c8a8ff",
+    ambient: "#a8c8ff",
+  },
+  golden: {
+    grassTint: "#a4cf6c",
+    grassDeep: "#5b893a",
+    sandLight: "#ffe69a",
+    sandDark: "#d8a548",
+    dirt: "#7a4a18",
+    rockColor: "#c8a35a",
+    trunkBark: "#5a3818",
+    leafLight: "#e7e070",
+    leafMid: "#3c8a3a",
+    oceanShallow: "#5fd0f0",
+    oceanMid: "#1ea1e0",
+    oceanDeep: "#0a5a9c",
+    oceanFoam: "#fff4d0",
+    fogColor: "#ffe7a8",
+    sparkle: "#ffd24a",
+    ambient: "#ffd070",
+  },
+};
+
+const IslandThemeContext = createContext<IslandTheme>(DEFAULT_THEME);
+const useIslandTheme = () => useContext(IslandThemeContext);
+
+
+
+/* ============================================================
    GableRoof — reusable, correctly-oriented pitched roof.
    Built from real geometry so normals point OUTWARD, the ridge
    sits at the top, both slopes face down-and-outward toward the
