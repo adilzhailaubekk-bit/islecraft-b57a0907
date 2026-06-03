@@ -335,7 +335,7 @@ export function MainMenu({
             boxShadow: "0 8px 24px rgba(255,179,71,0.45)",
           }}
         >
-          ОСТРОВНОЙ ТАЙКУН · ТРОПИКИ
+          ISLECRAFT · ТРОПИКИ
         </div>
         <h1
           className="font-semibold leading-[1.02] tracking-[-0.04em]"
@@ -345,14 +345,14 @@ export function MainMenu({
             textShadow: "0 6px 28px rgba(0,0,0,0.4)",
           }}
         >
-          Lost Isles
+          Isle
           <br />
           <span className="relative inline-block">
             <span
               className="absolute left-[-4%] right-[-4%] top-[18%] bottom-[14%] rounded-[14px] -z-10"
               style={{ background: "#ffb347", boxShadow: "0 12px 40px rgba(255,179,71,0.5)" }}
             />
-            <span style={{ color: "#6b4e1a", position: "relative", padding: "0 0.18em" }}>tycoon</span>
+            <span style={{ color: "#6b4e1a", position: "relative", padding: "0 0.18em" }}>craft</span>
           </span>
         </h1>
       </motion.div>
