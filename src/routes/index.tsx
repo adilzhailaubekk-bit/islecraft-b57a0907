@@ -88,13 +88,13 @@ function IndexPage() {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Lost Isles Tycoon — Построй свою тропическую империю" },
+      { title: "Islecraft — Построй свой тропический остров" },
       {
         name: "description",
         content:
-          "Lost Isles Tycoon — современный тропический тайкун: добывайте ресурсы, стройте здания и открывайте архипелаг островов.",
+          "Islecraft — современный тропический островной крафт: добывайте ресурсы, стройте здания и открывайте архипелаг островов.",
       },
-      { property: "og:title", content: "Lost Isles Tycoon" },
+      { property: "og:title", content: "Islecraft" },
       {
         property: "og:description",
         content:
