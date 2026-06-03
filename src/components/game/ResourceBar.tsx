@@ -348,7 +348,7 @@ function ResourceCell({
       onHoverEnd={() => setHover(false)}
       animate={{ scale: bump ? [1, 1.05, 1] : 1, y: hover ? -2 : 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className={`relative bg-gradient-to-br ${theme.cell} backdrop-blur-xl rounded-2xl px-2.5 sm:px-3.5 py-2 sm:py-2.5 border ${theme.border} flex items-center gap-2 sm:gap-3 overflow-hidden`}
+      className={`relative bg-gradient-to-br ${theme.cell} backdrop-blur-xl rounded-2xl px-1.5 sm:px-3.5 py-1.5 sm:py-2.5 border ${theme.border} flex items-center gap-1.5 sm:gap-3 overflow-hidden`}
       style={{
         boxShadow:
           theme.glow +
