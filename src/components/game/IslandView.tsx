@@ -539,6 +539,7 @@ function Palm({
   scale?: number;
   delay?: number;
 }) {
+  const theme = useIslandTheme();
   const group = useRef<THREE.Group>(null!);
   useFrame(({ clock }) => {
     const t = clock.elapsedTime + delay;
@@ -557,7 +558,7 @@ function Palm({
           return (
             <mesh key={i} position={[bend, y, 0]} rotation={[0, 0, -0.08 * i]} castShadow>
               <cylinderGeometry args={[r, r + 0.02, 0.45, 10]} />
-              <meshStandardMaterial color={PALETTE.trunkBark} roughness={1} />
+              <meshStandardMaterial color={theme.trunkBark} roughness={1} />
             </mesh>
           );
         })}
@@ -570,15 +571,16 @@ function Palm({
               <group key={i} rotation={[0, a, tilt]}>
                 <mesh position={[0.65, 0, 0]} castShadow>
                   <sphereGeometry args={[0.55, 10, 6]} />
-                  <meshStandardMaterial color={i % 2 ? PALETTE.leafLight : PALETTE.leafMid} roughness={0.7} />
+                  <meshStandardMaterial color={i % 2 ? theme.leafLight : theme.leafMid} roughness={0.7} />
                 </mesh>
                 <mesh position={[1.05, -0.05, 0]} castShadow>
                   <sphereGeometry args={[0.32, 10, 6]} />
-                  <meshStandardMaterial color={PALETTE.leafLight} roughness={0.7} />
+                  <meshStandardMaterial color={theme.leafLight} roughness={0.7} />
                 </mesh>
               </group>
             );
           })}
+
           {/* Coconuts */}
           {[0, 1, 2].map((i) => {
             const a = (i / 3) * Math.PI * 2;
