@@ -8,6 +8,7 @@ interface SettingsModalProps {
   onClose: () => void;
   settings: GameState["settings"];
   onUpdate: (patch: Partial<GameState["settings"]>) => void;
+  onAddGold?: (amount: number) => void;
 }
 
 type TabId = "graphics" | "sound" | "language";
@@ -18,7 +19,7 @@ const TABS: { id: TabId; label: string; emoji: string }[] = [
   { id: "language", label: "Язык", emoji: "🌐" },
 ];
 
-export function SettingsModal({ open, onClose, settings, onUpdate }: SettingsModalProps) {
+export function SettingsModal({ open, onClose, settings, onUpdate, onAddGold }: SettingsModalProps) {
   const [tab, setTab] = useState<TabId>("graphics");
 
   return (
