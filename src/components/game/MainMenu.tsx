@@ -199,29 +199,205 @@ export function MainMenu({
         <path d="M0,200 L0,150 L100,90 L200,140 L320,80 L440,150 L560,100 L680,140 L800,110 L800,200 Z" fill="#2d567a" opacity="0.7" />
       </motion.svg>
 
-      {/* Ocean */}
-      <div className="absolute bottom-0 left-0 right-0 h-[55%]">
-        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, #3ec5f0 0%, #1c8fc9 55%, #07365f 100%)" }} />
+      {/* Ocean — layered depth, waves, sparkle, caustics, foam, fish */}
+      <div className="absolute bottom-0 left-0 right-0 h-[55%] overflow-hidden">
+        {/* Depth gradient: shallow turquoise -> mid teal -> deep navy */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, #9be7f2 0%, #4cc6e8 14%, #1ea0d4 34%, #0f6fb0 62%, #093a73 88%, #051e44 100%)",
+          }}
+        />
+        {/* Subtle horizontal teal band where mid-depth lives */}
+        <div
+          className="absolute inset-x-0"
+          style={{
+            top: "8%",
+            height: "26%",
+            background:
+              "linear-gradient(180deg, rgba(120,230,220,0.35) 0%, rgba(80,200,210,0.05) 100%)",
+            mixBlendMode: "screen",
+          }}
+        />
+
+        {/* Caustic light streaks slowly drifting across surface */}
+        <motion.div
+          className="absolute inset-x-0 pointer-events-none"
+          style={{
+            top: "0%",
+            height: "35%",
+            opacity: 0.35,
+            background:
+              "repeating-linear-gradient(110deg, transparent 0 26px, rgba(255,255,255,0.12) 26px 30px, transparent 30px 70px)",
+            mixBlendMode: "screen",
+            filter: "blur(2px)",
+          }}
+          animate={{ backgroundPositionX: ["0px", "140px"] }}
+          transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
+        />
+
+        {/* Sun glint — soft moving highlight on the water */}
+        <motion.div
+          className="absolute pointer-events-none"
+          style={{
+            top: "2%",
+            left: "30%",
+            width: "40%",
+            height: "22%",
+            background:
+              "radial-gradient(ellipse at center, rgba(255,250,210,0.55) 0%, rgba(255,240,180,0.25) 35%, rgba(255,240,180,0) 70%)",
+            mixBlendMode: "screen",
+            filter: "blur(6px)",
+          }}
+          animate={{ opacity: [0.55, 0.85, 0.55], scaleX: [1, 1.05, 1] }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+        />
+
+        {/* Tiny specular sparkles */}
+        {mounted &&
+          Array.from({ length: 18 }).map((_, i) => {
+            const left = (i * 53) % 100;
+            const top = 2 + ((i * 17) % 28);
+            const dur = 2.2 + ((i * 0.37) % 2.4);
+            const delay = (i * 0.31) % 3;
+            return (
+              <motion.span
+                key={`spk-${i}`}
+                className="absolute rounded-full"
+                style={{
+                  left: `${left}%`,
+                  top: `${top}%`,
+                  width: 3,
+                  height: 3,
+                  background: "white",
+                  boxShadow: "0 0 6px rgba(255,255,255,0.9)",
+                  mixBlendMode: "screen",
+                }}
+                animate={{ opacity: [0, 1, 0], scale: [0.6, 1.4, 0.6] }}
+                transition={{ duration: dur, delay, repeat: Infinity, ease: "easeInOut" }}
+              />
+            );
+          })}
+
+        {/* Sky / cloud reflection band on far water */}
+        <div
+          className="absolute inset-x-0 pointer-events-none"
+          style={{
+            top: "0%",
+            height: "10%",
+            background:
+              "linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 100%)",
+            mixBlendMode: "screen",
+            filter: "blur(3px)",
+          }}
+        />
+
+        {/* Wave layers — back to front, varying amplitude, color, speed */}
         {[
-          { top: 0, color: "#ffffff", opacity: 0.35, duration: 9, amp: 6 },
-          { top: 12, color: "#a7e6ff", opacity: 0.3, duration: 13, amp: 8 },
-          { top: 28, color: "#6dc4f0", opacity: 0.22, duration: 17, amp: 10 },
+          { top: 0, color: "#ffffff", opacity: 0.22, duration: 11, amp: 5, dir: 1 },
+          { top: 6, color: "#cdf2ff", opacity: 0.32, duration: 14, amp: 7, dir: -1 },
+          { top: 14, color: "#7fd5ee", opacity: 0.32, duration: 18, amp: 9, dir: 1 },
+          { top: 24, color: "#3aa8cf", opacity: 0.28, duration: 23, amp: 11, dir: -1 },
+          { top: 38, color: "#15679a", opacity: 0.35, duration: 28, amp: 13, dir: 1 },
+          { top: 56, color: "#0a3c70", opacity: 0.45, duration: 34, amp: 14, dir: -1 },
         ].map((w, i) => (
           <motion.svg
             key={`w-${i}`}
             className="absolute left-0 w-[200%]"
-            style={{ top: `${w.top}%`, height: 70 }}
+            style={{ top: `${w.top}%`, height: 80 }}
             viewBox="0 0 1600 70"
             preserveAspectRatio="none"
-            animate={{ x: ["0%", "-50%"] }}
+            animate={{ x: w.dir > 0 ? ["0%", "-50%"] : ["-50%", "0%"] }}
             transition={{ duration: w.duration, repeat: Infinity, ease: "linear" }}
           >
             <path
               d={`M0,35 Q200,${35 - w.amp} 400,35 T800,35 T1200,35 T1600,35 L1600,70 L0,70 Z`}
-              fill={w.color} opacity={w.opacity}
+              fill={w.color}
+              opacity={w.opacity}
             />
           </motion.svg>
         ))}
+
+        {/* Drifting foam crests on top water */}
+        {mounted &&
+          Array.from({ length: 5 }).map((_, i) => {
+            const top = 4 + i * 5;
+            const dur = 26 + i * 7;
+            return (
+              <motion.div
+                key={`fc-${i}`}
+                className="absolute h-[2px] rounded-full"
+                style={{
+                  top: `${top}%`,
+                  width: `${60 + (i * 23) % 80}px`,
+                  background:
+                    "linear-gradient(90deg, transparent, rgba(255,255,255,0.85), transparent)",
+                  filter: "blur(1px)",
+                  opacity: 0.7,
+                }}
+                initial={{ x: "-10vw" }}
+                animate={{ x: "110vw" }}
+                transition={{ duration: dur, delay: -i * 5, repeat: Infinity, ease: "linear" }}
+              />
+            );
+          })}
+
+        {/* Bubble streams rising from the deep */}
+        {mounted &&
+          Array.from({ length: 3 }).map((_, s) => {
+            const left = 12 + s * 35;
+            return (
+              <div key={`bs-${s}`} className="absolute" style={{ left: `${left}%`, bottom: "5%", width: 30, height: "30%" }}>
+                {Array.from({ length: 4 }).map((_, b) => (
+                  <motion.span
+                    key={b}
+                    className="absolute rounded-full"
+                    style={{
+                      left: ((b * 7) % 14) + "px",
+                      bottom: 0,
+                      width: 4 + (b % 2) * 2,
+                      height: 4 + (b % 2) * 2,
+                      background: "rgba(220,245,255,0.7)",
+                      border: "1px solid rgba(255,255,255,0.6)",
+                      boxShadow: "inset 1px 1px 0 rgba(255,255,255,0.9)",
+                    }}
+                    animate={{ y: [0, -120], opacity: [0, 0.9, 0], x: [0, (b % 2 ? 6 : -6)] }}
+                    transition={{ duration: 6 + b, delay: s * 1.5 + b * 1.4, repeat: Infinity, ease: "easeOut" }}
+                  />
+                ))}
+              </div>
+            );
+          })}
+
+        {/* Small silvery fish near the surface */}
+        {mounted &&
+          Array.from({ length: 3 }).map((_, i) => {
+            const top = 18 + i * 8;
+            const dur = 24 + i * 6;
+            const flip = i % 2 === 0;
+            return (
+              <motion.div
+                key={`fish-${i}`}
+                className="absolute"
+                style={{ top: `${top}%`, opacity: 0.85 }}
+                initial={{ x: flip ? "-15vw" : "115vw" }}
+                animate={{ x: flip ? "115vw" : "-15vw", y: [0, -4, 4, 0] }}
+                transition={{
+                  x: { duration: dur, delay: i * 4, repeat: Infinity, ease: "linear" },
+                  y: { duration: 2.4, repeat: Infinity, ease: "easeInOut" },
+                }}
+              >
+                <svg width="22" height="10" viewBox="0 0 22 10" style={{ transform: flip ? "none" : "scaleX(-1)" }}>
+                  <ellipse cx="9" cy="5" rx="7" ry="3" fill="#e8f5ff" stroke="#8fc5dc" strokeWidth="0.6" />
+                  <polygon points="16,5 22,1 22,9" fill="#cfe6f1" stroke="#8fc5dc" strokeWidth="0.6" />
+                  <circle cx="5" cy="4.2" r="0.6" fill="#1a1a2e" />
+                </svg>
+              </motion.div>
+            );
+          })}
+
+
 
         {/* Island with subtle camera drift */}
         <motion.div
