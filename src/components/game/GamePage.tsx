@@ -64,14 +64,9 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
 
   return (
     <div className="fixed inset-0 flex flex-col overflow-hidden bg-gradient-sky">
-      {/* TOP HUD */}
-      <div className="relative z-10 p-2 sm:p-4 space-y-2">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <LevelBadge level={game.state.level} xp={game.state.xp} />
-          <div className="flex-1">
-            <ResourceBar resources={game.state.resources} rates={game.rates} />
-          </div>
-        </div>
+      {/* TOP HUD — resources in a single row */}
+      <div className="relative z-10 px-2 pt-2 sm:px-4 sm:pt-3 space-y-1.5">
+        <ResourceBar resources={game.state.resources} rates={game.rates} />
 
         {/* Active boosts */}
         <AnimatePresence>
