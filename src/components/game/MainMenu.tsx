@@ -518,7 +518,7 @@ export function MainMenu({
         className="absolute bottom-3 right-4 text-[12px] font-semibold tracking-[0.14em] uppercase"
         style={{ color: "rgba(255,255,255,0.75)" }}
       >
-        v1.0 · Lost Isles Tycoon
+        v1.0 · Islecraft
       </motion.div>
     </div>
   );
