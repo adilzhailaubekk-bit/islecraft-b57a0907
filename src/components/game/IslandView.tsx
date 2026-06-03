@@ -401,6 +401,8 @@ function Ocean() {
    Island base — multi-tier with rocky cliffs
    ============================================================ */
 function IslandBase({ grassTint }: { grassTint: string }) {
+  const theme = useIslandTheme();
+
   const rocks = useMemo(() => {
     const rng = mulberry32(7);
     return Array.from({ length: 18 }).map((_, i) => {
