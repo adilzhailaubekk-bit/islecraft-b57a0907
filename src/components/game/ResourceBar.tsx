@@ -459,7 +459,7 @@ function ResourceCell({
         </div>
 
         <div
-          className={`font-display font-black text-lg sm:text-2xl leading-tight tabular-nums truncate ${theme.text}`}
+          className={`font-display font-black text-sm sm:text-2xl leading-tight tabular-nums truncate ${theme.text}`}
           style={{
             textShadow:
               "0 1px 0 rgba(255,255,255,0.85), 0 2px 6px rgba(0,0,0,0.08)",
