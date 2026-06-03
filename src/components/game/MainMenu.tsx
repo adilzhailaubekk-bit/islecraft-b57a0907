@@ -406,6 +406,24 @@ export function MainMenu({
           animate={{ y: [0, -6, 0], x: ["-52%", "-48%", "-52%"] }}
           transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
         >
+          {/* Pulsing foam ring around the island shoreline */}
+          <motion.div
+            className="absolute left-1/2 pointer-events-none"
+            style={{
+              top: "50%",
+              transform: "translate(-50%, -50%)",
+              width: 600,
+              height: 110,
+              borderRadius: "50%",
+              background:
+                "radial-gradient(ellipse at center, rgba(255,255,255,0) 56%, rgba(255,255,255,0.85) 64%, rgba(255,255,255,0) 78%)",
+              filter: "blur(2px)",
+              mixBlendMode: "screen",
+            }}
+            animate={{ scale: [1, 1.04, 1], opacity: [0.7, 1, 0.7] }}
+            transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut" }}
+          />
+
           <svg width="560" height="240" viewBox="0 0 560 240">
             <defs>
               <radialGradient id="sand" cx="50%" cy="50%" r="60%">
@@ -416,11 +434,30 @@ export function MainMenu({
                 <stop offset="0%" stopColor="#8be082" />
                 <stop offset="100%" stopColor="#3ea34a" />
               </radialGradient>
+              <radialGradient id="wetSand" cx="50%" cy="50%" r="60%">
+                <stop offset="0%" stopColor="#c69a55" />
+                <stop offset="100%" stopColor="#a07a3a" />
+              </radialGradient>
+              <radialGradient id="shallow" cx="50%" cy="50%" r="60%">
+                <stop offset="0%" stopColor="#bff3ff" stopOpacity="0.85" />
+                <stop offset="100%" stopColor="#7fd9ee" stopOpacity="0" />
+              </radialGradient>
             </defs>
+            {/* Shallow turquoise halo (light water near beach) */}
+            <ellipse cx="280" cy="180" rx="290" ry="60" fill="url(#shallow)" />
+            {/* Wet sand band — darker, just outside dry sand */}
+            <ellipse cx="280" cy="178" rx="272" ry="52" fill="url(#wetSand)" opacity="0.85" />
+            {/* Dry sand */}
             <ellipse cx="280" cy="170" rx="260" ry="48" fill="url(#sand)" />
+            {/* Grass */}
             <ellipse cx="280" cy="135" rx="180" ry="52" fill="url(#grass)" />
+            {/* Surf line — thin white foam along the waterline */}
+            <ellipse cx="280" cy="184" rx="268" ry="48" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="2" strokeDasharray="14 10" opacity="0.7" />
             <ellipse cx="120" cy="168" rx="22" ry="12" fill="#8a96aa" />
             <ellipse cx="450" cy="170" rx="26" ry="14" fill="#8a96aa" />
+            {/* Tiny foam splashes around rocks */}
+            <ellipse cx="120" cy="178" rx="30" ry="6" fill="rgba(255,255,255,0.75)" />
+            <ellipse cx="450" cy="180" rx="34" ry="7" fill="rgba(255,255,255,0.75)" />
             <g transform="translate(220 105)">
               <rect x="0" y="0" width="28" height="24" fill="#f5d29a" stroke="#8a5a2a" strokeWidth="1.5" />
               <polygon points="-2,0 30,0 14,-14" fill="#e8a020" stroke="#8a6a10" strokeWidth="1.5" />
@@ -430,6 +467,7 @@ export function MainMenu({
               <polygon points="-2,0 24,0 11,-12" fill="#3a7ac8" stroke="#1e4a82" strokeWidth="1.5" />
             </g>
           </svg>
+
 
           {[{ left: "15%", s: 1 }, { left: "75%", s: 0.9 }, { left: "48%", s: 1.1 }].map((p, i) => (
             <motion.div
