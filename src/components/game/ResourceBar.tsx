@@ -391,7 +391,7 @@ function ResourceCell({
 
       {/* Icon disc */}
       <motion.div
-        className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center flex-shrink-0"
+        className="relative w-9 h-9 sm:w-14 sm:h-14 rounded-full flex items-center justify-center flex-shrink-0"
         animate={
           active
             ? {
