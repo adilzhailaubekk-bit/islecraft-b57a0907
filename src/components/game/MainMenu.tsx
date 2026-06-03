@@ -302,19 +302,19 @@ export function MainMenu({
         <ProfileChip snap={snap} />
 
         <div className="hidden md:flex items-center gap-2 ml-1">
-          <ResChip icon={<Coins className="w-4 h-4" style={{ color: "#7a4a10" }} />} value={fmt(snap?.gold ?? 0)} bg="#fde8c4" />
-          <ResChip icon={<TreePine className="w-4 h-4" style={{ color: "#0e6b63" }} />} value={fmt(snap?.wood ?? 0)} bg="#cdf3ee" />
-          <ResChip icon={<Mountain className="w-4 h-4" style={{ color: "#6b4e1a" }} />} value={fmt(snap?.stone ?? 0)} bg="#fff1bd" />
+          <ResChip icon={<Coins className="w-5 h-5" style={{ color: "#7a4a10" }} />} value={fmt(snap?.gold ?? 0)} bg="#fde8c4" />
+          <ResChip icon={<TreePine className="w-5 h-5" style={{ color: "#0e6b63" }} />} value={fmt(snap?.wood ?? 0)} bg="#cdf3ee" />
+          <ResChip icon={<Mountain className="w-5 h-5" style={{ color: "#6b4e1a" }} />} value={fmt(snap?.stone ?? 0)} bg="#fff1bd" />
         </div>
 
         <div className="flex-1" />
 
         <IconChip onClick={() => toast("Уведомлений нет 🔔")} title="Уведомления">
-          <Bell className="w-[18px] h-[18px]" strokeWidth={2.2} />
+          <Bell className="w-5 h-5" strokeWidth={2.2} />
           {hasSave && <span className="absolute top-1 right-1 w-2 h-2 rounded-full" style={{ background: "#ff4747" }} />}
         </IconChip>
         <IconChip onClick={onSettings} title="Настройки">
-          <Settings className="w-[18px] h-[18px]" strokeWidth={2.2} />
+          <Settings className="w-5 h-5" strokeWidth={2.2} />
         </IconChip>
         <AuthChip />
       </motion.div>
@@ -331,7 +331,7 @@ export function MainMenu({
           style={{
             background: "#ffb347",
             color: "#6b4e1a",
-            fontSize: "11px",
+            fontSize: "13px",
             boxShadow: "0 8px 24px rgba(255,179,71,0.45)",
           }}
         >
@@ -340,7 +340,7 @@ export function MainMenu({
         <h1
           className="font-semibold leading-[1.02] tracking-[-0.04em]"
           style={{
-            fontSize: "clamp(2.6rem, 8vw, 6rem)",
+            fontSize: "clamp(3rem, 9vw, 6.8rem)",
             color: "#ffffff",
             textShadow: "0 6px 28px rgba(0,0,0,0.4)",
           }}
@@ -384,9 +384,9 @@ export function MainMenu({
               boxShadow: "0 6px 18px rgba(107,78,26,0.15)",
             }}
           >
-            <b.icon className="w-[18px] h-[18px] sm:w-5 sm:h-5" strokeWidth={2.2} />
+            <b.icon className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.2} />
             <span
-              className="absolute left-full ml-2 px-3 py-1.5 text-[12px] font-semibold rounded-full whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none hidden sm:block"
+              className="absolute left-full ml-2 px-3 py-1.5 text-[14px] font-semibold rounded-full whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none hidden sm:block"
               style={{ background: "#ffd84a", color: "#6b4e1a" }}
             >
               {b.label}
@@ -421,11 +421,11 @@ export function MainMenu({
                 }}
               >
                 <div className="flex items-center justify-between mb-3">
-                  <div className="text-[11px] uppercase tracking-[0.12em] font-semibold" style={{ color: "#8e91a0" }}>
+                  <div className="text-[13px] uppercase tracking-[0.12em] font-semibold" style={{ color: "#8e91a0" }}>
                     Последнее сохранение
                   </div>
                   <div
-                    className="text-[11px] font-semibold flex items-center gap-1.5 px-2 py-0.5 rounded-full"
+                    className="text-[13px] font-semibold flex items-center gap-1.5 px-2 py-0.5 rounded-full"
                     style={{ background: "#e6f7ef", color: "#00b473" }}
                   >
                     <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#00b473" }} />
@@ -440,10 +440,10 @@ export function MainMenu({
                     🏝️
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold capitalize truncate text-[15px]" style={{ color: "#6b4e1a" }}>
+                    <div className="font-semibold capitalize truncate text-[17px]" style={{ color: "#6b4e1a" }}>
                       {snap.islandName}
                     </div>
-                    <div className="text-[12px] mt-0.5" style={{ color: "#6b6f7e" }}>
+                    <div className="text-[14px] mt-0.5" style={{ color: "#6b6f7e" }}>
                       Зданий <b style={{ color: "#6b4e1a" }}>{snap.buildings}</b>/{snap.plots} · Уровень{" "}
                       <b style={{ color: "#6b4e1a" }}>{snap.level}</b>
                     </div>
@@ -478,7 +478,7 @@ export function MainMenu({
               border: "1.5px solid rgba(255,216,74,0.9)",
               borderRadius: "9999px",
               padding: "20px 28px",
-              fontSize: "17px",
+              fontSize: "19px",
               fontWeight: 600,
               letterSpacing: "-0.01em",
               boxShadow: hoverPlay
@@ -489,19 +489,19 @@ export function MainMenu({
           >
             <span
               className="flex items-center justify-center rounded-full"
-              style={{ width: 32, height: 32, background: "#ffd84a", color: "#6b4e1a" }}
+              style={{ width: 36, height: 36, background: "#ffd84a", color: "#6b4e1a" }}
             >
-              <Play className="w-4 h-4 fill-current" strokeWidth={0} />
+              <Play className="w-5 h-5 fill-current" strokeWidth={0} />
             </span>
             <span>{hasSave ? "Продолжить игру" : "Начать играть"}</span>
-            <ChevronRight className="w-5 h-5 opacity-70" />
+            <ChevronRight className="w-6 h-6 opacity-70" />
           </motion.button>
 
           {/* Secondary — outlined + yellow pill */}
           <div className="mt-3 grid grid-cols-2 gap-2.5">
-            <SecondaryBtn icon={<Plus className="w-4 h-4" strokeWidth={2.4} />} label="Новая игра" onClick={onNewGame} />
+            <SecondaryBtn icon={<Plus className="w-5 h-5" strokeWidth={2.4} />} label="Новая игра" onClick={onNewGame} />
             <SecondaryBtn
-              icon={<ChevronRight className="w-4 h-4" strokeWidth={2.4} />}
+              icon={<ChevronRight className="w-5 h-5" strokeWidth={2.4} />}
               label={hasSave ? "Архипелаг" : "Открыть мир"}
               onClick={hasSave ? onPlay : onNewGame}
               variant="yellow"
@@ -515,7 +515,7 @@ export function MainMenu({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.0 }}
-        className="absolute bottom-3 right-4 text-[10px] font-semibold tracking-[0.14em] uppercase"
+        className="absolute bottom-3 right-4 text-[12px] font-semibold tracking-[0.14em] uppercase"
         style={{ color: "rgba(255,255,255,0.75)" }}
       >
         v1.0 · Lost Isles Tycoon
@@ -533,7 +533,7 @@ function ResChip({ icon, value, bg }: { icon: React.ReactNode; value: string; bg
       style={{ background: bg, color: "#6b4e1a", border: "1px solid rgba(255,255,255,0.8)" }}
     >
       {icon}
-      <span className="text-[13px] font-bold tabular-nums">{value}</span>
+      <span className="text-[15px] font-bold tabular-nums">{value}</span>
     </div>
   );
 }
@@ -580,7 +580,7 @@ function SecondaryBtn({
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.97 }}
       onClick={onClick}
-      className="relative flex items-center justify-center gap-2 rounded-full font-semibold text-[13px]"
+      className="relative flex items-center justify-center gap-2 rounded-full font-semibold text-[15px]"
       style={{
         ...styles,
         padding: "12px 18px",
@@ -616,21 +616,21 @@ function ProfileChip({ snap }: { snap: SaveSnap | null }) {
           <img src={avatar} alt="" className="w-8 h-8 rounded-full" style={{ border: "2px solid #ffb347" }} />
         ) : (
           <div
-            className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[13px]"
+            className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[15px]"
             style={{ background: "#ffb347", color: "#6b4e1a" }}
           >
             {name.charAt(0).toUpperCase()}
           </div>
         )}
         <div
-          className="absolute -bottom-1 -right-1 min-w-[20px] h-[16px] px-1 rounded-full text-[10px] font-extrabold flex items-center justify-center"
+          className="absolute -bottom-1 -right-1 min-w-[20px] h-[16px] px-1 rounded-full text-[12px] font-extrabold flex items-center justify-center"
           style={{ background: "#ffd84a", color: "#6b4e1a", border: "2px solid #ffffff" }}
         >
           {level}
         </div>
       </div>
       <div className="hidden sm:flex flex-col min-w-0">
-        <div className="text-[12px] font-bold truncate max-w-[110px] leading-tight" style={{ color: "#6b4e1a" }}>
+        <div className="text-[14px] font-bold truncate max-w-[110px] leading-tight" style={{ color: "#6b4e1a" }}>
           {name}
         </div>
         <div className="flex items-center gap-1.5">
@@ -643,7 +643,7 @@ function ProfileChip({ snap }: { snap: SaveSnap | null }) {
               style={{ background: "#ffd84a" }}
             />
           </div>
-          <span className="text-[9px] font-bold tabular-nums" style={{ color: "#8e91a0" }}>
+          <span className="text-[11px] font-bold tabular-nums" style={{ color: "#8e91a0" }}>
             {Math.round(xpPct)}%
           </span>
         </div>
@@ -659,7 +659,7 @@ function AuthChip() {
     return (
       <Link
         to="/login"
-        className="flex items-center gap-1.5 px-4 h-9 rounded-full text-[12px] font-semibold"
+        className="flex items-center gap-1.5 px-4 h-9 rounded-full text-[14px] font-semibold"
         style={{ background: "rgba(255,216,74,0.8)", color: "#6b4e1a", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.8)" }}
       >
         Войти
