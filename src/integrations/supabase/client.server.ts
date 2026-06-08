@@ -25,7 +25,8 @@ function readEnv(name: string) {
 
 function readSupabaseUrl() {
   const raw = readEnv('SUPABASE_URL') || readEnv('VITE_SUPABASE_URL');
-  const withoutRestPath = raw.replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
+  const extracted = raw.match(/https?:\/\/[a-z0-9-]+\.supabase\.co(?:\/rest\/v1)?/i)?.[0] ?? raw;
+  const withoutRestPath = extracted.replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
 
   try {
     const url = new URL(withoutRestPath);

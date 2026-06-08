@@ -113,17 +113,20 @@ export function MainMenu({
       ["#ff8c7a", "#ffc56b", "#6c8fc7"],   // dusk
       ["#0c1838", "#1b2a55", "#37406b"],   // night
     ];
-    const idx = t * stops.length;
+    const safeT = Number.isFinite(t) ? Math.max(0, Math.min(0.999999, t)) : 0;
+    const idx = safeT * stops.length;
     const i = Math.floor(idx) % stops.length;
     const j = (i + 1) % stops.length;
     const k = idx - Math.floor(idx);
     const mix = (a: string, b: string) => {
-      const pa = a.match(/\w\w/g)!.map((h) => parseInt(h, 16));
-      const pb = b.match(/\w\w/g)!.map((h) => parseInt(h, 16));
+      const pa = a.match(/\w\w/g)?.map((h) => parseInt(h, 16)) ?? [126, 200, 255];
+      const pb = b.match(/\w\w/g)?.map((h) => parseInt(h, 16)) ?? pa;
       const m = pa.map((v, n) => Math.round(v + (pb[n] - v) * k));
       return `rgb(${m[0]},${m[1]},${m[2]})`;
     };
-    return [mix(stops[i][0], stops[j][0]), mix(stops[i][1], stops[j][1]), mix(stops[i][2], stops[j][2])];
+    const current = stops[i] ?? stops[0];
+    const next = stops[j] ?? stops[0];
+    return [mix(current[0], next[0]), mix(current[1], next[1]), mix(current[2], next[2])];
   }, [t]);
 
   const sideButtons = [

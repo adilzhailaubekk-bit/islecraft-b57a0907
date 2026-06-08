@@ -27,7 +27,8 @@ function readEnv(name: string) {
 
 function readSupabaseUrl() {
   const raw = readEnv('VITE_SUPABASE_URL') || readEnv('SUPABASE_URL');
-  const withoutRestPath = raw.replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
+  const extracted = raw.match(/https?:\/\/[a-z0-9-]+\.supabase\.co(?:\/rest\/v1)?/i)?.[0] ?? raw;
+  const withoutRestPath = extracted.replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
 
   try {
     const url = new URL(withoutRestPath);
@@ -39,12 +40,19 @@ function readSupabaseUrl() {
 }
 
 function readSupabasePublishableKey() {
-  return (
+  const raw =
     readEnv('VITE_SUPABASE_PUBLISHABLE_KEY') ||
     readEnv('VITE_SUPABASE_ANON_KEY') ||
     readEnv('SUPABASE_PUBLISHABLE_KEY') ||
-    readEnv('SUPABASE_ANON_KEY')
-  );
+    readEnv('SUPABASE_ANON_KEY');
+
+  const publishable = raw.match(/sb_publishable_[A-Za-z0-9_-]+/)?.[0];
+  if (publishable) return publishable;
+
+  const jwt = raw.match(/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/)?.[0];
+  if (jwt) return jwt;
+
+  return raw.replace(/[\r\n\t ]+/g, '');
 }
 
 function createOfflineSupabaseClient(): SupabaseClient {
