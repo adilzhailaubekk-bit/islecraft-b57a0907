@@ -7,7 +7,8 @@ type SupabaseClient = ReturnType<typeof createClient<Database>>;
 function readEnv(name: string) {
   const viteEnv = typeof import.meta !== 'undefined' ? import.meta.env?.[name] : undefined;
   const nodeEnv = typeof process !== 'undefined' ? process.env?.[name] : undefined;
-  return viteEnv || nodeEnv || '';
+  const value = viteEnv || nodeEnv || '';
+  return typeof value === 'string' ? value.trim().replace(/^["']|["']$/g, '') : '';
 }
 
 function createOfflineSupabaseClient(): SupabaseClient {
