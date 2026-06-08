@@ -39,7 +39,7 @@ const emptyCounters = (date = todayKey()) => ({
 });
 
 const initialState = (): GameState => ({
-  resources: { gold: 75, wood: 0, stone: 0, energy: 0 },
+  resources: { gold: 150, wood: 0, stone: 0, energy: 0 },
   buildings: [],
   unlockedIslands: ["paradise"],
   activeIsland: "paradise",
