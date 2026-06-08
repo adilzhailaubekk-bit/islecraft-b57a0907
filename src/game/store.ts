@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { BuildingDef, BuildingState, DailyMission, GameState, Resources } from "./types";
 import { defaultSettings } from "./types";
@@ -186,6 +187,27 @@ const applyUpgrade = (s: GameState): GameState => ({
   dailyMissions: bumpMissions(s.dailyMissions, "upgrade", 1),
 });
 
+const userMetaString = (user: User, key: string) => {
+  const value = user.user_metadata?.[key];
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+};
+
+const profileNameFromUser = (user: User) =>
+  userMetaString(user, "display_name") ||
+  userMetaString(user, "full_name") ||
+  userMetaString(user, "name") ||
+  user.email?.split("@")[0] ||
+  null;
+
+const profileUsernameFromUser = (user: User) =>
+  userMetaString(user, "username") ||
+  user.email?.split("@")[0] ||
+  null;
+
+const profileAvatarFromUser = (user: User) =>
+  userMetaString(user, "avatar_url") ||
+  userMetaString(user, "picture");
+
 
 export function useGameStore() {
   const [state, setState] = useState<GameState>(() => {
@@ -299,66 +321,98 @@ export function useGameStore() {
       try {
         const { data, error } = await supabase
           .from("profiles")
-          .select("game_state, updated_at")
+          .select("game_state, settings, gold, level, xp, updated_at")
           .eq("user_id", userId)
           .maybeSingle();
-        if (cancelled || error || !data) return;
+        if (cancelled || error || !data) return false;
         const cloud = data.game_state as Partial<GameState> | null;
         if (cloud && typeof cloud === "object" && Object.keys(cloud).length > 0) {
           const cloudTick = (cloud as GameState).lastTick ?? 0;
           if (cloudTick >= stateRef.current.lastTick) {
             setState(normalize({ ...initialState(), ...cloud }));
           }
+          return true;
         }
-      } catch {}
+        setState((prev) =>
+          normalize({
+            ...prev,
+            resources: { ...prev.resources, gold: Number(data.gold ?? prev.resources.gold) },
+            level: Number(data.level ?? prev.level),
+            xp: Number(data.xp ?? prev.xp),
+            settings:
+              data.settings && typeof data.settings === "object"
+                ? (data.settings as GameState["settings"])
+                : prev.settings,
+          })
+        );
+        return true;
+      } catch (error) {
+        console.warn("[Cloud Save] Failed to load player profile", error);
+      }
+      return false;
     };
 
-    const pushToCloud = async (userId: string) => {
+    const pushToCloud = async (user: User) => {
       try {
         const s = stateRef.current;
-        await supabase
+        const now = new Date().toISOString();
+        const { error } = await supabase
           .from("profiles")
-          .update({
+          .upsert(
+            {
+              user_id: user.id,
+              username: profileUsernameFromUser(user),
+              display_name: profileNameFromUser(user),
+              avatar_url: profileAvatarFromUser(user),
             game_state: s as never,
+              settings: s.settings as never,
             gold: Math.floor(s.resources.gold),
             level: s.level,
             xp: Math.floor(s.xp),
-            last_seen_at: new Date().toISOString(),
-          })
-          .eq("user_id", userId);
-      } catch {}
+              trophies: s.achievements.length + s.prestigeAchievements.length,
+              last_seen_at: now,
+              updated_at: now,
+            },
+            { onConflict: "user_id" }
+          );
+        if (error) throw error;
+      } catch (error) {
+        console.warn("[Cloud Save] Failed to save player profile", error);
+      }
     };
 
-    const startAutosave = (userId: string) => {
+    const startAutosave = (user: User) => {
       if (saveTimer) window.clearInterval(saveTimer);
-      saveTimer = window.setInterval(() => pushToCloud(userId), 15000);
+      saveTimer = window.setInterval(() => pushToCloud(user), 15000);
     };
 
-    let currentUserId: string | null = null;
+    let currentUser: User | null = null;
 
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(async ({ data }) => {
       if (cancelled || !data.user) return;
-      currentUserId = data.user.id;
-      pullFromCloud(currentUserId);
-      startAutosave(currentUserId);
+      currentUser = data.user;
+      const foundCloudProfile = await pullFromCloud(data.user.id);
+      if (!cancelled && !foundCloudProfile) void pushToCloud(data.user);
+      if (!cancelled) startAutosave(data.user);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (cancelled) return;
       if (session?.user) {
-        currentUserId = session.user.id;
-        pullFromCloud(currentUserId);
-        startAutosave(currentUserId);
+        currentUser = session.user;
+        const foundCloudProfile = await pullFromCloud(session.user.id);
+        if (!cancelled && !foundCloudProfile) void pushToCloud(session.user);
+        if (!cancelled) startAutosave(session.user);
       } else {
-        currentUserId = null;
+        currentUser = null;
         if (saveTimer) window.clearInterval(saveTimer);
       }
     });
 
     const onUnload = () => {
-      if (currentUserId) {
+      if (currentUser) {
         // Best-effort final save (fire-and-forget)
-        void pushToCloud(currentUserId);
+        void pushToCloud(currentUser);
       }
     };
     window.addEventListener("beforeunload", onUnload);
