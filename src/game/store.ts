@@ -67,26 +67,120 @@ const initialState = (): GameState => ({
   islandStates: {},
 });
 
-// Normalize older save formats
-const normalize = (s: GameState): GameState => {
-  const buildings = Array.isArray(s.buildings)
-    ? s.buildings.map((b) => (b && typeof b === "object" && "id" in b ? (b as BuildingState) : null))
+const asNumber = (value: unknown, fallback: number) =>
+  typeof value === "number" && Number.isFinite(value) ? value : fallback;
+
+const asStringArray = (value: unknown, fallback: string[] = []) =>
+  Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : fallback;
+
+const normalizeBuildings = (value: unknown): (BuildingState | null)[] =>
+  Array.isArray(value)
+    ? value.map((b) =>
+        b &&
+        typeof b === "object" &&
+        "id" in b &&
+        typeof (b as { id?: unknown }).id === "string"
+          ? {
+              id: (b as { id: string }).id,
+              level: Math.max(1, Math.floor(asNumber((b as { level?: unknown }).level, 1))),
+            }
+          : null
+      )
     : [];
+
+const normalizeIslandStates = (value: unknown): GameState["islandStates"] => {
+  if (!value || typeof value !== "object") return {};
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).flatMap(([islandId, raw]) => {
+      if (!ISLANDS.some((island) => island.id === islandId) || !raw || typeof raw !== "object") return [];
+      const state = raw as { buildings?: unknown; plots?: unknown };
+      return [
+        [
+          islandId,
+          {
+            buildings: normalizeBuildings(state.buildings),
+            plots: Math.max(3, Math.floor(asNumber(state.plots, 3))),
+          },
+        ],
+      ];
+    })
+  );
+};
+
+// Normalize older or partial save formats.
+const normalize = (input: Partial<GameState>): GameState => {
+  const base = initialState();
+  const resources = input.resources && typeof input.resources === "object" ? input.resources : {};
+  const boosters = input.boosters && typeof input.boosters === "object" ? input.boosters : {};
+  const counters = input.dailyCounters && typeof input.dailyCounters === "object" ? input.dailyCounters : {};
+  const savedSettings = input.settings && typeof input.settings === "object" ? input.settings : {};
+  const savedGraphics =
+    "graphics" in savedSettings && savedSettings.graphics && typeof savedSettings.graphics === "object"
+      ? savedSettings.graphics
+      : {};
+  const unlockedIslands = asStringArray(input.unlockedIslands, base.unlockedIslands).filter((id) =>
+    ISLANDS.some((island) => island.id === id)
+  );
+  const activeIsland =
+    typeof input.activeIsland === "string" && ISLANDS.some((island) => island.id === input.activeIsland)
+      ? input.activeIsland
+      : unlockedIslands[0] ?? "paradise";
+
   return {
-    ...s,
-    buildings,
-    dailyStreak: s.dailyStreak ?? 0,
-    dailyCycleDay: s.dailyCycleDay ?? 1,
-    lastSpinAt: s.lastSpinAt ?? 0,
-    dailyMissions: Array.isArray(s.dailyMissions) ? s.dailyMissions : [],
-    dailyMissionsDate: s.dailyMissionsDate ?? "",
-    dailyCounters: s.dailyCounters ?? emptyCounters(),
-    settings: s.settings ?? defaultSettings(),
-    prestigeTokens: s.prestigeTokens ?? 0,
-    prestigeCount: s.prestigeCount ?? 0,
-    prestigeUpgrades: s.prestigeUpgrades && typeof s.prestigeUpgrades === "object" ? s.prestigeUpgrades : {},
-    prestigeAchievements: Array.isArray(s.prestigeAchievements) ? s.prestigeAchievements : [],
-    islandStates: s.islandStates && typeof s.islandStates === "object" ? s.islandStates : {},
+    ...base,
+    ...input,
+    resources: {
+      gold: asNumber((resources as Partial<Resources>).gold, base.resources.gold),
+      wood: asNumber((resources as Partial<Resources>).wood, base.resources.wood),
+      stone: asNumber((resources as Partial<Resources>).stone, base.resources.stone),
+      energy: asNumber((resources as Partial<Resources>).energy, base.resources.energy),
+    },
+    buildings: normalizeBuildings(input.buildings),
+    unlockedIslands: unlockedIslands.length > 0 ? unlockedIslands : base.unlockedIslands,
+    activeIsland,
+    plots: Math.max(3, Math.floor(asNumber(input.plots, base.plots))),
+    level: Math.max(1, Math.floor(asNumber(input.level, base.level))),
+    xp: Math.max(0, asNumber(input.xp, base.xp)),
+    boosters: {
+      doubleIncomeUntil: asNumber((boosters as GameState["boosters"]).doubleIncomeUntil, 0),
+      speedBoostUntil: asNumber((boosters as GameState["boosters"]).speedBoostUntil, 0),
+      extraWorkers: Math.max(0, Math.floor(asNumber((boosters as GameState["boosters"]).extraWorkers, 0))),
+    },
+    achievements: asStringArray(input.achievements),
+    lastTick: asNumber(input.lastTick, Date.now()),
+    lastDailyClaim: asNumber(input.lastDailyClaim, 0),
+    dailyStreak: Math.max(0, Math.floor(asNumber(input.dailyStreak, 0))),
+    cosmetics: asStringArray(input.cosmetics),
+    totalGoldEarned: Math.max(0, asNumber(input.totalGoldEarned, 0)),
+    dailyCycleDay: Math.max(1, Math.floor(asNumber(input.dailyCycleDay, 1))),
+    lastSpinAt: asNumber(input.lastSpinAt, 0),
+    dailyMissions: Array.isArray(input.dailyMissions) ? input.dailyMissions : [],
+    dailyMissionsDate: typeof input.dailyMissionsDate === "string" ? input.dailyMissionsDate : "",
+    dailyCounters: {
+      ...emptyCounters(),
+      ...counters,
+      date: typeof (counters as { date?: unknown }).date === "string" ? (counters as { date: string }).date : todayKey(),
+      goldEarned: asNumber((counters as GameState["dailyCounters"]).goldEarned, 0),
+      woodEarned: asNumber((counters as GameState["dailyCounters"]).woodEarned, 0),
+      stoneEarned: asNumber((counters as GameState["dailyCounters"]).stoneEarned, 0),
+      upgrades: Math.max(0, Math.floor(asNumber((counters as GameState["dailyCounters"]).upgrades, 0))),
+      builds: Math.max(0, Math.floor(asNumber((counters as GameState["dailyCounters"]).builds, 0))),
+      goldSpent: asNumber((counters as GameState["dailyCounters"]).goldSpent, 0),
+    },
+    settings: {
+      ...defaultSettings(),
+      ...savedSettings,
+      graphics: {
+        ...defaultSettings().graphics,
+        ...savedGraphics,
+      },
+    },
+    prestigeTokens: Math.max(0, Math.floor(asNumber(input.prestigeTokens, 0))),
+    prestigeCount: Math.max(0, Math.floor(asNumber(input.prestigeCount, 0))),
+    prestigeUpgrades:
+      input.prestigeUpgrades && typeof input.prestigeUpgrades === "object" ? input.prestigeUpgrades : {},
+    prestigeAchievements: asStringArray(input.prestigeAchievements),
+    islandStates: normalizeIslandStates(input.islandStates),
   };
 };
 

@@ -3463,7 +3463,7 @@ function GoldNugget({ position }: { position: [number, number, number] }) {
 
 function IslandScene({ state, onPlotClick, moveMode, movingFrom, lowPower = false }: IslandViewProps) {
 
-  const island = ISLANDS.find((i) => i.id === state.activeIsland)!;
+  const island = ISLANDS.find((i) => i.id === state.activeIsland) ?? ISLANDS[0];
   const theme = ISLAND_THEMES[island.id] ?? DEFAULT_THEME;
   const tint = theme.grassTint;
 
@@ -3571,8 +3571,14 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom, lowPower = fals
     forbidden.push({ x: 7.2, z: 0, r: 1.5 }); // Bridge
     forbidden.push({ x: -6.5, z: 4, r: 1.3 }); // Lighthouse cosmetic
     forbidden.push({ x: 6, z: -4, r: 1.2 });   // Statue cosmetic
-    return generatePlotGrid(forbidden);
+    return generatePlotGrid(forbidden).filter((pos): pos is [number, number] =>
+      Array.isArray(pos) &&
+      pos.length >= 2 &&
+      Number.isFinite(pos[0]) &&
+      Number.isFinite(pos[1])
+    );
   }, [palms, trees, decor]);
+  const plotSlots = slots.length > 0 ? slots : FALLBACK_PLOT_POSITIONS;
 
   return (
     <IslandThemeContext.Provider value={theme}>
@@ -3698,7 +3704,7 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom, lowPower = fals
 
 
       {/* Plots / buildings */}
-      {slots.map((pos, i) => {
+      {plotSlots.map((pos, i) => {
         const hasBuilding = !!state.buildings[i];
         const ownedPlot = true;
         if (!moveMode && !ownedPlot && !hasBuilding) return null;
@@ -3723,13 +3729,13 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom, lowPower = fals
 
       {/* Decorative surroundings around every built plot */}
       <NoHit>
-        {slots.map((pos, i) => {
+        {plotSlots.map((pos, i) => {
           if (!state.buildings[i]) return null;
           return <BuildingSurround key={`bs-${i}`} position={[pos[0], 0.52, pos[1]]} seed={i + 1} buildingId={state.buildings[i]!.id} />;
         })}
       </NoHit>
 
-      <WindowGlows slots={slots} buildings={state.buildings.slice(0, slots.length)} />
+      <WindowGlows slots={plotSlots} buildings={state.buildings.slice(0, plotSlots.length)} />
 
       </group>
 
@@ -3787,7 +3793,7 @@ function CameraRig() {
 export function IslandView({ state, onPlotClick, moveMode, movingFrom }: IslandViewProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-  const island = ISLANDS.find((i) => i.id === state.activeIsland)!;
+  const island = ISLANDS.find((i) => i.id === state.activeIsland) ?? ISLANDS[0];
 
   // Auto-detect low-power devices (more aggressive than before).
   const autoLow = useMemo(() => {
