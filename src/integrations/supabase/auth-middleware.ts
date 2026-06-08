@@ -5,19 +5,59 @@ import { createClient } from '@supabase/supabase-js'
 import type { Database } from './types'
 
 
+function readEnv(name: string) {
+  const value = process.env[name] || '';
+  let cleaned = value.trim();
+
+  if (/^[A-Z0-9_]+\s*=/.test(cleaned)) {
+    cleaned = cleaned.slice(cleaned.indexOf('=') + 1).trim();
+  }
+
+  while (
+    (cleaned.startsWith('"') && cleaned.endsWith('"')) ||
+    (cleaned.startsWith("'") && cleaned.endsWith("'"))
+  ) {
+    cleaned = cleaned.slice(1, -1).trim();
+  }
+
+  return cleaned;
+}
+
+function readSupabaseUrl() {
+  const raw = readEnv('SUPABASE_URL') || readEnv('VITE_SUPABASE_URL');
+  const withoutRestPath = raw.replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
+
+  try {
+    const url = new URL(withoutRestPath);
+    if (!['https:', 'http:'].includes(url.protocol)) return '';
+    return url.origin;
+  } catch {
+    return '';
+  }
+}
+
+function readSupabasePublishableKey() {
+  return (
+    readEnv('SUPABASE_PUBLISHABLE_KEY') ||
+    readEnv('SUPABASE_ANON_KEY') ||
+    readEnv('VITE_SUPABASE_PUBLISHABLE_KEY') ||
+    readEnv('VITE_SUPABASE_ANON_KEY')
+  );
+}
+
 
 export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server(
   async ({ next }) => {
     
-    const SUPABASE_URL = process.env.SUPABASE_URL;
-    const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
+    const SUPABASE_URL = readSupabaseUrl();
+    const SUPABASE_PUBLISHABLE_KEY = readSupabasePublishableKey();
 
     if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
       const missing = [
-        ...(!SUPABASE_URL ? ['SUPABASE_URL'] : []),
-        ...(!SUPABASE_PUBLISHABLE_KEY ? ['SUPABASE_PUBLISHABLE_KEY'] : []),
+        ...(!SUPABASE_URL ? ['SUPABASE_URL or VITE_SUPABASE_URL'] : []),
+        ...(!SUPABASE_PUBLISHABLE_KEY ? ['SUPABASE_PUBLISHABLE_KEY, SUPABASE_ANON_KEY, VITE_SUPABASE_PUBLISHABLE_KEY, or VITE_SUPABASE_ANON_KEY'] : []),
       ];
-      const message = `Missing Supabase environment variable(s): ${missing.join(', ')}. Connect Supabase in Lovable Cloud.`;
+      const message = `Missing or invalid Supabase environment variable(s): ${missing.join(', ')}. Add the Supabase project URL and anon/public key.`;
       console.error(`[Supabase] ${message}`);
       throw new Error(message);
     }
