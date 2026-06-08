@@ -38,7 +38,7 @@
 - Current code reads and updates `profiles` through the normal Supabase client under RLS, so service role is not required for current runtime behavior.
 - The generated `supabaseAdmin` client exists but is not imported elsewhere. Require `SUPABASE_SERVICE_ROLE_KEY` only if future backend code imports that admin client for RLS-bypass/admin actions.
 - Migrations are SQL files that create or update database tables. This repo has Supabase migrations under `supabase/migrations`.
-- Supabase project ref found in `supabase/config.toml`: `tcnnemcyjvzdiwosjewf`.
+- Supabase project ref found in `supabase/config.toml`: `loibxpdfpljqcxfwmtnj`.
 - If Supabase reports `Could not find the table ... in the schema cache`, apply the migration SQL to the target project.
 
 ## Gemini And AI Keys
@@ -60,5 +60,5 @@
 - Confirm all required Supabase variables are set in Vercel Production, Preview, and Development.
 - Confirm `.env` and local Vercel handoff files are ignored.
 - Confirm `.env.example` is committed and contains no real values.
-- Confirm database migrations have been applied to Supabase project `tcnnemcyjvzdiwosjewf`.
+- Confirm database migrations have been applied to Supabase project `loibxpdfpljqcxfwmtnj`.
 - Run `npm run build` before redeploying.

@@ -13,6 +13,7 @@ lerna-debug.log*
 VERCEL_ENV_IMPORT.local.env
 VERCEL_ENV_VALUES.local.md
 .vercel
+supabase/.temp
 
 node_modules
 dist
