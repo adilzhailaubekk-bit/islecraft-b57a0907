@@ -8,7 +8,43 @@ function readEnv(name: string) {
   const viteEnv = typeof import.meta !== 'undefined' ? import.meta.env?.[name] : undefined;
   const nodeEnv = typeof process !== 'undefined' ? process.env?.[name] : undefined;
   const value = viteEnv || nodeEnv || '';
-  return typeof value === 'string' ? value.trim().replace(/^["']|["']$/g, '') : '';
+  if (typeof value !== 'string') return '';
+
+  let cleaned = value.trim();
+  if (/^[A-Z0-9_]+\s*=/.test(cleaned)) {
+    cleaned = cleaned.slice(cleaned.indexOf('=') + 1).trim();
+  }
+
+  while (
+    (cleaned.startsWith('"') && cleaned.endsWith('"')) ||
+    (cleaned.startsWith("'") && cleaned.endsWith("'"))
+  ) {
+    cleaned = cleaned.slice(1, -1).trim();
+  }
+
+  return cleaned;
+}
+
+function readSupabaseUrl() {
+  const raw = readEnv('VITE_SUPABASE_URL') || readEnv('SUPABASE_URL');
+  const withoutRestPath = raw.replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
+
+  try {
+    const url = new URL(withoutRestPath);
+    if (!['https:', 'http:'].includes(url.protocol)) return '';
+    return url.origin;
+  } catch {
+    return '';
+  }
+}
+
+function readSupabasePublishableKey() {
+  return (
+    readEnv('VITE_SUPABASE_PUBLISHABLE_KEY') ||
+    readEnv('VITE_SUPABASE_ANON_KEY') ||
+    readEnv('SUPABASE_PUBLISHABLE_KEY') ||
+    readEnv('SUPABASE_ANON_KEY')
+  );
 }
 
 function createOfflineSupabaseClient(): SupabaseClient {
@@ -48,11 +84,11 @@ function createOfflineSupabaseClient(): SupabaseClient {
 }
 
 function createSupabaseClient() {
-  const SUPABASE_URL = readEnv('VITE_SUPABASE_URL') || readEnv('SUPABASE_URL');
-  const SUPABASE_PUBLISHABLE_KEY = readEnv('VITE_SUPABASE_PUBLISHABLE_KEY') || readEnv('SUPABASE_PUBLISHABLE_KEY');
+  const SUPABASE_URL = readSupabaseUrl();
+  const SUPABASE_PUBLISHABLE_KEY = readSupabasePublishableKey();
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-    console.warn('[Supabase] Environment variables are missing. Running with local-only game saves and login disabled.');
+    console.warn('[Supabase] Environment variables are missing or invalid. Running with local-only game saves and login disabled.');
     return createOfflineSupabaseClient();
   }
 
