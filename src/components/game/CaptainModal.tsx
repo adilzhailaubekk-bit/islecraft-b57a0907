@@ -27,6 +27,16 @@ const rarityClass: Record<CaptainOffer["rarity"], string> = {
   mythic: "from-rose-500 to-indigo-700",
 };
 
+const CAPTAIN_LORE_INTRO =
+  "Из густого утреннего тумана медленно появляется старинный корабль с чёрными парусами. Никто не знает, откуда он приходит и куда исчезает.";
+
+const CAPTAIN_LORE = [
+  "Его деревянный корпус покрыт следами бесчисленных путешествий, а золотые элементы на бортах поблёскивают в лучах солнца. Над кораблём кружат чайки, а волны мягко бьются о его борт.",
+  "На палубе стоит загадочный капитан в длинном тёмно-синем плаще. Его лицо скрыто под широкополой шляпой, а взгляд кажется таким, будто он видел каждый остров и каждую тайну океана.",
+  "Одни считают его торговцем, другие - охотником за сокровищами, а некоторые уверены, что он хранит секреты давно затерянных цивилизаций.",
+  "Каждый его визит приносит новые возможности: редкие товары, древние карты, загадочные артефакты или рискованные сделки.",
+];
+
 const hasEnoughResources = (resources: Resources, cost?: Partial<Resources>) => {
   if (!cost) return true;
   return (Object.keys(cost) as (keyof Resources)[]).every((key) => resources[key] >= (cost[key] ?? 0));
@@ -68,6 +78,24 @@ export function CaptainModal({
         </div>
       ) : offer ? (
         <div className="space-y-5">
+          <div className="rounded-2xl border-2 border-slate-200 bg-gradient-to-br from-slate-900 to-blue-950 p-4 text-white shadow-card">
+            <div className="flex items-center gap-2 font-display text-lg font-black">
+              <span>🏴</span>
+              <span>Таинственный Капитан</span>
+            </div>
+            <p className="mt-2 text-sm font-semibold leading-relaxed text-slate-100">{CAPTAIN_LORE_INTRO}</p>
+            <details className="mt-3 group">
+              <summary className="cursor-pointer text-xs font-black uppercase tracking-wide text-amber-200 transition-colors hover:text-amber-100">
+                История капитана
+              </summary>
+              <div className="mt-3 space-y-2 text-sm font-medium leading-relaxed text-slate-200">
+                {CAPTAIN_LORE.map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
+              </div>
+            </details>
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-[150px_1fr]">
             <CaptainPortrait mood={offer.risk ? "risk" : "calm"} />
             <div className="space-y-3">
