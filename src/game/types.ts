@@ -42,6 +42,44 @@ export interface BoosterState {
   extraWorkers: number;
 }
 
+export type CaptainOfferKind = "trade" | "chest" | "bonus" | "rare" | "risk";
+export type CaptainOfferRarity = "common" | "rare" | "legendary" | "mythic";
+
+export interface CaptainOffer {
+  id: string;
+  kind: CaptainOfferKind;
+  rarity: CaptainOfferRarity;
+  title: string;
+  description: string;
+  icon: string;
+  cost?: Partial<Resources>;
+  rewardPreview: string;
+  risk?: boolean;
+  payload:
+    | { type: "resource"; resources: Partial<Resources> }
+    | { type: "booster"; booster: "speed" | "double" | "offline"; durationSec: number; multiplier?: number }
+    | { type: "cosmetic"; cosmeticId: string; name: string }
+    | { type: "risk"; stake: Partial<Resources> };
+}
+
+export interface CaptainResult {
+  title: string;
+  description: string;
+  icon: string;
+  resources?: Partial<Resources>;
+  cosmeticId?: string;
+  booster?: "speed" | "double" | "offline";
+}
+
+export interface CaptainState {
+  activePlayedMs: number;
+  nextAtActiveMs: number;
+  activeOffer: CaptainOffer | null;
+  activeUntilActiveMs: number;
+  lastResult: CaptainResult | null;
+  offlineBoostUntil: number;
+}
+
 export interface Achievement {
   id: string;
   name: string;
@@ -106,6 +144,7 @@ export interface GameState {
   level: number;
   xp: number;
   boosters: BoosterState;
+  captain: CaptainState;
   achievements: string[];
   lastTick: number;
   lastDailyClaim: number;

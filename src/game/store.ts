@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import type { BuildingDef, BuildingState, DailyMission, GameState, Resources } from "./types";
+import type { BuildingDef, BuildingState, CaptainOffer, CaptainResult, CaptainState, DailyMission, GameState, Resources } from "./types";
 import { defaultSettings } from "./types";
 import {
   BUILDINGS,
@@ -26,6 +26,15 @@ import {
   computePrestigeBonuses,
   canPrestige,
 } from "./prestige";
+import {
+  CAPTAIN_ACTIVE_DURATION_MS,
+  canPayCaptainCost,
+  defaultCaptainState,
+  generateCaptainOffer,
+  randomCaptainDelayMs,
+  rollRiskResult,
+  subtractCaptainCost,
+} from "./captain";
 
 const STORAGE_KEY = "island-tycoon-save-v2";
 
@@ -48,6 +57,7 @@ const initialState = (): GameState => ({
   level: 1,
   xp: 0,
   boosters: { doubleIncomeUntil: 0, speedBoostUntil: 0, extraWorkers: 0 },
+  captain: defaultCaptainState(),
   achievements: [],
   lastTick: Date.now(),
   lastDailyClaim: 0,
@@ -107,6 +117,22 @@ const normalizeIslandStates = (value: unknown): GameState["islandStates"] => {
   );
 };
 
+const normalizeCaptain = (value: unknown): CaptainState => {
+  const base = defaultCaptainState();
+  if (!value || typeof value !== "object") return base;
+  const raw = value as Partial<CaptainState>;
+  return {
+    ...base,
+    ...raw,
+    activePlayedMs: Math.max(0, asNumber(raw.activePlayedMs, base.activePlayedMs)),
+    nextAtActiveMs: Math.max(0, asNumber(raw.nextAtActiveMs, base.nextAtActiveMs)),
+    activeOffer: raw.activeOffer && typeof raw.activeOffer === "object" ? (raw.activeOffer as CaptainOffer) : null,
+    activeUntilActiveMs: Math.max(0, asNumber(raw.activeUntilActiveMs, 0)),
+    lastResult: raw.lastResult && typeof raw.lastResult === "object" ? (raw.lastResult as CaptainResult) : null,
+    offlineBoostUntil: asNumber(raw.offlineBoostUntil, 0),
+  };
+};
+
 // Normalize older or partial save formats.
 const normalize = (input: Partial<GameState>): GameState => {
   const base = initialState();
@@ -146,6 +172,7 @@ const normalize = (input: Partial<GameState>): GameState => {
       speedBoostUntil: asNumber((boosters as GameState["boosters"]).speedBoostUntil, 0),
       extraWorkers: Math.max(0, Math.floor(asNumber((boosters as GameState["boosters"]).extraWorkers, 0))),
     },
+    captain: normalizeCaptain(input.captain),
     achievements: asStringArray(input.achievements),
     lastTick: asNumber(input.lastTick, Date.now()),
     lastDailyClaim: asNumber(input.lastDailyClaim, 0),
@@ -324,10 +351,12 @@ export function useGameStore() {
     if (elapsed > 30 && s.buildings.some(Boolean)) {
       const rates = computeRates(s);
       const island = ISLANDS.find((i) => i.id === s.activeIsland)!;
+      const captainOfflineMult = s.captain.offlineBoostUntil > now ? 1.5 : 1;
       const offlineMult =
         0.25 *
         computePrestigeBonuses(s.prestigeUpgrades).offlineMult *
-        (island.offlineBonus ?? 1);
+        (island.offlineBonus ?? 1) *
+        captainOfflineMult;
       const earned: Resources = {
         gold: rates.gold * elapsed * offlineMult,
         wood: rates.wood * elapsed * offlineMult,
@@ -364,6 +393,23 @@ export function useGameStore() {
         if (dg > 0) missions = bumpMissions(missions, "earnGold", dg);
         if (dw > 0) missions = bumpMissions(missions, "earnWood", dw);
         if (ds > 0) missions = bumpMissions(missions, "earnStone", ds);
+        let captain: CaptainState = { ...p.captain, activePlayedMs: p.captain.activePlayedMs + dt * 1000 };
+        if (captain.activeOffer && captain.activePlayedMs >= captain.activeUntilActiveMs) {
+          captain = {
+            ...captain,
+            activeOffer: null,
+            activeUntilActiveMs: 0,
+            nextAtActiveMs: captain.activePlayedMs + randomCaptainDelayMs(),
+          };
+        }
+        if (!captain.activeOffer && captain.activePlayedMs >= captain.nextAtActiveMs) {
+          captain = {
+            ...captain,
+            activeOffer: generateCaptainOffer({ ...p, captain }),
+            activeUntilActiveMs: captain.activePlayedMs + CAPTAIN_ACTIVE_DURATION_MS,
+            lastResult: null,
+          };
+        }
         return {
           ...p,
           resources: {
@@ -380,6 +426,7 @@ export function useGameStore() {
             stoneEarned: p.dailyCounters.stoneEarned + ds,
           },
           dailyMissions: missions,
+          captain,
           lastTick: Date.now(),
         };
       });
@@ -701,6 +748,107 @@ export function useGameStore() {
     });
   }, []);
 
+  const acceptCaptainOffer = useCallback((): CaptainResult | null => {
+    let result: CaptainResult | null = null;
+    setState((prev) => {
+      const p = ensureDaily(prev);
+      const offer = p.captain.activeOffer;
+      if (!offer || !canPayCaptainCost(p, offer.cost)) return p;
+
+      const now = Date.now();
+      let resources = subtractCaptainCost(p.resources, offer.cost);
+      let boosters = { ...p.boosters };
+      let cosmetics = p.cosmetics;
+      let totalGoldEarned = p.totalGoldEarned;
+      let captain: CaptainState = {
+        ...p.captain,
+        activeOffer: null,
+        activeUntilActiveMs: 0,
+        nextAtActiveMs: p.captain.activePlayedMs + randomCaptainDelayMs(),
+      };
+
+      if (offer.payload.type === "resource") {
+        for (const key of Object.keys(offer.payload.resources) as (keyof Resources)[]) {
+          const amount = offer.payload.resources[key] ?? 0;
+          resources = { ...resources, [key]: resources[key] + amount };
+          if (key === "gold") totalGoldEarned += amount;
+        }
+        result = {
+          title: "Сделка завершена",
+          description: offer.rewardPreview,
+          icon: offer.icon,
+          resources: offer.payload.resources,
+        };
+      }
+
+      if (offer.payload.type === "booster") {
+        if (offer.payload.booster === "speed") {
+          boosters.speedBoostUntil = Math.max(boosters.speedBoostUntil, now) + offer.payload.durationSec * 1000;
+        } else if (offer.payload.booster === "double") {
+          boosters.doubleIncomeUntil = Math.max(boosters.doubleIncomeUntil, now) + offer.payload.durationSec * 1000;
+        } else {
+          captain.offlineBoostUntil = Math.max(captain.offlineBoostUntil, now) + offer.payload.durationSec * 1000;
+        }
+        result = {
+          title: "Бонус активирован",
+          description: offer.rewardPreview,
+          icon: offer.icon,
+          booster: offer.payload.booster,
+        };
+      }
+
+      if (offer.payload.type === "cosmetic") {
+        if (!cosmetics.includes(offer.payload.cosmeticId)) {
+          cosmetics = [...cosmetics, offer.payload.cosmeticId];
+        }
+        result = {
+          title: "Редкость получена",
+          description: `${offer.payload.name} добавлен в коллекцию.`,
+          icon: offer.icon,
+          cosmeticId: offer.payload.cosmeticId,
+        };
+      }
+
+      if (offer.payload.type === "risk") {
+        result = rollRiskResult(offer.payload.stake);
+        if (result.resources) {
+          for (const key of Object.keys(result.resources) as (keyof Resources)[]) {
+            const amount = result.resources[key] ?? 0;
+            resources = { ...resources, [key]: resources[key] + amount };
+            if (key === "gold") totalGoldEarned += amount;
+          }
+        }
+      }
+
+      if (!result) return p;
+      captain = { ...captain, lastResult: result };
+      let next: GameState = { ...p, resources, boosters, cosmetics, totalGoldEarned, captain };
+      next = applyGoldSpent(next, offer.cost?.gold ?? 0);
+      return next;
+    });
+    return result;
+  }, []);
+
+  const declineCaptainOffer = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      captain: {
+        ...prev.captain,
+        activeOffer: null,
+        activeUntilActiveMs: 0,
+        lastResult: null,
+        nextAtActiveMs: prev.captain.activePlayedMs + randomCaptainDelayMs(),
+      },
+    }));
+  }, []);
+
+  const clearCaptainResult = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      captain: { ...prev.captain, lastResult: null },
+    }));
+  }, []);
+
   const claimAchievement = useCallback((id: string, reward: number) => {
     setState((p) => {
       if (p.achievements.includes(id)) return p;
@@ -925,6 +1073,9 @@ export function useGameStore() {
     switchIsland,
     buyBooster,
     buyCosmetic,
+    acceptCaptainOffer,
+    declineCaptainOffer,
+    clearCaptainResult,
     claimAchievement,
     claimDaily,
     claimDailyReward,

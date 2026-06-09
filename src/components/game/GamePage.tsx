@@ -12,6 +12,8 @@ import { DailyModal } from "@/components/game/DailyModal";
 import { OfflineModal } from "@/components/game/OfflineModal";
 import { SettingsModal } from "@/components/game/SettingsModal";
 import { PrestigeModal } from "@/components/game/PrestigeModal";
+import { CaptainShip } from "@/components/game/CaptainShip";
+import { CaptainModal } from "@/components/game/CaptainModal";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "@tanstack/react-router";
@@ -39,6 +41,7 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
   const [mounted, setMounted] = useState(false);
   const [moveMode, setMoveMode] = useState(false);
   const [movingFrom, setMovingFrom] = useState<number | null>(null);
+  const [captainOpen, setCaptainOpen] = useState(false);
   useEffect(() => setMounted(true), []);
   if (!mounted) return <div className="fixed inset-0 bg-gradient-sky" />;
 
@@ -126,6 +129,7 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
             setModal("build");
           }}
         />
+        <CaptainShip offer={game.state.captain.activeOffer} onClick={() => setCaptainOpen(true)} />
         {moveMode && (
           <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-violet-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-pop border-2 border-white pointer-events-none">
             {movingFrom === null ? "Выберите здание для переноса" : "Выберите участок назначения"}
@@ -266,6 +270,23 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
         state={game.state}
         onPrestige={game.performPrestige}
         onBuyUpgrade={game.buyPrestigeUpgrade}
+      />
+      <CaptainModal
+        open={captainOpen || !!game.state.captain.lastResult}
+        offer={captainOpen ? game.state.captain.activeOffer : null}
+        result={game.state.captain.lastResult}
+        resources={game.state.resources}
+        onAccept={() => {
+          game.acceptCaptainOffer();
+        }}
+        onDecline={() => {
+          game.declineCaptainOffer();
+          setCaptainOpen(false);
+        }}
+        onClose={() => {
+          setCaptainOpen(false);
+          game.clearCaptainResult();
+        }}
       />
     </div>
   );
