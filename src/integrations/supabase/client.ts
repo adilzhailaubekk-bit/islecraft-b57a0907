@@ -85,6 +85,10 @@ function createOfflineSupabaseClient(): SupabaseClient {
         data: { user: null, session: null },
         error: new Error('Supabase is not configured. Add the Supabase environment variables to enable login.'),
       }),
+      signInWithOAuth: () => Promise.resolve({
+        data: { provider: 'google', url: null },
+        error: new Error('Supabase is not configured. Add the Supabase environment variables to enable login.'),
+      }),
       setSession: () => noSession,
     },
     from: () => query,

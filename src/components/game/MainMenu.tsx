@@ -972,6 +972,7 @@ function AuthChip() {
       </Link>
     );
   }
+  const email = user.email ?? "Аккаунт";
   return (
     <motion.button
       whileHover={{ scale: 1.06 }}
@@ -981,7 +982,7 @@ function AuthChip() {
         toast.success("Вы вышли из аккаунта");
       }}
       title="Выйти"
-      className="w-9 h-9 rounded-full flex items-center justify-center"
+      className="h-9 max-w-[230px] rounded-full flex items-center justify-center gap-2 px-3"
       style={{
         background: "rgba(255,255,255,0.6)",
         backdropFilter: "blur(10px)",
@@ -991,6 +992,9 @@ function AuthChip() {
         boxShadow: "0 4px 12px rgba(107,78,26,0.12)",
       }}
     >
+      <span className="block max-w-[120px] sm:max-w-[180px] truncate text-[13px] font-semibold" title={email}>
+        {email}
+      </span>
       <LogOut className="w-4 h-4" />
     </motion.button>
   );
