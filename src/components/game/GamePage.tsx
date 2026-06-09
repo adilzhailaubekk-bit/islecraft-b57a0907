@@ -277,12 +277,22 @@ function GameAccountBadge() {
 
   if (!user) {
     return (
-      <Link
-        to="/login"
-        className="h-11 sm:h-14 shrink-0 rounded-2xl border border-white/80 bg-white/80 px-3 text-xs sm:text-sm font-bold text-slate-700 shadow-card backdrop-blur flex items-center justify-center"
-      >
-        Войти
-      </Link>
+      <div className="shrink-0 flex flex-col sm:flex-row gap-1.5">
+        <Link
+          to="/login"
+          search={{ mode: "login" }}
+          className="h-9 sm:h-14 rounded-2xl border border-white/80 bg-white/80 px-3 text-xs sm:text-sm font-bold text-slate-700 shadow-card backdrop-blur flex items-center justify-center"
+        >
+          Войти
+        </Link>
+        <Link
+          to="/login"
+          search={{ mode: "register" }}
+          className="h-9 sm:h-14 rounded-2xl border border-white/80 bg-white/60 px-3 text-xs sm:text-sm font-bold text-slate-700 shadow-card backdrop-blur flex items-center justify-center"
+        >
+          Регистрация
+        </Link>
+      </div>
     );
   }
 

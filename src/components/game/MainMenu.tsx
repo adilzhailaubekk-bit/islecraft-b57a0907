@@ -963,13 +963,24 @@ function AuthChip() {
   if (loading) return null;
   if (!user) {
     return (
-      <Link
-        to="/login"
-        className="flex items-center gap-1.5 px-4 h-9 rounded-full text-[14px] font-semibold"
-        style={{ background: "rgba(255,216,74,0.8)", color: "#6b4e1a", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.8)" }}
-      >
-        Войти
-      </Link>
+      <div className="flex items-center gap-1.5">
+        <Link
+          to="/login"
+          search={{ mode: "login" }}
+          className="flex items-center gap-1.5 px-4 h-9 rounded-full text-[14px] font-semibold"
+          style={{ background: "rgba(255,216,74,0.8)", color: "#6b4e1a", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.8)" }}
+        >
+          Войти
+        </Link>
+        <Link
+          to="/login"
+          search={{ mode: "register" }}
+          className="hidden sm:flex items-center gap-1.5 px-4 h-9 rounded-full text-[14px] font-semibold"
+          style={{ background: "rgba(255,255,255,0.62)", color: "#6b4e1a", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.9)" }}
+        >
+          Регистрация
+        </Link>
+      </div>
     );
   }
   const email = user.email ?? "Аккаунт";

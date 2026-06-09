@@ -5,9 +5,16 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 
+type LoginSearch = {
+  mode?: "login" | "register";
+};
+
 function LoginPage() {
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const [busy, setBusy] = useState(false);
+  const mode = search.mode === "register" ? "register" : "login";
+  const isRegister = mode === "register";
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -33,7 +40,7 @@ function LoginPage() {
       });
       if (error) throw error;
     } catch (err) {
-      toast.error("Не удалось войти через Google", {
+      toast.error(isRegister ? "Не удалось зарегистрироваться через Google" : "Не удалось войти через Google", {
         description: err instanceof Error ? err.message : String(err),
       });
       setBusy(false);
@@ -60,8 +67,31 @@ function LoginPage() {
                 Islecraft
               </h1>
               <p className="text-sm text-slate-500 mt-1">
-                Войдите через Google, чтобы сохранять прогресс в облаке
+                {isRegister
+                  ? "Зарегистрируйтесь через Google, чтобы сохранять прогресс в облаке"
+                  : "Войдите через Google, чтобы сохранять прогресс в облаке"}
               </p>
+            </div>
+
+            <div className="mb-5 grid grid-cols-2 gap-2 rounded-2xl bg-slate-100 p-1">
+              <Link
+                to="/login"
+                search={{ mode: "login" }}
+                className={`rounded-xl py-2 text-center text-sm font-semibold transition ${
+                  !isRegister ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                Войти
+              </Link>
+              <Link
+                to="/login"
+                search={{ mode: "register" }}
+                className={`rounded-xl py-2 text-center text-sm font-semibold transition ${
+                  isRegister ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                Регистрация
+              </Link>
             </div>
 
             <button
@@ -76,7 +106,7 @@ function LoginPage() {
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
               </svg>
-              {busy ? "..." : "Продолжить с Google"}
+              {busy ? "..." : isRegister ? "Зарегистрироваться через Google" : "Войти через Google"}
             </button>
 
             <div className="mt-5 text-center">
@@ -92,12 +122,15 @@ function LoginPage() {
 }
 
 export const Route = createFileRoute("/login")({
+  validateSearch: (search: Record<string, unknown>): LoginSearch => ({
+    mode: search.mode === "register" ? "register" : "login",
+  }),
   head: () => ({
     meta: [
       { title: "Вход — Islecraft" },
       {
         name: "description",
-        content: "Войдите в Islecraft через Google, чтобы сохранять прогресс в облаке.",
+        content: "Войдите или зарегистрируйтесь в Islecraft через Google, чтобы сохранять прогресс в облаке.",
       },
     ],
   }),
