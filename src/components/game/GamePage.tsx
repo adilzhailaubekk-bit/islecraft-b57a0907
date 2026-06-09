@@ -1,24 +1,21 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useGameStore } from "@/game/store";
-import { plotCost, ACHIEVEMENTS } from "@/game/data";
+import { plotCost, ACHIEVEMENTS, xpForLevel } from "@/game/data";
 import { ResourceBar } from "@/components/game/ResourceBar";
 import { IslandView } from "@/components/game/IslandView";
 import { BuildMenu } from "@/components/game/BuildMenu";
 import { ShopModal } from "@/components/game/ShopModal";
 import { IslandsModal } from "@/components/game/IslandsModal";
 import { AchievementsModal } from "@/components/game/AchievementsModal";
-import { DailyModal } from "@/components/game/DailyModal";
 import { OfflineModal } from "@/components/game/OfflineModal";
 import { SettingsModal } from "@/components/game/SettingsModal";
 import { PrestigeModal } from "@/components/game/PrestigeModal";
 import { CaptainShip } from "@/components/game/CaptainShip";
 import { CaptainModal } from "@/components/game/CaptainModal";
-import { AiAdvisorModal } from "@/components/game/AiAdvisorModal";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
-import { Link } from "@tanstack/react-router";
-import { LogOut } from "lucide-react";
+import { ArrowLeft, LogOut } from "lucide-react";
 
 import { fmt } from "@/game/format";
 import { canPrestige } from "@/game/prestige";
@@ -27,15 +24,19 @@ const ACTIONS = [
   { id: "shop", label: "Магазин", emoji: "🛒", gradient: "from-rose-400 to-rose-600" },
   { id: "upgrades", label: "Здания", emoji: "🔨", gradient: "from-amber-400 to-orange-500" },
   { id: "islands", label: "Острова", emoji: "🗺️", gradient: "from-emerald-400 to-teal-600" },
-  { id: "daily", label: "Награды", emoji: "🎁", gradient: "from-violet-400 to-fuchsia-600" },
   { id: "achievements", label: "Кубки", emoji: "🏆", gradient: "from-sky-400 to-indigo-600" },
   { id: "prestige", label: "Перерождение", emoji: "✨", gradient: "from-fuchsia-500 to-violet-700" },
-  { id: "ai", label: "ИИ", emoji: "✨", gradient: "from-cyan-400 to-blue-600" },
 ] as const;
 
 type ModalId = (typeof ACTIONS)[number]["id"] | "build" | "settings" | null;
 
-export default function GamePage({ initialModal = null }: { initialModal?: ModalId } = {}) {
+export default function GamePage({
+  initialModal = null,
+  onBackToMenu,
+}: {
+  initialModal?: ModalId;
+  onBackToMenu?: () => void;
+} = {}) {
   const game = useGameStore();
   const [modal, setModal] = useState<ModalId>(initialModal);
   const [plotIndex, setPlotIndex] = useState(0);
@@ -47,10 +48,6 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
   useEffect(() => setMounted(true), []);
   if (!mounted) return <div className="fixed inset-0 bg-gradient-sky" />;
 
-  const dailyReady = Date.now() - game.state.lastDailyClaim >= 22 * 3600 * 1000;
-  const spinReady = Date.now() - (game.state.lastSpinAt ?? 0) >= 22 * 3600 * 1000;
-  const claimableMissions = game.state.dailyMissions?.filter((m) => !m.claimed && m.progress >= m.goal).length ?? 0;
-  const dailyTotalBadge = (dailyReady ? 1 : 0) + (spinReady ? 1 : 0) + claimableMissions;
   const claimableAchievements = ACHIEVEMENTS.filter((a) => {
     if (game.state.achievements.includes(a.id)) return false;
     const p =
@@ -76,6 +73,12 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
       {/* TOP HUD — resources in a single row */}
       <div className="relative z-10 px-2 pt-2 sm:px-4 sm:pt-3 space-y-1.5">
         <div className="flex items-start gap-2">
+          {onBackToMenu && <BackToMenuButton onClick={onBackToMenu} />}
+          <MiniLevelButton
+            level={game.state.level}
+            xp={game.state.xp}
+            onClick={() => setModal("achievements")}
+          />
           <div className="min-w-0 flex-1">
             <ResourceBar resources={game.state.resources} rates={game.rates} />
           </div>
@@ -156,7 +159,6 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
         <div className="bg-white/85 backdrop-blur-xl rounded-3xl border-2 border-white shadow-pop p-2 sm:p-4 grid grid-cols-4 gap-1.5 sm:flex sm:gap-3 max-w-3xl mx-auto">
           {ACTIONS.map((a) => {
             const notif =
-              a.id === "daily" ? (dailyTotalBadge > 0 ? String(dailyTotalBadge) : null) :
               a.id === "achievements" ? (claimableAchievements > 0 ? String(claimableAchievements) : null) :
               a.id === "prestige" ? (canPrestige(game.state) ? "!" : null) :
               null;
@@ -182,14 +184,6 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
               </motion.button>
             );
           })}
-          <motion.div
-            whileHover={{ y: -4 }}
-            className="btn-3d relative sm:flex-1 bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-500 text-white rounded-2xl py-2.5 sm:py-5 px-1 sm:px-3 flex flex-col items-center justify-center gap-0.5 sm:gap-2 font-display font-bold min-h-[60px] sm:min-h-0"
-            title={`Уровень ${game.state.level}`}
-          >
-            <span className="text-2xl sm:text-4xl drop-shadow leading-none">⭐</span>
-            <span className="text-[10px] sm:text-sm text-shadow-soft leading-tight">Ур. {game.state.level}</span>
-          </motion.div>
           <motion.button
             whileHover={{ y: -4 }}
             whileTap={{ scale: 0.94 }}
@@ -236,14 +230,6 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
         onUnlock={game.unlockIsland}
         onSwitch={game.switchIsland}
       />
-      <DailyModal
-        open={modal === "daily"}
-        onClose={() => setModal(null)}
-        state={game.state}
-        onClaimDaily={game.claimDailyReward}
-        onSpin={game.claimSpin}
-        onClaimMission={game.claimMission}
-      />
       <AchievementsModal
         open={modal === "achievements"}
         onClose={() => setModal(null)}
@@ -273,11 +259,6 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
         onPrestige={game.performPrestige}
         onBuyUpgrade={game.buyPrestigeUpgrade}
       />
-      <AiAdvisorModal
-        open={modal === "ai"}
-        onClose={() => setModal(null)}
-        state={game.state}
-      />
       <CaptainModal
         open={captainOpen || !!game.state.captain.lastResult}
         offer={captainOpen ? game.state.captain.activeOffer : null}
@@ -299,29 +280,59 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
   );
 }
 
+function BackToMenuButton({ onClick }: { onClick: () => void }) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      whileHover={{ y: -2 }}
+      whileTap={{ scale: 0.95 }}
+      className="flex h-[52px] w-[46px] shrink-0 items-center justify-center rounded-2xl border border-white/80 bg-white/85 text-slate-700 shadow-card backdrop-blur sm:h-[76px] sm:w-[56px]"
+      title="Назад в меню"
+      aria-label="Назад в меню"
+    >
+      <ArrowLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+    </motion.button>
+  );
+}
+
+function MiniLevelButton({ level, xp, onClick }: { level: number; xp: number; onClick: () => void }) {
+  const need = xpForLevel(level);
+  const pct = Math.min(100, Math.max(0, (xp / need) * 100));
+
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      whileHover={{ y: -2 }}
+      whileTap={{ scale: 0.95 }}
+      className="relative h-[52px] w-[54px] shrink-0 overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-100 shadow-card sm:h-[76px] sm:w-[72px]"
+      title={`Уровень ${level}`}
+      aria-label={`Уровень ${level}`}
+    >
+      <div className="absolute inset-x-1 bottom-1 h-1 rounded-full bg-white/70">
+        <motion.div
+          className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500"
+          initial={false}
+          animate={{ width: `${pct}%` }}
+        />
+      </div>
+      <div className="flex h-full flex-col items-center justify-center pb-1">
+        <span className="text-base leading-none drop-shadow sm:text-2xl">⭐</span>
+        <span className="font-display text-[11px] font-black leading-none text-amber-900 sm:text-sm">
+          Ур. {level}
+        </span>
+      </div>
+    </motion.button>
+  );
+}
+
 function GameAccountBadge() {
   const { user, loading } = useAuth();
   if (loading) return null;
 
   if (!user) {
-    return (
-      <div className="shrink-0 flex flex-col sm:flex-row gap-1.5">
-        <Link
-          to="/login"
-          search={{ mode: "login" }}
-          className="h-9 sm:h-14 rounded-2xl border border-white/80 bg-white/80 px-3 text-xs sm:text-sm font-bold text-slate-700 shadow-card backdrop-blur flex items-center justify-center"
-        >
-          Войти
-        </Link>
-        <Link
-          to="/login"
-          search={{ mode: "register" }}
-          className="h-9 sm:h-14 rounded-2xl border border-white/80 bg-white/60 px-3 text-xs sm:text-sm font-bold text-slate-700 shadow-card backdrop-blur flex items-center justify-center"
-        >
-          Регистрация
-        </Link>
-      </div>
-    );
+    return null;
   }
 
   const email = user.email ?? "Аккаунт";

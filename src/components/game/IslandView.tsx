@@ -530,69 +530,160 @@ function FenceRing() {
 /* ============================================================
    Palm tree — curved trunk, lush layered crown, coconuts
    ============================================================ */
+type PalmVariant = "tall" | "curved" | "wide";
+
 function Palm({
   position,
   scale = 1,
   delay = 0,
+  variant = "curved",
+  lean = 0,
+  coconuts = true,
 }: {
   position: [number, number, number];
   scale?: number;
   delay?: number;
+  variant?: PalmVariant;
+  lean?: number;
+  coconuts?: boolean;
 }) {
   const theme = useIslandTheme();
-  const group = useRef<THREE.Group>(null!);
+  const trunk = useRef<THREE.Group>(null!);
+  const crown = useRef<THREE.Group>(null!);
+  const leafPattern = useMemo(() => {
+    const rng = mulberry32(Math.floor((position[0] + 11) * 83 + (position[2] + 13) * 131));
+    const count = variant === "wide" ? 13 : variant === "tall" ? 10 : 11;
+    return Array.from({ length: count }).map((_, i) => ({
+      angle: (i / count) * Math.PI * 2 + (rng() - 0.5) * 0.28,
+      length: (variant === "wide" ? 1.28 : variant === "tall" ? 1.06 : 1.16) + rng() * 0.28,
+      width: 0.34 + rng() * 0.12,
+      droop: -0.48 - rng() * (variant === "wide" ? 0.28 : 0.2),
+      lift: (rng() - 0.5) * 0.2,
+      color: rng() > 0.42 ? theme.leafLight : theme.leafMid,
+    }));
+  }, [position, theme.leafLight, theme.leafMid, variant]);
+
   useFrame(({ clock }) => {
     const t = clock.elapsedTime + delay;
-    group.current.rotation.z = Math.sin(t * 1.1) * 0.05;
-    group.current.rotation.x = Math.cos(t * 0.85) * 0.03;
+    const gust = Math.max(0, Math.sin(t * 0.36) - 0.72) * 2.2;
+    if (trunk.current) {
+      trunk.current.rotation.z = lean + Math.sin(t * 0.72) * (0.025 + gust * 0.025);
+      trunk.current.rotation.x = Math.cos(t * 0.58) * (0.018 + gust * 0.018);
+    }
+    if (crown.current) {
+      crown.current.rotation.z = Math.sin(t * 1.05) * (0.08 + gust * 0.08);
+      crown.current.rotation.x = Math.cos(t * 0.9) * (0.05 + gust * 0.05);
+    }
   });
-  const segments = 6;
+
+  const segments = variant === "tall" ? 8 : variant === "wide" ? 6 : 7;
+  const heightStep = variant === "tall" ? 0.44 : variant === "wide" ? 0.36 : 0.41;
+  const crownY = segments * heightStep + 0.3;
+
   return (
     <group position={position} scale={scale}>
-      <group ref={group}>
-        {/* Curved trunk segments */}
+      <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <circleGeometry args={[0.78, 22]} />
+        <meshBasicMaterial color="#1c2a16" transparent opacity={0.18} />
+      </mesh>
+
+      <group ref={trunk}>
+        {/* Curved trunk segments with uneven taper */}
         {Array.from({ length: segments }).map((_, i) => {
-          const y = 0.25 + i * 0.42;
-          const bend = Math.sin((i / segments) * Math.PI) * 0.25;
-          const r = 0.22 - i * 0.022;
+          const k = i / Math.max(1, segments - 1);
+          const y = 0.24 + i * heightStep;
+          const bend = Math.sin(k * Math.PI) * (variant === "wide" ? 0.16 : 0.28) + k * lean * 1.3;
+          const r = 0.23 - i * (variant === "tall" ? 0.017 : 0.02);
           return (
-            <mesh key={i} position={[bend, y, 0]} rotation={[0, 0, -0.08 * i]} castShadow>
+            <mesh key={i} position={[bend, y, 0]} rotation={[0, 0, -0.06 * i + lean * 0.4]} castShadow>
               <cylinderGeometry args={[r, r + 0.02, 0.45, 10]} />
               <meshStandardMaterial color={theme.trunkBark} roughness={1} />
             </mesh>
           );
         })}
-        {/* Crown of layered leaves */}
-        <group position={[Math.sin(0.5) * 0.35, segments * 0.42 + 0.2, 0]}>
-          {Array.from({ length: 9 }).map((_, i) => {
-            const a = (i / 9) * Math.PI * 2;
-            const tilt = -0.55 + ((i % 2) * 0.15);
+        <group ref={crown} position={[Math.sin(0.5) * 0.34 + lean * 1.25, crownY, 0]}>
+          {leafPattern.map((leaf, i) => {
             return (
-              <group key={i} rotation={[0, a, tilt]}>
-                <mesh position={[0.65, 0, 0]} castShadow>
-                  <sphereGeometry args={[0.55, 10, 6]} />
-                  <meshStandardMaterial color={i % 2 ? theme.leafLight : theme.leafMid} roughness={0.7} />
+              <group key={i} rotation={[leaf.lift, leaf.angle, leaf.droop]}>
+                <mesh position={[leaf.length * 0.42, 0, 0]} scale={[leaf.length, 0.16, leaf.width]} castShadow>
+                  <sphereGeometry args={[0.48, 14, 7]} />
+                  <MeshWobbleMaterial
+                    color={leaf.color}
+                    roughness={0.72}
+                    factor={0.08}
+                    speed={0.7 + i * 0.03}
+                  />
                 </mesh>
-                <mesh position={[1.05, -0.05, 0]} castShadow>
-                  <sphereGeometry args={[0.32, 10, 6]} />
-                  <meshStandardMaterial color={theme.leafLight} roughness={0.7} />
+                <mesh position={[leaf.length * 0.88, -0.03, 0]} scale={[leaf.length * 0.55, 0.12, leaf.width * 0.74]} castShadow>
+                  <sphereGeometry args={[0.42, 12, 6]} />
+                  <MeshWobbleMaterial
+                    color={i % 2 ? theme.leafLight : theme.leafMid}
+                    roughness={0.75}
+                    factor={0.1}
+                    speed={0.85 + i * 0.02}
+                  />
                 </mesh>
               </group>
             );
           })}
 
-          {/* Coconuts */}
-          {[0, 1, 2].map((i) => {
+          {coconuts && [0, 1, 2, 3].map((i) => {
             const a = (i / 3) * Math.PI * 2;
             return (
-              <mesh key={i} position={[Math.cos(a) * 0.3, -0.1, Math.sin(a) * 0.3]} castShadow>
-                <sphereGeometry args={[0.13, 10, 8]} />
+              <mesh key={i} position={[Math.cos(a) * 0.26, -0.14 - (i % 2) * 0.05, Math.sin(a) * 0.26]} castShadow>
+                <sphereGeometry args={[0.12, 10, 8]} />
                 <meshStandardMaterial color="#4a2a16" roughness={0.9} />
               </mesh>
             );
           })}
         </group>
       </group>
+
+      <PalmBaseDetails seed={Math.floor((position[0] + 9) * 19 + (position[2] + 9) * 23)} coconuts={coconuts} />
+    </group>
+  );
+}
+
+function PalmBaseDetails({ seed, coconuts }: { seed: number; coconuts: boolean }) {
+  const theme = useIslandTheme();
+  const items = useMemo(() => {
+    const rng = mulberry32(seed);
+    return Array.from({ length: 7 }).map((_, i) => {
+      const a = rng() * Math.PI * 2;
+      const r = 0.42 + rng() * 0.55;
+      return {
+        kind: i < 3 ? "grass" : i < 5 ? "stone" : "flower",
+        x: Math.cos(a) * r,
+        z: Math.sin(a) * r,
+        s: 0.7 + rng() * 0.55,
+        color: [PALETTE.flowerPink, PALETTE.flowerYellow, PALETTE.flowerWhite][Math.floor(rng() * 3)],
+      };
+    });
+  }, [seed]);
+
+  return (
+    <group>
+      {items.map((item, i) => {
+        if (item.kind === "stone") {
+          return (
+            <mesh key={i} position={[item.x, 0.14, item.z]} scale={item.s * 0.22} castShadow>
+              <dodecahedronGeometry args={[0.5, 0]} />
+              <meshStandardMaterial color={theme.rockColor} roughness={0.96} />
+            </mesh>
+          );
+        }
+        if (item.kind === "flower") {
+          return <Flower key={i} position={[item.x, 0.18, item.z]} color={item.color} delay={seed * 0.01 + i} />;
+        }
+        return <GrassTuft key={i} position={[item.x, 0.15, item.z]} tint={theme.grassDeep} />;
+      })}
+      {coconuts &&
+        [0, 1].map((i) => (
+          <mesh key={`coconut-${i}`} position={[0.42 + i * 0.18, 0.13, -0.28 + i * 0.16]} castShadow>
+            <sphereGeometry args={[0.12, 10, 8]} />
+            <meshStandardMaterial color="#4a2a16" roughness={0.9} />
+          </mesh>
+        ))}
     </group>
   );
 }
@@ -805,31 +896,45 @@ function FlagPole({ position }: { position: [number, number, number] }) {
    ============================================================ */
 function Fountain({ position }: { position: [number, number, number] }) {
   const water = useRef<THREE.Mesh>(null!);
+  const stream = useRef<THREE.Mesh>(null!);
   useFrame(({ clock }) => {
+    const wave = 1 + Math.sin(clock.elapsedTime * 2.4) * 0.08;
     if (water.current) {
-      const s = 1 + Math.sin(clock.elapsedTime * 3) * 0.06;
-      water.current.scale.set(s, 1, s);
+      water.current.scale.set(wave, 1, wave);
+    }
+    if (stream.current) {
+      stream.current.position.y = 0.58 + Math.sin(clock.elapsedTime * 2.4) * 0.08;
+      stream.current.scale.y = 0.75 + Math.sin(clock.elapsedTime * 2.4) * 0.18;
     }
   });
   return (
     <group position={position}>
-      <mesh castShadow receiveShadow position={[0, 0.1, 0]}>
-        <cylinderGeometry args={[0.7, 0.8, 0.2, 24]} />
-        <meshStandardMaterial color={PALETTE.rockLight} roughness={0.9} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} receiveShadow>
+        <circleGeometry args={[1.05, 28]} />
+        <meshBasicMaterial color="#1c2a16" transparent opacity={0.14} />
       </mesh>
-      <mesh ref={water} position={[0, 0.21, 0]}>
-        <cylinderGeometry args={[0.6, 0.6, 0.04, 24]} />
-        <meshPhysicalMaterial color={PALETTE.oceanShallow} transmission={0.6} thickness={0.4} roughness={0.1} />
+      <mesh castShadow receiveShadow position={[0, 0.12, 0]}>
+        <cylinderGeometry args={[0.78, 0.86, 0.24, 32]} />
+        <meshStandardMaterial color="#d8d1b8" roughness={0.82} />
       </mesh>
-      <mesh castShadow position={[0, 0.5, 0]}>
-        <cylinderGeometry args={[0.12, 0.18, 0.6, 12]} />
-        <meshStandardMaterial color={PALETTE.rockLight} />
+      <mesh ref={water} position={[0, 0.26, 0]}>
+        <cylinderGeometry args={[0.6, 0.6, 0.045, 32]} />
+        <meshPhysicalMaterial color="#8ee8ff" transmission={0.55} thickness={0.35} roughness={0.08} emissive="#55cfff" emissiveIntensity={0.25} />
       </mesh>
-      <mesh position={[0, 0.85, 0]}>
-        <sphereGeometry args={[0.16, 14, 12]} />
-        <meshStandardMaterial color={PALETTE.oceanShallow} emissive={PALETTE.oceanShallow} emissiveIntensity={0.4} />
+      <mesh castShadow position={[0, 0.48, 0]}>
+        <cylinderGeometry args={[0.12, 0.18, 0.5, 16]} />
+        <meshStandardMaterial color="#c9c2aa" roughness={0.86} />
       </mesh>
-      <FxSparkles count={20} scale={[0.6, 1, 0.6]} position={[0, 0.7, 0]} size={2} speed={1.4} color="#a0f0ff" />
+      <mesh ref={stream} position={[0, 0.58, 0]}>
+        <cylinderGeometry args={[0.055, 0.075, 0.46, 16]} />
+        <meshPhysicalMaterial color="#a8f2ff" transmission={0.65} thickness={0.28} roughness={0.06} emissive="#6bdcff" emissiveIntensity={0.45} transparent opacity={0.72} />
+      </mesh>
+      <mesh position={[0, 0.84, 0]}>
+        <sphereGeometry args={[0.12, 16, 12]} />
+        <meshStandardMaterial color="#a8f2ff" emissive="#6bdcff" emissiveIntensity={0.65} roughness={0.15} />
+      </mesh>
+      <pointLight position={[0, 0.75, 0]} color="#9eeaff" intensity={0.8} distance={3.2} />
+      <FxSparkles count={12} scale={[0.7, 0.9, 0.7]} position={[0, 0.58, 0]} size={1.5} speed={0.7} color="#c9f7ff" />
     </group>
   );
 }
@@ -3272,107 +3377,101 @@ function BuildingSurround({ position, seed, buildingId }: { position: [number, n
    ============================================================ */
 
 function Volcano() {
-  const lavaRef = useRef<THREE.MeshStandardMaterial>(null!);
-  const smokeRef = useRef<THREE.Group>(null!);
+  const glowRef = useRef<THREE.MeshStandardMaterial>(null!);
+  const ashRef = useRef<THREE.Group>(null!);
   useFrame(({ clock }) => {
     const t = clock.elapsedTime;
-    if (lavaRef.current) lavaRef.current.emissiveIntensity = 1.2 + Math.sin(t * 2.2) * 0.4;
-    if (smokeRef.current) {
-      smokeRef.current.children.forEach((c, i) => {
-        const phase = t * 0.6 + i * 1.3;
-        c.position.y = 3.4 + ((phase % 3) * 0.8);
-        (c as THREE.Mesh).scale.setScalar(0.6 + (phase % 3) * 0.4);
-        const mat = (c as THREE.Mesh).material as THREE.MeshBasicMaterial;
-        mat.opacity = Math.max(0, 0.55 - (phase % 3) * 0.18);
+    if (glowRef.current) glowRef.current.emissiveIntensity = 0.45 + Math.max(0, Math.sin(t * 1.2)) * 0.9;
+    if (ashRef.current) {
+      ashRef.current.children.forEach((c, i) => {
+        const phase = (t * 0.35 + i * 0.9) % 2.8;
+        c.position.y = 1.72 + phase * 0.22;
+        c.position.x = Math.sin(t * 0.45 + i) * 0.08;
+        (c as THREE.Mesh).scale.setScalar(0.16 + phase * 0.04);
+        ((c as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity = Math.max(0, 0.28 - phase * 0.08);
       });
     }
   });
   return (
-    <group position={[0, 0.5, 0]}>
+    <group position={[0, 0.48, 0]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} receiveShadow>
+        <circleGeometry args={[1.35, 24]} />
+        <meshBasicMaterial color="#10080a" transparent opacity={0.18} />
+      </mesh>
+      <mesh castShadow receiveShadow position={[0, 0.14, 0]}>
+        <cylinderGeometry args={[1.08, 1.22, 0.22, 20]} />
+        <meshStandardMaterial color="#22151a" roughness={0.95} />
+      </mesh>
       {/* Cone — outer dark obsidian */}
-      <mesh castShadow position={[0, 1.4, 0]}>
-        <coneGeometry args={[2.4, 2.8, 24, 1, true]} />
-        <meshStandardMaterial color="#1a0f12" roughness={0.95} side={THREE.DoubleSide} />
+      <mesh castShadow position={[0, 0.84, 0]}>
+        <coneGeometry args={[0.92, 1.35, 18]} />
+        <meshStandardMaterial color="#1b1116" roughness={0.98} flatShading />
       </mesh>
       {/* Inner cone with glowing lava lip */}
-      <mesh position={[0, 2.6, 0]}>
-        <torusGeometry args={[0.6, 0.18, 12, 24]} />
-        <meshStandardMaterial ref={lavaRef} color="#ff3a08" emissive="#ff5a18" emissiveIntensity={1.4} roughness={0.4} />
+      <mesh position={[0, 1.54, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.32, 18]} />
+        <meshStandardMaterial ref={glowRef} color="#6b1710" emissive="#ff3415" emissiveIntensity={0.8} roughness={0.55} />
       </mesh>
-      {/* Lava pool inside */}
-      <mesh position={[0, 2.6, 0]}>
-        <circleGeometry args={[0.6, 24]} />
-        <meshStandardMaterial color="#ff8030" emissive="#ff5018" emissiveIntensity={1.2} roughness={0.4} />
-      </mesh>
-      {/* Lava flows down slopes */}
-      {[0, 1, 2, 3].map((i) => {
-        const a = (i / 4) * Math.PI * 2 + 0.4;
-        return (
-          <mesh key={i} position={[Math.cos(a) * 1.1, 1.5, Math.sin(a) * 1.1]} rotation={[0, -a + Math.PI / 2, 0.7]}>
-            <boxGeometry args={[0.18, 1.8, 0.08]} />
-            <meshStandardMaterial color="#ff5018" emissive="#ff3008" emissiveIntensity={1.0} roughness={0.5} />
-          </mesh>
-        );
-      })}
       {/* Obsidian rocks around base */}
-      {[0, 1, 2, 3, 4, 5].map((i) => {
+      {[0, 1, 2, 3, 4].map((i) => {
         const a = (i / 6) * Math.PI * 2;
         return (
-          <mesh key={i} position={[Math.cos(a) * 2.6, 0.1, Math.sin(a) * 2.6]} rotation={[i, i * 0.7, 0]} castShadow>
-            <dodecahedronGeometry args={[0.32 + (i % 3) * 0.1, 0]} />
-            <meshStandardMaterial color="#1a0f14" roughness={0.9} metalness={0.3} />
+          <mesh key={i} position={[Math.cos(a) * 1.05, 0.22, Math.sin(a) * 1.05]} rotation={[i, i * 0.7, 0]} castShadow>
+            <dodecahedronGeometry args={[0.18 + (i % 2) * 0.05, 0]} />
+            <meshStandardMaterial color="#2a1d21" roughness={0.95} />
           </mesh>
         );
       })}
       {/* Smoke puffs */}
-      <group ref={smokeRef}>
+      <group ref={ashRef}>
         {[0, 1, 2, 3].map((i) => (
-          <mesh key={i} position={[0, 3.4 + i * 0.6, 0]}>
-            <sphereGeometry args={[0.5, 10, 8]} />
-            <meshBasicMaterial color="#3a2a2a" transparent opacity={0.45} depthWrite={false} />
+          <mesh key={i} position={[0, 1.7 + i * 0.08, 0]}>
+            <sphereGeometry args={[0.18, 8, 6]} />
+            <meshBasicMaterial color="#493b3a" transparent opacity={0.18} depthWrite={false} />
           </mesh>
         ))}
       </group>
       {/* Hot glow light */}
-      <pointLight position={[0, 2.8, 0]} color="#ff5a18" intensity={2.5} distance={9} />
+      <pointLight position={[0, 1.45, 0]} color="#ff4a22" intensity={1.0} distance={4.5} />
     </group>
   );
 }
 
 function CrystalSpires() {
   const lightRef = useRef<THREE.PointLight>(null!);
+  const guardianRef = useRef<THREE.Group>(null!);
   useFrame(({ clock }) => {
     if (lightRef.current) lightRef.current.intensity = 1.6 + Math.sin(clock.elapsedTime * 1.5) * 0.6;
+    if (guardianRef.current) guardianRef.current.rotation.y = Math.sin(clock.elapsedTime * 0.45) * 0.12;
   });
-  const spires = useMemo(
-    () =>
-      [
-        { p: [0, 0, 0] as [number, number, number], h: 2.4, r: 0.45, c: "#7af6e8" },
-        { p: [0.7, 0, 0.4] as [number, number, number], h: 1.6, r: 0.3, c: "#c8a8ff" },
-        { p: [-0.8, 0, 0.3] as [number, number, number], h: 1.9, r: 0.34, c: "#ff9ce0" },
-        { p: [0.2, 0, -0.7] as [number, number, number], h: 1.3, r: 0.26, c: "#7af6e8" },
-        { p: [-0.4, 0, -0.5] as [number, number, number], h: 1.0, r: 0.22, c: "#c8a8ff" },
-      ],
-    [],
-  );
   return (
     <group position={[0, 0.5, 0]}>
-      {spires.map((s, i) => (
-        <mesh key={i} position={[s.p[0], s.h / 2, s.p[2]]} castShadow>
-          <coneGeometry args={[s.r, s.h, 6]} />
-          <meshStandardMaterial
-            color={s.c}
-            emissive={s.c}
-            emissiveIntensity={0.7}
-            roughness={0.15}
-            metalness={0.4}
-            transparent
-            opacity={0.92}
-          />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} receiveShadow>
+        <circleGeometry args={[1.08, 26]} />
+        <meshBasicMaterial color="#183b56" transparent opacity={0.16} />
+      </mesh>
+      <mesh castShadow receiveShadow position={[0, 0.16, 0]}>
+        <cylinderGeometry args={[0.78, 0.92, 0.28, 8]} />
+        <meshStandardMaterial color="#dff8ff" emissive="#7af6e8" emissiveIntensity={0.18} roughness={0.24} metalness={0.2} />
+      </mesh>
+      <group ref={guardianRef} position={[0, 0.18, 0]}>
+        <mesh castShadow position={[0, 0.64, 0]} scale={[0.72, 1.05, 0.72]}>
+          <octahedronGeometry args={[0.56, 1]} />
+          <meshPhysicalMaterial color="#7af6e8" emissive="#54dfff" emissiveIntensity={0.55} roughness={0.08} metalness={0.15} transmission={0.45} thickness={0.65} transparent opacity={0.86} />
         </mesh>
-      ))}
-      <pointLight ref={lightRef} position={[0, 1.4, 0]} color="#a8e0ff" intensity={1.8} distance={8} />
-      <Sparkles count={40} scale={[3, 3, 3]} position={[0, 1.2, 0]} size={3} speed={0.4} color="#c8a8ff" />
+        <mesh castShadow position={[0, 1.28, 0]} scale={[0.64, 0.78, 0.64]}>
+          <octahedronGeometry args={[0.38, 1]} />
+          <meshPhysicalMaterial color="#b8f6ff" emissive="#7af6e8" emissiveIntensity={0.75} roughness={0.06} metalness={0.12} transmission={0.5} thickness={0.45} transparent opacity={0.9} />
+        </mesh>
+        {[-1, 1].map((side) => (
+          <mesh key={side} castShadow position={[side * 0.52, 0.72, 0]} rotation={[0, 0, side * 0.55]} scale={[0.38, 0.72, 0.38]}>
+            <octahedronGeometry args={[0.28, 0]} />
+            <meshPhysicalMaterial color="#7bdcff" emissive="#41cfff" emissiveIntensity={0.42} roughness={0.08} transparent opacity={0.82} />
+          </mesh>
+        ))}
+      </group>
+      <pointLight ref={lightRef} position={[0, 1.2, 0]} color="#a8e0ff" intensity={1.7} distance={6} />
+      <FxSparkles count={24} scale={[2.2, 2.2, 2.2]} position={[0, 1.0, 0]} size={2.1} speed={0.28} color="#b8f6ff" />
     </group>
   );
 }
@@ -3380,39 +3479,42 @@ function CrystalSpires() {
 function GoldenObelisk() {
   const ref = useRef<THREE.Group>(null!);
   useFrame(({ clock }) => {
-    if (ref.current) ref.current.rotation.y = clock.elapsedTime * 0.2;
+    if (ref.current) ref.current.rotation.y = Math.sin(clock.elapsedTime * 0.45) * 0.08;
   });
   return (
     <group position={[0, 0.5, 0]}>
-      {/* Marble base */}
-      <mesh castShadow position={[0, 0.25, 0]}>
-        <cylinderGeometry args={[1.0, 1.2, 0.5, 16]} />
-        <meshStandardMaterial color="#fff4d8" roughness={0.6} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} receiveShadow>
+        <circleGeometry args={[1.08, 24]} />
+        <meshBasicMaterial color="#6b4a08" transparent opacity={0.14} />
       </mesh>
-      {/* Obelisk shaft */}
-      <mesh castShadow position={[0, 1.7, 0]}>
-        <boxGeometry args={[0.7, 2.4, 0.7]} />
-        <meshStandardMaterial color="#ffd24a" emissive="#a87a00" emissiveIntensity={0.25} roughness={0.3} metalness={0.85} />
+      <mesh castShadow position={[0, 0.16, 0]}>
+        <cylinderGeometry args={[0.75, 0.88, 0.28, 10]} />
+        <meshStandardMaterial color="#d8a548" roughness={0.68} metalness={0.15} />
       </mesh>
-      {/* Pyramid cap */}
-      <mesh castShadow position={[0, 3.15, 0]}>
-        <coneGeometry args={[0.55, 0.6, 4]} />
-        <meshStandardMaterial color="#fff0a0" emissive="#ffae00" emissiveIntensity={0.6} roughness={0.2} metalness={0.95} />
-      </mesh>
-      {/* Floating gold coins ring */}
-      <group ref={ref}>
-        {[0, 1, 2, 3, 4, 5].map((i) => {
-          const a = (i / 6) * Math.PI * 2;
-          return (
-            <mesh key={i} position={[Math.cos(a) * 1.6, 1.8, Math.sin(a) * 1.6]} rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[0.18, 0.18, 0.05, 16]} />
-              <meshStandardMaterial color="#ffd24a" emissive="#ffae00" emissiveIntensity={0.5} roughness={0.2} metalness={0.95} />
-            </mesh>
-          );
-        })}
+      <group ref={ref} position={[0, 0.28, 0]}>
+        <mesh castShadow position={[0, 0.58, 0]}>
+          <cylinderGeometry args={[0.28, 0.36, 1.1, 6]} />
+          <meshStandardMaterial color="#7a4a26" roughness={0.85} />
+        </mesh>
+        <mesh castShadow position={[0, 1.24, 0]}>
+          <coneGeometry args={[0.5, 0.42, 6]} />
+          <meshStandardMaterial color="#ffd24a" emissive="#ffae00" emissiveIntensity={0.25} roughness={0.45} metalness={0.35} />
+        </mesh>
+        {[0, 1, 2].map((i) => (
+          <mesh key={i} position={[0, 0.45 + i * 0.24, 0.31]} rotation={[0, 0, Math.PI / 4]}>
+            <boxGeometry args={[0.28, 0.045, 0.035]} />
+            <meshStandardMaterial color="#ffd24a" emissive="#ffb734" emissiveIntensity={0.18} roughness={0.4} />
+          </mesh>
+        ))}
+        {[-1, 1].map((side) => (
+          <mesh key={side} position={[side * 0.36, 1.06, 0]} rotation={[0, 0, side * 0.7]} scale={[0.62, 0.12, 0.32]}>
+            <sphereGeometry args={[0.38, 10, 6]} />
+            <meshStandardMaterial color="#e7e070" roughness={0.7} />
+          </mesh>
+        ))}
       </group>
-      <pointLight position={[0, 2.4, 0]} color="#ffd070" intensity={2.0} distance={10} />
-      <Sparkles count={30} scale={[4, 3, 4]} position={[0, 1.8, 0]} size={3} speed={0.3} color="#ffd24a" />
+      <pointLight position={[0, 1.4, 0]} color="#ffd070" intensity={0.95} distance={4.5} />
+      <FxSparkles count={14} scale={[1.8, 1.8, 1.8]} position={[0, 1.05, 0]} size={1.8} speed={0.25} color="#ffd24a" />
     </group>
   );
 }
@@ -3471,14 +3573,21 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom, lowPower = fals
   const palms = useMemo(
     () =>
       [
-        [-5.5, 0.4, 1.5, 1.15, 0],
-        [5.2, 0.4, -1.8, 1.05, 0.5],
-        [-3.5, 0.4, 4.8, 0.95, 1.2],
-        [4.7, 0.4, 4.2, 1.1, 1.8],
-        [-6, 0.4, -3, 1, 0.3],
-        [3.2, 0.4, -5.2, 1.05, 0.9],
-        [-6.2, 0.4, 4.5, 0.85, 2.4],
-      ] as [number, number, number, number, number][],
+        [-6.4, 0.42, -3.7, 1.18, 0.1, "tall", 0.06, true],
+        [-5.8, 0.42, -2.6, 0.86, 1.4, "curved", -0.08, false],
+        [-6.8, 0.42, 1.3, 1.08, 0.7, "wide", 0.02, true],
+        [-5.7, 0.42, 2.1, 0.78, 2.2, "curved", 0.1, true],
+        [-4.2, 0.43, 5.7, 1.0, 3.0, "wide", -0.05, false],
+        [-2.6, 0.43, 6.4, 0.9, 1.9, "curved", 0.07, true],
+        [1.7, 0.43, 6.6, 1.22, 0.4, "tall", -0.04, true],
+        [3.1, 0.42, 5.9, 0.82, 2.7, "curved", 0.12, false],
+        [6.3, 0.42, 3.0, 1.12, 1.1, "wide", -0.08, true],
+        [6.9, 0.42, 1.6, 0.84, 3.3, "curved", -0.12, true],
+        [6.1, 0.42, -2.0, 1.0, 1.8, "tall", 0.05, false],
+        [4.6, 0.42, -5.2, 1.07, 0.9, "wide", -0.03, true],
+        [2.9, 0.42, -6.5, 0.82, 2.4, "curved", 0.08, true],
+        [-1.4, 0.42, -6.8, 1.15, 1.5, "tall", -0.07, false],
+      ] as [number, number, number, number, number, PalmVariant, number, boolean][],
     [],
   );
 
@@ -3558,7 +3667,7 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom, lowPower = fals
   // Build a grid of legal plot positions that avoids every plant/decor footprint.
   const slots = useMemo<[number, number][]>(() => {
     const forbidden: { x: number; z: number; r: number }[] = [];
-    for (const p of palms) forbidden.push({ x: p[0], z: p[2], r: 1.7 });
+    for (const p of palms) forbidden.push({ x: p[0], z: p[2], r: 1.55 + p[3] * 0.45 });
     for (const t of trees) forbidden.push({ x: t[0], z: t[2], r: 1.6 });
     for (const r of decor.rocks) forbidden.push({ x: r.pos[0], z: r.pos[2], r: 0.9 + r.scale * 0.4 });
     for (const b of decor.bushes) forbidden.push({ x: b[0], z: b[2], r: 1.1 });
@@ -3605,7 +3714,15 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom, lowPower = fals
       {/* Vegetation — wrapped in NoHit so it never blocks plot clicks */}
       <NoHit>
         {palms.map((p, i) => (
-          <Palm key={`palm-${i}`} position={[p[0], p[1], p[2]]} scale={p[3]} delay={p[4]} />
+          <Palm
+            key={`palm-${i}`}
+            position={[p[0], p[1], p[2]]}
+            scale={p[3]}
+            delay={p[4]}
+            variant={p[5]}
+            lean={p[6]}
+            coconuts={p[7]}
+          />
         ))}
         {trees.map((t, i) => (
           <Tree key={`tree-${i}`} position={[t[0], t[1], t[2]]} scale={t[3]} />
