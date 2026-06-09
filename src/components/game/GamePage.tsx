@@ -14,6 +14,7 @@ import { SettingsModal } from "@/components/game/SettingsModal";
 import { PrestigeModal } from "@/components/game/PrestigeModal";
 import { CaptainShip } from "@/components/game/CaptainShip";
 import { CaptainModal } from "@/components/game/CaptainModal";
+import { AiAdvisorModal } from "@/components/game/AiAdvisorModal";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "@tanstack/react-router";
@@ -29,6 +30,7 @@ const ACTIONS = [
   { id: "daily", label: "Награды", emoji: "🎁", gradient: "from-violet-400 to-fuchsia-600" },
   { id: "achievements", label: "Кубки", emoji: "🏆", gradient: "from-sky-400 to-indigo-600" },
   { id: "prestige", label: "Перерождение", emoji: "✨", gradient: "from-fuchsia-500 to-violet-700" },
+  { id: "ai", label: "ИИ", emoji: "✨", gradient: "from-cyan-400 to-blue-600" },
 ] as const;
 
 type ModalId = (typeof ACTIONS)[number]["id"] | "build" | "settings" | null;
@@ -270,6 +272,11 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
         state={game.state}
         onPrestige={game.performPrestige}
         onBuyUpgrade={game.buyPrestigeUpgrade}
+      />
+      <AiAdvisorModal
+        open={modal === "ai"}
+        onClose={() => setModal(null)}
+        state={game.state}
       />
       <CaptainModal
         open={captainOpen || !!game.state.captain.lastResult}
