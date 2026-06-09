@@ -89,6 +89,7 @@ function createOfflineSupabaseClient(): SupabaseClient {
         data: { provider: 'google', url: null },
         error: new Error('Supabase is not configured. Add the Supabase environment variables to enable login.'),
       }),
+      exchangeCodeForSession: () => noSession,
       setSession: () => noSession,
     },
     from: () => query,
@@ -109,6 +110,8 @@ function createSupabaseClient() {
       storage: typeof window !== 'undefined' ? localStorage : undefined,
       persistSession: true,
       autoRefreshToken: true,
+      detectSessionInUrl: false,
+      flowType: 'pkce',
     }
   });
 }

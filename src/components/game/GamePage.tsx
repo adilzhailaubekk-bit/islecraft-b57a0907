@@ -12,6 +12,10 @@ import { DailyModal } from "@/components/game/DailyModal";
 import { OfflineModal } from "@/components/game/OfflineModal";
 import { SettingsModal } from "@/components/game/SettingsModal";
 import { PrestigeModal } from "@/components/game/PrestigeModal";
+import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
+import { Link } from "@tanstack/react-router";
+import { LogOut } from "lucide-react";
 
 import { fmt } from "@/game/format";
 import { canPrestige } from "@/game/prestige";
@@ -66,7 +70,12 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
     <div className="fixed inset-0 flex flex-col overflow-hidden bg-gradient-sky">
       {/* TOP HUD — resources in a single row */}
       <div className="relative z-10 px-2 pt-2 sm:px-4 sm:pt-3 space-y-1.5">
-        <ResourceBar resources={game.state.resources} rates={game.rates} />
+        <div className="flex items-start gap-2">
+          <div className="min-w-0 flex-1">
+            <ResourceBar resources={game.state.resources} rates={game.rates} />
+          </div>
+          <GameAccountBadge />
+        </div>
 
         {/* Active boosts */}
         <AnimatePresence>
@@ -258,6 +267,59 @@ export default function GamePage({ initialModal = null }: { initialModal?: Modal
         onPrestige={game.performPrestige}
         onBuyUpgrade={game.buyPrestigeUpgrade}
       />
+    </div>
+  );
+}
+
+function GameAccountBadge() {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+
+  if (!user) {
+    return (
+      <Link
+        to="/login"
+        className="h-11 sm:h-14 shrink-0 rounded-2xl border border-white/80 bg-white/80 px-3 text-xs sm:text-sm font-bold text-slate-700 shadow-card backdrop-blur flex items-center justify-center"
+      >
+        Войти
+      </Link>
+    );
+  }
+
+  const email = user.email ?? "Аккаунт";
+  const name = user.user_metadata?.full_name || user.user_metadata?.name || email;
+  const avatar = user.user_metadata?.avatar_url as string | undefined;
+
+  return (
+    <div className="h-11 sm:h-14 shrink-0 rounded-2xl border border-white/80 bg-white/85 pl-1.5 pr-2 sm:pr-3 shadow-card backdrop-blur flex items-center gap-2 max-w-[170px] sm:max-w-[240px]">
+      {avatar ? (
+        <img src={avatar} alt="" className="h-8 w-8 sm:h-10 sm:w-10 rounded-full border-2 border-white object-cover" />
+      ) : (
+        <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full border-2 border-white bg-emerald-200 text-emerald-900 flex items-center justify-center text-sm font-black">
+          {email.charAt(0).toUpperCase()}
+        </div>
+      )}
+      <div className="min-w-0 hidden sm:block">
+        <div className="truncate text-[12px] font-black leading-tight text-slate-800" title={name}>
+          {name}
+        </div>
+        <div className="truncate text-[11px] font-semibold leading-tight text-slate-500" title={email}>
+          {email}
+        </div>
+      </div>
+      <div className="min-w-0 sm:hidden">
+        <div className="truncate max-w-[72px] text-[11px] font-bold text-slate-700" title={email}>
+          {email}
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={() => supabase.auth.signOut()}
+        className="ml-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200"
+        title="Выйти"
+      >
+        <LogOut className="h-3.5 w-3.5" />
+      </button>
     </div>
   );
 }

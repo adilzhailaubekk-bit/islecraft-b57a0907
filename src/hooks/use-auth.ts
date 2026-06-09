@@ -8,21 +8,30 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const refreshSession = () => {
+      supabase.auth.getSession().then(({ data }) => {
+        setSession(data.session);
+        setUser(data.session?.user ?? null);
+        setLoading(false);
+      });
+    };
+
     // Register listener FIRST so we don't miss events
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
       setUser(newSession?.user ?? null);
-    });
-
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    refreshSession();
+    window.addEventListener("supabase-auth-updated", refreshSession);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener("supabase-auth-updated", refreshSession);
+    };
   }, []);
 
   return { session, user, loading };
