@@ -1,6 +1,9 @@
 import { motion, AnimatePresence } from "motion/react";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Environment, Sky, Sparkles } from "@react-three/drei";
+import * as THREE from "three";
 import {
   Play, Plus, Settings, Bell, Gift, Trophy, ShoppingBag,
   Swords, CalendarDays, LogOut, ChevronRight, Coins, TreePine, Mountain,
@@ -68,6 +71,1141 @@ const fmt = (n: number) => {
   return Math.floor(n).toString();
 };
 
+const MENU_COLORS = {
+  ocean: "#32bfd7",
+  oceanDeep: "#0b6e9a",
+  foam: "#f4ffff",
+  sand: "#efd184",
+  grass: "#58c65b",
+  grassDark: "#2f8f45",
+  path: "#dccaa2",
+  trunk: "#80502b",
+  leaf: "#3ab35b",
+  leafLight: "#7ddf6c",
+  roofRed: "#df5650",
+  roofBlue: "#3d8bd8",
+  wall: "#f1d2a0",
+  rock: "#9da9ad",
+  wood: "#8a532f",
+  darkWood: "#4a2a18",
+  gold: "#f4c45a",
+  };
+
+function MenuCinematicBackdrop({ mounted }: { mounted: boolean }) {
+  const lowPower = useMemo(() => {
+    if (typeof navigator === "undefined") return false;
+    const cores = (navigator as Navigator & { hardwareConcurrency?: number }).hardwareConcurrency ?? 8;
+    const mobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    return mobile || cores <= 6;
+  }, []);
+
+  if (!mounted) {
+    return <div className="absolute inset-0 bg-[#8bdcf2]" />;
+  }
+
+  return (
+    <div className="absolute inset-0 z-0 bg-[#8bdcf2]">
+      <Canvas
+        shadows={!lowPower}
+        dpr={lowPower ? 1 : [1, 1.35]}
+        camera={{ position: [17, 13, 18], fov: 42 }}
+        gl={{
+          antialias: !lowPower,
+          alpha: false,
+          powerPreference: "high-performance",
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 1.05,
+        }}
+      >
+        <Suspense fallback={null}>
+          <MenuScene lowPower={lowPower} />
+        </Suspense>
+      </Canvas>
+    </div>
+  );
+}
+
+function MenuScene({ lowPower }: { lowPower: boolean }) {
+  return (
+    <>
+      <color attach="background" args={["#91dbf4"]} />
+      <fog attach="fog" args={["#c9eef7", 34, 86]} />
+      <Sky sunPosition={[12, 12, 4]} turbidity={5} rayleigh={1.6} mieCoefficient={0.008} mieDirectionalG={0.76} />
+      <ambientLight color="#fff5dd" intensity={0.78} />
+      <directionalLight position={[12, 16, 8]} intensity={2.15} color="#fff0c8" castShadow={!lowPower} />
+      {!lowPower && <Environment preset="park" />}
+
+      <CinematicCamera />
+      <OceanSurface lowPower={lowPower} />
+      <Archipelago />
+      <CentralMenuIsland lowPower={lowPower} />
+      <MenuShips lowPower={lowPower} />
+      <MovingClouds />
+      <SeagullFlock lowPower={lowPower} />
+      <MenuFish lowPower={lowPower} />
+      {!lowPower && <Sparkles count={38} scale={[42, 1, 42]} position={[0, 0.18, 0]} size={2.2} speed={0.22} color="#fff8d1" />}
+    </>
+  );
+}
+
+function CinematicCamera() {
+  const { camera } = useThree();
+  useFrame((state) => {
+    const t = state.clock.elapsedTime * 0.045;
+    const radius = 22 + Math.sin(t * 1.7) * 1.2;
+    camera.position.set(Math.cos(t) * radius, 12.8 + Math.sin(t * 0.8) * 0.65, Math.sin(t) * radius);
+    camera.lookAt(0, 1.2, 0);
+  });
+  return null;
+}
+
+function OceanSurface({ lowPower }: { lowPower: boolean }) {
+  const mesh = useRef<THREE.Mesh>(null!);
+  const glint = useRef<THREE.Mesh>(null!);
+  const geometry = useMemo(() => new THREE.PlaneGeometry(120, 120, lowPower ? 36 : 58, lowPower ? 36 : 58), [lowPower]);
+  const original = useMemo(() => Float32Array.from(geometry.attributes.position.array), [geometry]);
+
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    const pos = geometry.attributes.position.array as Float32Array;
+    for (let i = 0; i < pos.length; i += 3) {
+      const x = original[i];
+      const y = original[i + 1];
+      pos[i + 2] = Math.sin(x * 0.32 + t * 1.15) * 0.16 + Math.cos(y * 0.25 + t * 0.82) * 0.12;
+    }
+    geometry.attributes.position.needsUpdate = true;
+    if (glint.current) {
+      glint.current.position.x = Math.sin(t * 0.18) * 2.2;
+      (glint.current.material as THREE.MeshBasicMaterial).opacity = 0.22 + Math.sin(t * 1.1) * 0.06;
+    }
+  });
+
+  return (
+    <group>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.42, 0]}>
+        <circleGeometry args={[72, 96]} />
+        <meshBasicMaterial color={MENU_COLORS.oceanDeep} />
+      </mesh>
+      <mesh ref={mesh} geometry={geometry} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.18, 0]} receiveShadow>
+        <meshStandardMaterial color={MENU_COLORS.ocean} roughness={0.18} metalness={0.18} transparent opacity={0.82} />
+      </mesh>
+      <mesh ref={glint} rotation={[-Math.PI / 2, 0, -0.35]} position={[1.5, -0.11, -8]}>
+        <planeGeometry args={[18, 5]} />
+        <meshBasicMaterial color="#fff7c7" transparent opacity={0.25} blending={THREE.AdditiveBlending} depthWrite={false} />
+      </mesh>
+      <WaveLines />
+    </group>
+  );
+}
+
+function WaveLines() {
+  const group = useRef<THREE.Group>(null!);
+  useFrame(({ clock }) => {
+    if (group.current) group.current.position.x = Math.sin(clock.elapsedTime * 0.35) * 0.5;
+  });
+  return (
+    <group ref={group} position={[0, -0.08, 0]}>
+      {Array.from({ length: 11 }).map((_, i) => (
+        <mesh key={i} rotation={[-Math.PI / 2, 0, 0.12]} position={[-24 + i * 5, 0.02, -25 + (i % 4) * 9]}>
+          <planeGeometry args={[3.8, 0.05]} />
+          <meshBasicMaterial color="#eaffff" transparent opacity={0.28} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function CentralMenuIsland({ lowPower }: { lowPower: boolean }) {
+  const island = useRef<THREE.Group>(null!);
+  useFrame(({ clock }) => {
+    if (island.current) island.current.rotation.y = Math.sin(clock.elapsedTime * 0.08) * 0.025;
+  });
+
+  const palms: [number, number, number, number][] = [
+    [-5.2, 0.55, -2.8, 1.25],
+    [-4.4, 0.55, 2.9, 0.92],
+    [-1.9, 0.55, 4.9, 1.1],
+    [2.9, 0.55, 4.3, 0.86],
+    [5.1, 0.55, 1.4, 1.16],
+    [4.8, 0.55, -3.2, 0.94],
+    [-1.0, 0.55, -5.1, 1.05],
+  ];
+
+  return (
+    <group ref={island}>
+      <mesh position={[0, -1.05, 0]} receiveShadow>
+        <cylinderGeometry args={[8.8, 10.4, 1.55, 88]} />
+        <meshStandardMaterial color="#8f6637" roughness={0.95} />
+      </mesh>
+      <mesh position={[0, -0.34, 0]} receiveShadow>
+        <cylinderGeometry args={[8.2, 9.2, 0.58, 88]} />
+        <meshStandardMaterial color={MENU_COLORS.sand} roughness={0.92} />
+      </mesh>
+      <mesh position={[0, 0.06, 0]} receiveShadow castShadow>
+        <cylinderGeometry args={[6.55, 7.35, 0.72, 88]} />
+        <meshStandardMaterial color={MENU_COLORS.grass} roughness={0.78} />
+      </mesh>
+      <mesh position={[-1.8, 0.58, -0.7]} scale={[1.15, 0.42, 0.95]} castShadow receiveShadow>
+        <sphereGeometry args={[2.2, 28, 14]} />
+        <meshStandardMaterial color={MENU_COLORS.grassDark} roughness={0.85} />
+      </mesh>
+      <mesh position={[3.25, 0.42, -1.8]} scale={[1.15, 0.48, 0.75]} castShadow receiveShadow>
+        <dodecahedronGeometry args={[1.08, 0]} />
+        <meshStandardMaterial color={MENU_COLORS.rock} roughness={0.92} />
+      </mesh>
+      <FoamRings />
+      <PathNetwork />
+      <FountainMini />
+      <MenuHouse position={[-2.7, 0.62, 1.35]} roof={MENU_COLORS.roofRed} scale={1.05} />
+      <MenuHouse position={[2.45, 0.62, 1.8]} roof={MENU_COLORS.roofBlue} scale={0.92} />
+      <MenuHouse position={[0.85, 0.64, -2.65]} roof="#e5ad3f" scale={0.82} />
+      <Banner position={[-4.8, 0.62, -0.15]} color="#e84e5f" />
+      <Banner position={[4.8, 0.62, 0.15]} color="#2e9ad7" />
+      {palms.map((p, i) => (
+        <MenuPalm key={i} position={[p[0], p[1], p[2]]} scale={p[3]} delay={i * 0.42} />
+      ))}
+      {!lowPower && <DecorScatter />}
+    </group>
+  );
+}
+
+function FoamRings() {
+  const ref = useRef<THREE.Group>(null!);
+  useFrame(({ clock }) => {
+    if (ref.current) ref.current.scale.setScalar(1 + Math.sin(clock.elapsedTime * 1.35) * 0.015);
+  });
+  return (
+    <group ref={ref}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.03, 0]}>
+        <ringGeometry args={[8.25, 8.85, 96]} />
+        <meshBasicMaterial color={MENU_COLORS.foam} transparent opacity={0.72} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
+        <ringGeometry args={[8.9, 9.75, 96]} />
+        <meshBasicMaterial color={MENU_COLORS.foam} transparent opacity={0.24} />
+      </mesh>
+    </group>
+  );
+}
+
+function PathNetwork() {
+  const stones = [
+    [0, 0], [0.6, 0.65], [1.25, 1.2], [2.0, 1.55],
+    [-0.6, 0.5], [-1.25, 0.9], [-2.05, 1.2],
+    [0.22, -0.75], [0.55, -1.45], [0.82, -2.15],
+    [-0.8, -0.42], [-1.7, -0.25], [-2.65, 0.15],
+  ];
+  return (
+    <group position={[0, 0.44, 0]}>
+      {stones.map(([x, z], i) => (
+        <mesh key={i} rotation={[-Math.PI / 2, 0, i * 0.41]} position={[x, 0, z]} receiveShadow>
+          <circleGeometry args={[0.28 + (i % 3) * 0.035, 7]} />
+          <meshStandardMaterial color={MENU_COLORS.path} roughness={0.96} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function FountainMini() {
+  const water = useRef<THREE.Mesh>(null!);
+  useFrame(({ clock }) => {
+    if (water.current) {
+      water.current.scale.setScalar(1 + Math.sin(clock.elapsedTime * 2.2) * 0.05);
+      water.current.rotation.y += 0.012;
+    }
+  });
+  return (
+    <group position={[0, 0.63, 0]}>
+      <mesh receiveShadow castShadow>
+        <cylinderGeometry args={[0.75, 0.9, 0.28, 32]} />
+        <meshStandardMaterial color="#d9d3c2" roughness={0.75} />
+      </mesh>
+      <mesh ref={water} position={[0, 0.18, 0]}>
+        <cylinderGeometry args={[0.52, 0.56, 0.08, 32]} />
+        <meshStandardMaterial color="#6fe4ff" emissive="#2bc4e8" emissiveIntensity={0.35} roughness={0.15} transparent opacity={0.78} />
+      </mesh>
+      <mesh position={[0, 0.55, 0]}>
+        <sphereGeometry args={[0.16, 16, 10]} />
+        <meshStandardMaterial color="#bff7ff" emissive="#7defff" emissiveIntensity={0.6} transparent opacity={0.82} />
+      </mesh>
+    </group>
+  );
+}
+
+function MenuHouse({ position, roof, scale = 1 }: { position: [number, number, number]; roof: string; scale?: number }) {
+  return (
+    <group position={position} scale={scale} rotation={[0, position[0] * 0.08, 0]}>
+      <mesh castShadow receiveShadow position={[0, 0.34, 0]}>
+        <boxGeometry args={[1.15, 0.68, 1.0]} />
+        <meshStandardMaterial color={MENU_COLORS.wall} roughness={0.8} />
+      </mesh>
+      <mesh castShadow position={[0, 0.88, 0]} rotation={[0, Math.PI / 4, 0]}>
+        <coneGeometry args={[0.92, 0.58, 4]} />
+        <meshStandardMaterial color={roof} roughness={0.72} />
+      </mesh>
+      <mesh position={[0, 0.26, 0.52]}>
+        <boxGeometry args={[0.22, 0.36, 0.03]} />
+        <meshStandardMaterial color={MENU_COLORS.wood} roughness={0.85} />
+      </mesh>
+    </group>
+  );
+}
+
+function MenuPalm({ position, scale, delay }: { position: [number, number, number]; scale: number; delay: number }) {
+  const top = useRef<THREE.Group>(null!);
+  const trunk = useRef<THREE.Group>(null!);
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime + delay;
+    if (trunk.current) trunk.current.rotation.z = Math.sin(t * 0.75) * 0.035;
+    if (top.current) top.current.rotation.z = Math.sin(t * 1.1) * 0.11;
+  });
+  return (
+    <group position={position} scale={scale}>
+      <group ref={trunk}>
+        <mesh castShadow position={[0, 0.72, 0]} rotation={[0.08, 0, 0.08]}>
+          <cylinderGeometry args={[0.13, 0.2, 1.5, 10]} />
+          <meshStandardMaterial color={MENU_COLORS.trunk} roughness={0.92} />
+        </mesh>
+      </group>
+      <group ref={top} position={[0, 1.55, 0]}>
+        {Array.from({ length: 8 }).map((_, i) => (
+          <mesh key={i} castShadow rotation={[0.35, (i / 8) * Math.PI * 2, 0.22]} position={[Math.cos((i / 8) * Math.PI * 2) * 0.38, 0, Math.sin((i / 8) * Math.PI * 2) * 0.38]}>
+            <coneGeometry args={[0.16, 1.15, 5]} />
+            <meshStandardMaterial color={i % 2 ? MENU_COLORS.leaf : MENU_COLORS.leafLight} roughness={0.82} />
+          </mesh>
+        ))}
+        <mesh>
+          <sphereGeometry args={[0.18, 12, 8]} />
+          <meshStandardMaterial color="#7a4b24" roughness={0.9} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
+function Banner({ position, color }: { position: [number, number, number]; color: string }) {
+  const flag = useRef<THREE.Mesh>(null!);
+  useFrame(({ clock }) => {
+    if (flag.current) flag.current.rotation.y = Math.sin(clock.elapsedTime * 2.1 + position[0]) * 0.18;
+  });
+  return (
+    <group position={position}>
+      <mesh castShadow position={[0, 0.58, 0]}>
+        <cylinderGeometry args={[0.035, 0.045, 1.15, 8]} />
+        <meshStandardMaterial color={MENU_COLORS.wood} />
+      </mesh>
+      <mesh ref={flag} castShadow position={[0.28, 0.95, 0]}>
+        <planeGeometry args={[0.48, 0.28, 3, 1]} />
+        <meshStandardMaterial color={color} side={THREE.DoubleSide} roughness={0.72} />
+      </mesh>
+    </group>
+  );
+}
+
+function DecorScatter() {
+  const items = useMemo(() => {
+    const out: { x: number; z: number; c: string }[] = [];
+    const colors = ["#ff6f9e", "#ffd84a", "#ffffff", "#9a6cff"];
+    for (let i = 0; i < 34; i++) {
+      const a = i * 2.399;
+      const r = 2.1 + ((i * 37) % 38) / 10;
+      out.push({ x: Math.cos(a) * r, z: Math.sin(a) * r, c: colors[i % colors.length] });
+    }
+    return out;
+  }, []);
+  return (
+    <group>
+      {items.map((it, i) => (
+        <mesh key={i} position={[it.x, 0.62, it.z]} castShadow>
+          <sphereGeometry args={[0.07, 8, 6]} />
+          <meshStandardMaterial color={it.c} roughness={0.75} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function Archipelago() {
+  const islands = [
+    [-24, -22, 2.8],
+    [25, -18, 2.3],
+    [-20, 18, 2.1],
+    [22, 22, 3.0],
+  ];
+  return (
+    <group>
+      {islands.map(([x, z, s], i) => (
+        <group key={i} position={[x, -0.12, z]} scale={s}>
+          <mesh rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[1.3, 24]} />
+            <meshStandardMaterial color={MENU_COLORS.sand} roughness={0.95} />
+          </mesh>
+          <mesh position={[0, 0.12, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[0.82, 24]} />
+            <meshStandardMaterial color={MENU_COLORS.grassDark} roughness={0.88} />
+          </mesh>
+          <MenuPalm position={[0.25, 0.12, -0.1]} scale={0.45} delay={i} />
+        </group>
+      ))}
+    </group>
+  );
+}
+
+type ShipKind = "explorer" | "merchant" | "distant";
+
+function MenuShips({ lowPower }: { lowPower: boolean }) {
+  return (
+    <group>
+      <StylizedShip
+        kind="explorer"
+        position={[-11.4, 0.18, 6.4]}
+        rotation={0.82}
+        scale={1.45}
+        phase={0.2}
+        speed={0}
+      />
+      <StylizedShip
+        kind="merchant"
+        position={[12.8, 0.08, -4.8]}
+        rotation={-1.15}
+        scale={0.92}
+        phase={1.6}
+        speed={0.07}
+      />
+      <StylizedShip
+        kind="merchant"
+        position={[-15.5, 0.06, -11.5]}
+        rotation={0.45}
+        scale={0.76}
+        phase={3.2}
+        speed={-0.052}
+      />
+      {!lowPower && (
+        <>
+          <DistantShip position={[28, 0.04, 24]} scale={1.4} speed={0.032} phase={0.4} />
+          <DistantShip position={[-31, 0.04, 20]} scale={1.1} speed={-0.024} phase={2.1} />
+          <DistantShip position={[18, 0.04, -30]} scale={0.92} speed={0.02} phase={4.2} />
+          <ShipSeagulls />
+        </>
+      )}
+    </group>
+  );
+}
+
+function StylizedShip({
+  kind,
+  position,
+  rotation,
+  scale,
+  phase,
+  speed,
+}: {
+  kind: ShipKind;
+  position: [number, number, number];
+  rotation: number;
+  scale: number;
+  phase: number;
+  speed: number;
+}) {
+  const ship = useRef<THREE.Group>(null!);
+  const reflection = useRef<THREE.Mesh>(null!);
+  const sailA = useRef<THREE.Mesh>(null!);
+  const sailB = useRef<THREE.Mesh>(null!);
+  const flag = useRef<THREE.Mesh>(null!);
+  const isExplorer = kind === "explorer";
+
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime + phase;
+    if (ship.current) {
+      const drift = speed === 0 ? 0 : Math.sin(t * 0.42) * 1.1;
+      ship.current.position.set(position[0] + drift, position[1] + Math.sin(t * 1.22) * 0.08, position[2] + Math.cos(t * 0.36) * Math.abs(speed) * 4);
+      ship.current.rotation.set(Math.sin(t * 0.9) * 0.035, rotation + Math.sin(t * 0.3) * 0.035, Math.sin(t * 1.05) * 0.045);
+    }
+    if (reflection.current) {
+      reflection.current.position.x = position[0] + (speed === 0 ? 0 : Math.sin(t * 0.42) * 1.1);
+      (reflection.current.material as THREE.MeshBasicMaterial).opacity = (isExplorer ? 0.18 : 0.12) + Math.sin(t * 1.6) * 0.025;
+    }
+    if (sailA.current) sailA.current.scale.x = 1 + Math.sin(t * 1.7) * 0.035;
+    if (sailB.current) sailB.current.scale.x = 1 + Math.cos(t * 1.55) * 0.028;
+    if (flag.current) {
+      flag.current.rotation.y = Math.sin(t * 2.8) * 0.2;
+      flag.current.scale.x = 1 + Math.sin(t * 3.2) * 0.06;
+    }
+  });
+
+  return (
+    <>
+      <mesh ref={reflection} rotation={[-Math.PI / 2, 0, rotation]} position={[position[0], -0.085, position[2]]}>
+        <planeGeometry args={[isExplorer ? 5.8 : 3.9, isExplorer ? 1.55 : 1.05]} />
+        <meshBasicMaterial color="#164f62" transparent opacity={isExplorer ? 0.18 : 0.12} depthWrite={false} />
+      </mesh>
+      <group ref={ship} position={position} rotation={[0, rotation, 0]} scale={scale}>
+        <ShipHull explorer={isExplorer} />
+        <ShipDeck explorer={isExplorer} />
+        <ShipMasts explorer={isExplorer} sailA={sailA} sailB={sailB} flag={flag} />
+        {!isExplorer && <MerchantCargo />}
+        {isExplorer && <ExplorerDetails />}
+        <ShipSplashes explorer={isExplorer} />
+      </group>
+    </>
+  );
+}
+
+function ShipHull({ explorer }: { explorer: boolean }) {
+  return (
+    <group>
+      <mesh castShadow receiveShadow scale={[explorer ? 2.25 : 1.65, 0.42, explorer ? 0.58 : 0.46]}>
+        <sphereGeometry args={[1, 24, 10]} />
+        <meshStandardMaterial color={explorer ? MENU_COLORS.darkWood : "#6a3d22"} roughness={0.78} metalness={0.03} />
+      </mesh>
+      <mesh castShadow position={[0, 0.18, 0]} scale={[explorer ? 2.05 : 1.5, 0.16, explorer ? 0.5 : 0.4]}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color={explorer ? "#633820" : MENU_COLORS.wood} roughness={0.82} />
+      </mesh>
+      <mesh position={[explorer ? 1.95 : 1.38, 0.18, 0]} rotation={[0, 0, -0.38]} scale={[0.32, 0.2, explorer ? 0.5 : 0.38]}>
+        <coneGeometry args={[1, 1, 4]} />
+        <meshStandardMaterial color={explorer ? MENU_COLORS.darkWood : "#6a3d22"} roughness={0.84} />
+      </mesh>
+      <mesh position={[-(explorer ? 1.95 : 1.38), 0.18, 0]} rotation={[0, 0, 0.38]} scale={[0.32, 0.2, explorer ? 0.5 : 0.38]}>
+        <coneGeometry args={[1, 1, 4]} />
+        <meshStandardMaterial color={explorer ? MENU_COLORS.darkWood : "#6a3d22"} roughness={0.84} />
+      </mesh>
+      <mesh position={[0, 0.35, 0]} scale={[explorer ? 1.75 : 1.15, 0.035, explorer ? 0.64 : 0.5]}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color={MENU_COLORS.gold} roughness={0.35} metalness={0.25} />
+      </mesh>
+    </group>
+  );
+}
+
+function ShipDeck({ explorer }: { explorer: boolean }) {
+  return (
+    <group position={[0, 0.46, 0]}>
+      <mesh castShadow scale={[explorer ? 1.55 : 1.0, 0.09, explorer ? 0.44 : 0.34]}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color="#a2683c" roughness={0.78} />
+      </mesh>
+      {[-0.68, 0, 0.68].map((x, i) => (
+        <mesh key={i} position={[x * (explorer ? 1.15 : 0.82), 0.11, 0]} scale={[0.055, 0.24, explorer ? 0.53 : 0.4]}>
+          <boxGeometry args={[1, 1, 1]} />
+          <meshStandardMaterial color={MENU_COLORS.gold} roughness={0.45} metalness={0.15} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function ShipMasts({
+  explorer,
+  sailA,
+  sailB,
+  flag,
+}: {
+  explorer: boolean;
+  sailA: React.RefObject<THREE.Mesh>;
+  sailB: React.RefObject<THREE.Mesh>;
+  flag: React.RefObject<THREE.Mesh>;
+}) {
+  const mastHeight = explorer ? 3.25 : 2.35;
+  return (
+    <group>
+      {[
+        [explorer ? -0.64 : -0.42, mastHeight * 0.9],
+        [explorer ? 0.58 : 0.42, mastHeight],
+      ].map(([x, h], i) => (
+        <group key={i} position={[x, 0.55, 0]}>
+          <mesh castShadow position={[0, h / 2, 0]}>
+            <cylinderGeometry args={[0.035, 0.05, h, 10]} />
+            <meshStandardMaterial color="#6c421f" roughness={0.84} />
+          </mesh>
+          <mesh position={[0, h * 0.72, 0]} rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[0.025, 0.025, explorer ? 1.65 : 1.12, 8]} />
+            <meshStandardMaterial color="#6c421f" roughness={0.82} />
+          </mesh>
+          <mesh ref={i === 0 ? sailA : sailB} castShadow position={[0.22, h * 0.58, 0.02]}>
+            <planeGeometry args={[explorer ? 1.08 : 0.76, explorer ? 1.32 : 0.92, 4, 2]} />
+            <meshStandardMaterial color="#fff8e4" side={THREE.DoubleSide} roughness={0.7} />
+          </mesh>
+          <mesh position={[0.22, h * 0.58, 0.025]} scale={[explorer ? 0.78 : 0.54, 0.03, 0.02]}>
+            <boxGeometry args={[1, 1, 1]} />
+            <meshStandardMaterial color={MENU_COLORS.gold} roughness={0.42} metalness={0.2} />
+          </mesh>
+        </group>
+      ))}
+      <mesh ref={flag} castShadow position={[0.58, 0.55 + mastHeight + 0.18, 0.04]}>
+        <planeGeometry args={[explorer ? 0.58 : 0.38, explorer ? 0.32 : 0.22, 3, 1]} />
+        <meshStandardMaterial color={explorer ? "#2e9ad7" : "#e84e5f"} side={THREE.DoubleSide} roughness={0.65} />
+      </mesh>
+      {explorer && (
+        <mesh position={[0.58, 0.55 + mastHeight + 0.18, 0.055]} scale={[0.18, 0.04, 0.01]}>
+          <boxGeometry args={[1, 1, 1]} />
+          <meshStandardMaterial color={MENU_COLORS.gold} emissive={MENU_COLORS.gold} emissiveIntensity={0.2} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+function MerchantCargo() {
+  return (
+    <group position={[-0.2, 0.73, 0]}>
+      {[
+        [-0.42, 0, 0.12, "#b98043"],
+        [-0.08, 0.02, -0.08, "#8b5a34"],
+        [0.28, 0.01, 0.1, "#c59a5d"],
+      ].map(([x, y, z, color], i) => (
+        <mesh key={i} castShadow position={[x as number, y as number, z as number]} scale={[0.22, 0.2, 0.2]}>
+          <boxGeometry args={[1, 1, 1]} />
+          <meshStandardMaterial color={color as string} roughness={0.86} />
+        </mesh>
+      ))}
+      <mesh castShadow position={[0.6, 0.02, -0.04]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.16, 0.16, 0.28, 12]} />
+        <meshStandardMaterial color="#74492e" roughness={0.86} />
+      </mesh>
+    </group>
+  );
+}
+
+function ExplorerDetails() {
+  return (
+    <group position={[0, 0.9, 0]}>
+      <mesh castShadow position={[-1.12, 0, 0]} scale={[0.32, 0.28, 0.34]}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color="#c28a52" roughness={0.78} />
+      </mesh>
+      <mesh castShadow position={[-1.12, 0.27, 0]} rotation={[0, Math.PI / 4, 0]} scale={[0.35, 0.2, 0.35]}>
+        <coneGeometry args={[1, 1, 4]} />
+        <meshStandardMaterial color={MENU_COLORS.roofBlue} roughness={0.7} />
+      </mesh>
+      {[0.95, 1.28].map((x) => (
+        <mesh key={x} position={[x, -0.14, 0.32]} scale={[0.09, 0.09, 0.02]}>
+          <cylinderGeometry args={[1, 1, 0.06, 12]} />
+          <meshStandardMaterial color={MENU_COLORS.gold} emissive="#d9992d" emissiveIntensity={0.15} roughness={0.35} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function ShipSplashes({ explorer }: { explorer: boolean }) {
+  return (
+    <group position={[0, 0.05, 0]}>
+      {[-1, 1].map((side) => (
+        <mesh key={side} position={[side * (explorer ? 2.12 : 1.5), 0, 0]} rotation={[-Math.PI / 2, 0, 0.12 * side]}>
+          <planeGeometry args={[explorer ? 1.1 : 0.72, 0.18]} />
+          <meshBasicMaterial color="#f6ffff" transparent opacity={explorer ? 0.62 : 0.42} depthWrite={false} />
+        </mesh>
+      ))}
+      <mesh position={[0, -0.015, explorer ? 0.58 : 0.45]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[explorer ? 2.9 : 1.8, 0.16]} />
+        <meshBasicMaterial color="#dcfbff" transparent opacity={0.36} depthWrite={false} />
+      </mesh>
+    </group>
+  );
+}
+
+function DistantShip({
+  position,
+  scale,
+  speed,
+  phase,
+}: {
+  position: [number, number, number];
+  scale: number;
+  speed: number;
+  phase: number;
+}) {
+  const ref = useRef<THREE.Group>(null!);
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime + phase;
+    if (ref.current) {
+      ref.current.position.x = position[0] + Math.sin(t * speed) * 3.5;
+      ref.current.position.y = position[1] + Math.sin(t * 0.8) * 0.025;
+    }
+  });
+  return (
+    <group ref={ref} position={position} scale={scale} rotation={[0, position[0] > 0 ? -0.9 : 0.9, 0]}>
+      <mesh scale={[1.1, 0.12, 0.22]}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshBasicMaterial color="#234a5a" transparent opacity={0.48} />
+      </mesh>
+      <mesh position={[0.05, 0.5, 0]}>
+        <planeGeometry args={[0.58, 0.9]} />
+        <meshBasicMaterial color="#f7fbff" transparent opacity={0.58} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh position={[0.08, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[1.45, 0.22]} />
+        <meshBasicMaterial color="#17475b" transparent opacity={0.12} depthWrite={false} />
+      </mesh>
+    </group>
+  );
+}
+
+function ShipSeagulls() {
+  return (
+    <group>
+      <Seagull phase={0.4} radius={9.5} />
+      <Seagull phase={2.8} radius={12.5} />
+    </group>
+  );
+}
+
+function MovingClouds() {
+  const group = useRef<THREE.Group>(null!);
+  useFrame(({ clock }) => {
+    if (group.current) group.current.position.x = ((clock.elapsedTime * 0.55) % 48) - 24;
+  });
+  return (
+    <group ref={group}>
+      {[[-18, 12, -24], [3, 14, -28], [21, 11, -21], [-8, 15, 22]].map((p, i) => (
+        <Cloud key={i} position={p as [number, number, number]} scale={1 + (i % 2) * 0.25} />
+      ))}
+    </group>
+  );
+}
+
+function Cloud({ position, scale }: { position: [number, number, number]; scale: number }) {
+  return (
+    <group position={position} scale={scale}>
+      {[[0, 0, 0, 1], [0.9, 0.05, 0, 0.72], [-0.85, -0.02, 0.05, 0.75], [0.18, 0.28, 0.04, 0.82]].map((c, i) => (
+        <mesh key={i} position={[c[0], c[1], c[2]]} scale={[c[3], c[3] * 0.55, c[3] * 0.45]}>
+          <sphereGeometry args={[1, 16, 8]} />
+          <meshBasicMaterial color="#ffffff" transparent opacity={0.78} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function SeagullFlock({ lowPower }: { lowPower: boolean }) {
+  const count = lowPower ? 3 : 6;
+  return (
+    <group>
+      {Array.from({ length: count }).map((_, i) => (
+        <Seagull key={i} phase={i * 1.7} radius={15 + i * 1.6} />
+      ))}
+    </group>
+  );
+}
+
+function Seagull({ phase, radius }: { phase: number; radius: number }) {
+  const ref = useRef<THREE.Group>(null!);
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime * 0.28 + phase;
+    if (ref.current) {
+      ref.current.position.set(Math.cos(t) * radius, 6.5 + Math.sin(t * 1.7) * 0.55, Math.sin(t) * radius);
+      ref.current.rotation.y = -t + Math.PI / 2;
+      ref.current.rotation.z = Math.sin(clock.elapsedTime * 5 + phase) * 0.18;
+    }
+  });
+  return (
+    <group ref={ref}>
+      <mesh scale={[0.34, 0.055, 0.12]}>
+        <sphereGeometry args={[1, 8, 6]} />
+        <meshBasicMaterial color="#ffffff" />
+      </mesh>
+      <mesh position={[-0.28, 0, 0]} rotation={[0, 0, 0.42]}>
+        <planeGeometry args={[0.55, 0.08]} />
+        <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
+      </mesh>
+      <mesh position={[0.28, 0, 0]} rotation={[0, 0, -0.42]}>
+        <planeGeometry args={[0.55, 0.08]} />
+        <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
+      </mesh>
+    </group>
+  );
+}
+
+function MenuFish({ lowPower }: { lowPower: boolean }) {
+  const count = lowPower ? 3 : 7;
+  return (
+    <group>
+      {Array.from({ length: count }).map((_, i) => (
+        <FishSwim key={i} phase={i * 0.9} radius={9.8 + (i % 3) * 1.8} color={i % 2 ? "#ffe082" : "#ff8f6d"} />
+      ))}
+    </group>
+  );
+}
+
+function FishSwim({ phase, radius, color }: { phase: number; radius: number; color: string }) {
+  const ref = useRef<THREE.Group>(null!);
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime * 0.32 + phase;
+    if (ref.current) {
+      ref.current.position.set(Math.cos(t) * radius, -0.44, Math.sin(t) * radius);
+      ref.current.rotation.y = -t;
+    }
+  });
+  return (
+    <group ref={ref} scale={0.45}>
+      <mesh scale={[0.56, 0.2, 0.18]}>
+        <sphereGeometry args={[1, 12, 8]} />
+        <meshStandardMaterial color={color} transparent opacity={0.72} roughness={0.35} />
+      </mesh>
+      <mesh position={[-0.58, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <coneGeometry args={[0.2, 0.34, 3]} />
+        <meshStandardMaterial color={color} transparent opacity={0.68} />
+      </mesh>
+    </group>
+  );
+}
+
+function Enhanced2DMenuBackdrop({ mounted }: { mounted: boolean }) {
+  return (
+    <div className="absolute inset-0 z-0 overflow-hidden bg-[#8dddf4]">
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(180deg, #77c9f2 0%, #b8ecff 38%, #e7fbff 56%, #6ed9df 57%, #1598c9 100%)",
+        }}
+      />
+      <motion.div
+        className="absolute left-[8%] top-[8%] h-28 w-28 rounded-full"
+        style={{
+          background: "radial-gradient(circle, #fffbd0 0%, #ffd76b 44%, rgba(255,215,107,0) 72%)",
+          filter: "blur(0.5px)",
+        }}
+        animate={{ scale: [1, 1.04, 1], opacity: [0.92, 1, 0.92] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <Distant2DArchipelago />
+      <Cloud2DLayer mounted={mounted} />
+      <Ocean2DLayer mounted={mounted} />
+      <Central2DIsland mounted={mounted} />
+      <Bird2DLayer mounted={mounted} />
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(255,244,206,0.2) 0%, rgba(255,255,255,0) 35%), radial-gradient(ellipse at center, rgba(255,255,255,0) 46%, rgba(8,38,62,0.24) 100%)",
+        }}
+      />
+    </div>
+  );
+}
+
+function Cloud2DLayer({ mounted }: { mounted: boolean }) {
+  if (!mounted) return null;
+  return (
+    <>
+      {[
+        { top: "10%", scale: 1.05, dur: 72, delay: -8, opacity: 0.78 },
+        { top: "18%", scale: 0.76, dur: 88, delay: -32, opacity: 0.62 },
+        { top: "27%", scale: 1.22, dur: 96, delay: -54, opacity: 0.5 },
+      ].map((cloud, i) => (
+        <motion.div
+          key={i}
+          className="absolute"
+          style={{ top: cloud.top, opacity: cloud.opacity }}
+          initial={{ x: "-22vw" }}
+          animate={{ x: "118vw" }}
+          transition={{ duration: cloud.dur, delay: cloud.delay, repeat: Infinity, ease: "linear" }}
+        >
+          <svg width={260 * cloud.scale} height={96 * cloud.scale} viewBox="0 0 260 96">
+            <g fill="#ffffff">
+              <ellipse cx="56" cy="62" rx="48" ry="24" />
+              <ellipse cx="112" cy="48" rx="58" ry="34" />
+              <ellipse cx="174" cy="58" rx="52" ry="27" />
+              <ellipse cx="216" cy="66" rx="36" ry="18" />
+            </g>
+            <path d="M24 70 C80 54 148 86 238 66" stroke="rgba(132,190,215,0.18)" strokeWidth="5" fill="none" />
+          </svg>
+        </motion.div>
+      ))}
+    </>
+  );
+}
+
+function Distant2DArchipelago() {
+  return (
+    <svg className="absolute left-0 top-[34%] h-[24%] w-full" viewBox="0 0 1200 260" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="haze2d" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="#dff8ff" stopOpacity="0.62" />
+          <stop offset="100%" stopColor="#dff8ff" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <rect width="1200" height="260" fill="url(#haze2d)" />
+      {[
+        { x: 82, y: 142, s: 0.92 },
+        { x: 294, y: 118, s: 0.74 },
+        { x: 866, y: 130, s: 0.86 },
+        { x: 1050, y: 112, s: 0.68 },
+      ].map((island, i) => (
+        <g key={i} transform={`translate(${island.x} ${island.y}) scale(${island.s})`} opacity="0.74">
+          <ellipse cx="0" cy="52" rx="92" ry="18" fill="#7bc6c8" opacity="0.45" />
+          <path d="M-98 50 C-55 14 7 24 42 2 C66 -12 106 8 132 44 C72 58 -36 64 -98 50Z" fill="#78bd72" />
+          <path d="M-112 55 C-48 38 64 38 142 53 C82 72 -52 74 -112 55Z" fill="#ecd492" />
+          <path d="M-72 36 L-38 4 L-12 38Z" fill="#86a8aa" opacity="0.5" />
+          <path d="M38 42 L76 8 L110 43Z" fill="#7f9fa3" opacity="0.42" />
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+function Ocean2DLayer({ mounted }: { mounted: boolean }) {
+  return (
+    <div className="absolute inset-x-0 bottom-0 h-[53%] overflow-hidden">
+      <div
+        className="absolute inset-0"
+        style={{ background: "linear-gradient(180deg, #8df0ee 0%, #42c9df 22%, #148fc4 58%, #08639d 100%)" }}
+      />
+      <motion.div
+        className="absolute left-[20%] top-[4%] h-[20%] w-[48%]"
+        style={{
+          background:
+            "radial-gradient(ellipse at center, rgba(255,250,202,0.7) 0%, rgba(255,250,202,0.22) 34%, rgba(255,250,202,0) 74%)",
+          mixBlendMode: "screen",
+          filter: "blur(7px)",
+        }}
+        animate={{ opacity: [0.5, 0.82, 0.5], scaleX: [0.96, 1.05, 0.96] }}
+        transition={{ duration: 6.4, repeat: Infinity, ease: "easeInOut" }}
+      />
+      {mounted &&
+        Array.from({ length: 20 }).map((_, i) => (
+          <motion.span
+            key={i}
+            className="absolute rounded-full"
+            style={{
+              left: `${(i * 47) % 100}%`,
+              top: `${4 + ((i * 19) % 34)}%`,
+              width: i % 3 === 0 ? 4 : 2,
+              height: i % 3 === 0 ? 4 : 2,
+              background: "rgba(255,255,255,0.95)",
+              boxShadow: "0 0 8px rgba(255,255,255,0.8)",
+            }}
+            animate={{ opacity: [0, 0.9, 0], scale: [0.7, 1.6, 0.7] }}
+            transition={{ duration: 2.4 + (i % 5) * 0.45, delay: i * 0.18, repeat: Infinity, ease: "easeInOut" }}
+          />
+        ))}
+      {[0, 1, 2, 3, 4].map((i) => (
+        <motion.svg
+          key={i}
+          className="absolute left-0 w-[200%]"
+          style={{ top: `${4 + i * 12}%`, height: 96 }}
+          viewBox="0 0 1600 90"
+          preserveAspectRatio="none"
+          animate={{ x: i % 2 ? ["-50%", "0%"] : ["0%", "-50%"] }}
+          transition={{ duration: 18 + i * 5, repeat: Infinity, ease: "linear" }}
+        >
+          <path
+            d={`M0,48 Q160,${34 + i * 2} 320,48 T640,48 T960,48 T1280,48 T1600,48 L1600,90 L0,90Z`}
+            fill={i < 2 ? "#ffffff" : i < 4 ? "#7fdcea" : "#116fa2"}
+            opacity={i < 2 ? 0.28 : 0.22}
+          />
+        </motion.svg>
+      ))}
+    </div>
+  );
+}
+
+function Central2DIsland({ mounted }: { mounted: boolean }) {
+  return (
+    <motion.div
+      className="absolute left-1/2 top-[44%] w-[min(860px,92vw)] -translate-x-1/2"
+      animate={{ y: [0, -5, 0], scale: [1, 1.006, 1] }}
+      transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+    >
+      <svg viewBox="0 0 860 430" className="w-full drop-shadow-[0_34px_34px_rgba(14,74,87,0.25)]">
+        <defs>
+          <radialGradient id="islandGrass2d" cx="50%" cy="42%" r="64%">
+            <stop offset="0%" stopColor="#98ee75" />
+            <stop offset="55%" stopColor="#4fc560" />
+            <stop offset="100%" stopColor="#2c8e48" />
+          </radialGradient>
+          <radialGradient id="sand2d" cx="48%" cy="44%" r="66%">
+            <stop offset="0%" stopColor="#fff2b8" />
+            <stop offset="100%" stopColor="#d9ae58" />
+          </radialGradient>
+          <linearGradient id="cliff2d" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="#b7894c" />
+            <stop offset="100%" stopColor="#70451f" />
+          </linearGradient>
+        </defs>
+        <ellipse cx="430" cy="316" rx="382" ry="76" fill="#bcf9ff" opacity="0.42" />
+        <ellipse cx="430" cy="324" rx="354" ry="61" fill="#ffffff" opacity="0.46" />
+        <ellipse cx="430" cy="324" rx="328" ry="51" fill="#e1fbff" opacity="0.25" />
+        <path d="M94 278 C142 204 262 198 342 166 C438 126 540 154 610 190 C690 230 778 230 806 290 C686 360 220 370 94 278Z" fill="url(#cliff2d)" />
+        <path d="M72 258 C132 174 252 170 342 134 C448 92 574 126 646 174 C724 226 800 218 828 278 C700 330 210 344 72 258Z" fill="url(#sand2d)" />
+        <path d="M156 232 C222 152 334 130 430 116 C538 100 644 148 704 226 C620 278 278 292 156 232Z" fill="url(#islandGrass2d)" />
+        <path d="M160 248 C244 282 624 284 704 236" fill="none" stroke="#1e7f43" strokeWidth="7" opacity="0.18" />
+        <path d="M154 262 C238 300 638 298 734 254" fill="none" stroke="#fff8df" strokeWidth="7" strokeDasharray="26 18" opacity="0.58" />
+        <Island2DPaths />
+        <Island2DBuildings />
+        <Island2DPlants />
+        <Island2DFountain />
+        <Island2DDetails />
+      </svg>
+      {mounted &&
+        Array.from({ length: 6 }).map((_, i) => (
+          <motion.span
+            key={i}
+            className="absolute h-1 rounded-full bg-white/80"
+            style={{ left: `${12 + i * 13}%`, top: `${68 + (i % 2) * 4}%`, width: `${42 + i * 7}px`, filter: "blur(1px)" }}
+            animate={{ x: [0, 18, 0], opacity: [0.32, 0.75, 0.32] }}
+            transition={{ duration: 4 + i * 0.4, repeat: Infinity, ease: "easeInOut" }}
+          />
+        ))}
+    </motion.div>
+  );
+}
+
+function Island2DPaths() {
+  return (
+    <g fill="none" strokeLinecap="round">
+      <path d="M430 238 C424 218 414 204 398 190 C376 170 346 160 314 152" stroke="#dfc997" strokeWidth="20" />
+      <path d="M430 238 C458 220 492 208 534 202 C584 194 626 202 666 222" stroke="#dfc997" strokeWidth="18" />
+      <path d="M430 238 C412 258 380 270 334 276" stroke="#dfc997" strokeWidth="17" />
+      <path d="M430 238 C424 218 414 204 398 190 C376 170 346 160 314 152" stroke="#fff4c8" strokeWidth="7" opacity="0.55" />
+      <path d="M430 238 C458 220 492 208 534 202 C584 194 626 202 666 222" stroke="#fff4c8" strokeWidth="6" opacity="0.5" />
+      <path d="M430 238 C412 258 380 270 334 276" stroke="#fff4c8" strokeWidth="6" opacity="0.5" />
+    </g>
+  );
+}
+
+function Island2DBuildings() {
+  const houses = [
+    { x: 300, y: 162, roof: "#df5650", s: 1 },
+    { x: 560, y: 206, roof: "#3d8bd8", s: 0.9 },
+    { x: 376, y: 280, roof: "#e5ad3f", s: 0.76 },
+    { x: 486, y: 170, roof: "#27a987", s: 0.82 },
+  ];
+  return (
+    <g>
+      {houses.map((h, i) => (
+        <g key={i} transform={`translate(${h.x} ${h.y}) scale(${h.s})`}>
+          <ellipse cx="0" cy="48" rx="42" ry="10" fill="#1b5b3d" opacity="0.18" />
+          <rect x="-30" y="-8" width="60" height="52" rx="6" fill="#f0cf9b" stroke="#9a6a38" strokeWidth="3" />
+          <path d="M-38 -8 L0 -38 L38 -8Z" fill={h.roof} stroke="#7a4a26" strokeWidth="3" />
+          <rect x="-9" y="16" width="18" height="28" rx="4" fill="#8b5530" />
+          <rect x="-23" y="6" width="14" height="13" rx="3" fill="#86e4ff" stroke="#5b8faa" strokeWidth="2" />
+          <rect x="12" y="6" width="14" height="13" rx="3" fill="#86e4ff" stroke="#5b8faa" strokeWidth="2" />
+        </g>
+      ))}
+    </g>
+  );
+}
+
+function Island2DFountain() {
+  return (
+    <g transform="translate(430 238)">
+      <ellipse cx="0" cy="25" rx="54" ry="16" fill="#235c65" opacity="0.18" />
+      <ellipse cx="0" cy="10" rx="42" ry="18" fill="#d8d4bf" stroke="#9d9580" strokeWidth="4" />
+      <ellipse cx="0" cy="7" rx="30" ry="10" fill="#72eaff" opacity="0.9" />
+      <path d="M0 5 C-10 -14 -4 -24 0 -36 C5 -22 12 -12 0 5Z" fill="#baf8ff" opacity="0.86" />
+      <circle cx="-15" cy="2" r="4" fill="#ffffff" opacity="0.75" />
+      <circle cx="17" cy="5" r="3" fill="#ffffff" opacity="0.7" />
+    </g>
+  );
+}
+
+function Island2DPlants() {
+  const palms = [
+    { x: 210, y: 190, s: 1.18, r: -8 },
+    { x: 250, y: 252, s: 0.88, r: 6 },
+    { x: 656, y: 194, s: 1.02, r: 8 },
+    { x: 700, y: 258, s: 0.82, r: -7 },
+    { x: 350, y: 128, s: 0.74, r: 5 },
+  ];
+  return (
+    <g>
+      {palms.map((p, i) => (
+        <g key={i} transform={`translate(${p.x} ${p.y}) rotate(${p.r}) scale(${p.s})`}>
+          <path d="M0 82 C-8 50 -4 24 8 0" fill="none" stroke="#7a4a26" strokeWidth="11" strokeLinecap="round" />
+          <path d="M7 0 C-36 -18 -56 0 -76 20 C-42 22 -14 14 7 0Z" fill="#48b957" />
+          <path d="M7 0 C-24 -42 0 -58 26 -72 C22 -36 18 -14 7 0Z" fill="#72db67" />
+          <path d="M7 0 C42 -34 70 -18 88 6 C52 12 28 8 7 0Z" fill="#42ad50" />
+          <path d="M7 0 C28 -2 48 26 56 52 C30 34 14 18 7 0Z" fill="#64ce60" />
+          <circle cx="3" cy="6" r="8" fill="#7a4a26" />
+        </g>
+      ))}
+      {Array.from({ length: 28 }).map((_, i) => {
+        const x = 178 + ((i * 67) % 510);
+        const y = 154 + ((i * 43) % 142);
+        const color = ["#ff6f9e", "#ffd84a", "#ffffff", "#9a6cff", "#ff9e4d"][i % 5];
+        return (
+          <g key={i} transform={`translate(${x} ${y})`}>
+            <ellipse cx="0" cy="10" rx="15" ry="6" fill="#217840" opacity="0.16" />
+            <circle cx="-5" cy="1" r="5" fill={color} />
+            <circle cx="4" cy="-2" r="4" fill={color} />
+            <circle cx="7" cy="6" r="4" fill={color} />
+            <circle cx="1" cy="2" r="3" fill="#ffeaa0" />
+          </g>
+        );
+      })}
+      {Array.from({ length: 14 }).map((_, i) => {
+        const x = 190 + ((i * 91) % 480);
+        const y = 176 + ((i * 59) % 112);
+        return (
+          <g key={`b-${i}`} transform={`translate(${x} ${y})`}>
+            <ellipse cx="0" cy="7" rx="17" ry="7" fill="#1f6f3b" opacity="0.18" />
+            <circle cx="-8" cy="0" r="11" fill="#329b4f" />
+            <circle cx="4" cy="-5" r="13" fill="#43b85b" />
+            <circle cx="14" cy="2" r="9" fill="#2f944d" />
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
+function Island2DDetails() {
+  return (
+    <g>
+      {[
+        [156, 286, 25, 11],
+        [730, 282, 30, 13],
+        [118, 264, 16, 8],
+      ].map(([x, y, rx, ry], i) => (
+        <g key={i}>
+          <ellipse cx={x} cy={y} rx={rx} ry={ry} fill="#87969a" />
+          <ellipse cx={x} cy={y + 12} rx={rx + 12} ry="5" fill="#ffffff" opacity="0.62" />
+        </g>
+      ))}
+      <g transform="translate(650 236)">
+        <rect x="-4" y="-42" width="8" height="64" rx="3" fill="#80502b" />
+        <path d="M4 -38 C30 -36 36 -22 4 -18Z" fill="#e84e5f" />
+        <path d="M4 -29 C24 -28 29 -22 4 -18" fill="#ffd84a" opacity="0.8" />
+      </g>
+      <g transform="translate(250 284)">
+        <rect x="-4" y="-36" width="8" height="58" rx="3" fill="#80502b" />
+        <path d="M4 -33 C28 -31 34 -18 4 -15Z" fill="#2e9ad7" />
+      </g>
+    </g>
+  );
+}
+
+function Bird2DLayer({ mounted }: { mounted: boolean }) {
+  if (!mounted) return null;
+  return (
+    <>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <motion.svg
+          key={i}
+          className="absolute"
+          style={{ top: `${13 + (i % 3) * 7}%`, opacity: 0.82 }}
+          width="52"
+          height="26"
+          viewBox="0 0 52 26"
+          initial={{ x: `${-10 - i * 8}vw` }}
+          animate={{ x: "112vw", y: [0, -10, 5, 0] }}
+          transition={{
+            x: { duration: 42 + i * 6, delay: -i * 7, repeat: Infinity, ease: "linear" },
+            y: { duration: 4.2, repeat: Infinity, ease: "easeInOut" },
+          }}
+        >
+          <path d="M6 15 C15 4 24 6 27 15 C32 6 42 4 48 15" fill="none" stroke="#ffffff" strokeWidth="4" strokeLinecap="round" />
+          <path d="M26 16 L29 18 L26 20 Z" fill="#ffbf62" />
+        </motion.svg>
+      ))}
+    </>
+  );
+}
+
 export function MainMenu({
   onPlay, onNewGame, onSettings, onLeaderboards, onDaily, onShop,
   onPrestige, onAchievements, onQuests, onEvents, hasSave,
@@ -92,17 +1230,10 @@ export function MainMenu({
     setSnap(loadSnap());
   }, []);
 
-  // Time-of-day cycle (60s loop)
+  // Kept for the legacy fallback block below; the cinematic background owns the active frame loop.
   const [t, setT] = useState(0);
   useEffect(() => {
-    let raf = 0;
-    const start = performance.now();
-    const tick = (now: number) => {
-      setT(((now - start) / 60000) % 1);
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    setT(0.18);
   }, []);
 
   // Sky gradient cycles: dawn -> day -> dusk -> night
@@ -139,6 +1270,16 @@ export function MainMenu({
 
   return (
     <div className="fixed inset-0 overflow-hidden select-none" style={{ fontFamily: "'Manrope', system-ui, sans-serif" }}>
+      <Enhanced2DMenuBackdrop mounted={mounted} />
+      <div
+        className="absolute inset-0 pointer-events-none z-10"
+        style={{
+          background:
+            "linear-gradient(90deg, rgba(4,23,38,0.18) 0%, rgba(4,23,38,0.04) 34%, rgba(4,23,38,0.08) 70%, rgba(4,23,38,0.22) 100%), radial-gradient(ellipse at center, rgba(255,255,255,0) 48%, rgba(2,15,30,0.34) 100%)",
+        }}
+      />
+      {false && (
+        <>
       {/* === Animated sky === */}
       <motion.div
         className="absolute inset-0 transition-colors"
@@ -515,6 +1656,9 @@ export function MainMenu({
 
       {/* Soft canvas-tone vignette (lighter so Miro UI reads cleanly) */}
       <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at center, transparent 50%, rgba(0,0,20,0.35) 100%)" }} />
+
+        </>
+      )}
 
       {/* ============ FOREGROUND UI — Miro design tokens ============ */}
 

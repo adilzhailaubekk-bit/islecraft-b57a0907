@@ -1,10 +1,10 @@
 import type { BuildingDef, IslandDef, Achievement } from "./types";
 
 /**
- * Economy is tuned for a friendlier pace.
- * - Early buildings pay back faster so players quickly feel progress.
- * - Upgrade costs still grow, but less sharply than the original slow balance.
- * - Islands, plots, boosters, and daily rewards are easier to reach.
+ * Economy is tuned for slow, satisfying progression.
+ * - Lower base rates and higher cost multipliers slow exponential growth.
+ * - Upgrades scale ~1.45x per level so high tiers are a real commitment.
+ * - Late-game buildings unlock at higher levels and cost noticeably more.
  */
 export const BUILDINGS: BuildingDef[] = [
   {
@@ -13,10 +13,10 @@ export const BUILDINGS: BuildingDef[] = [
     emoji: "🏚️",
     description: "Базовый источник золота",
     produces: "gold",
-    baseCost: { gold: 35 },
-    baseRate: 0.75,
-    costMultiplier: 1.32,
-    rateMultiplier: 1.18,
+    baseCost: { gold: 50 },
+    baseRate: 0.4,
+    costMultiplier: 1.45,
+    rateMultiplier: 1.14,
     unlockLevel: 1,
   },
   {
@@ -25,10 +25,10 @@ export const BUILDINGS: BuildingDef[] = [
     emoji: "🪵",
     description: "Добывает древесину из пальм",
     produces: "wood",
-    baseCost: { gold: 120 },
-    baseRate: 0.45,
-    costMultiplier: 1.35,
-    rateMultiplier: 1.18,
+    baseCost: { gold: 180 },
+    baseRate: 0.25,
+    costMultiplier: 1.5,
+    rateMultiplier: 1.15,
     unlockLevel: 2,
   },
   {
@@ -37,10 +37,10 @@ export const BUILDINGS: BuildingDef[] = [
     emoji: "⛰️",
     description: "Извлекает камень из утёсов",
     produces: "stone",
-    baseCost: { gold: 420, wood: 40 },
-    baseRate: 0.32,
-    costMultiplier: 1.38,
-    rateMultiplier: 1.19,
+    baseCost: { gold: 600, wood: 60 },
+    baseRate: 0.16,
+    costMultiplier: 1.55,
+    rateMultiplier: 1.16,
     unlockLevel: 4,
   },
   {
@@ -49,10 +49,10 @@ export const BUILDINGS: BuildingDef[] = [
     emoji: "🌬️",
     description: "Преобразует ветер в энергию",
     produces: "energy",
-    baseCost: { gold: 1500, wood: 150, stone: 60 },
-    baseRate: 0.22,
-    costMultiplier: 1.42,
-    rateMultiplier: 1.2,
+    baseCost: { gold: 2200, wood: 220, stone: 90 },
+    baseRate: 0.1,
+    costMultiplier: 1.6,
+    rateMultiplier: 1.17,
     unlockLevel: 6,
   },
   {
@@ -61,10 +61,10 @@ export const BUILDINGS: BuildingDef[] = [
     emoji: "🏛️",
     description: "Стабильный поток золота",
     produces: "gold",
-    baseCost: { gold: 6500, wood: 500, stone: 240 },
-    baseRate: 6,
-    costMultiplier: 1.45,
-    rateMultiplier: 1.21,
+    baseCost: { gold: 9000, wood: 700, stone: 350 },
+    baseRate: 3.5,
+    costMultiplier: 1.65,
+    rateMultiplier: 1.18,
     unlockLevel: 10,
   },
   {
@@ -73,10 +73,10 @@ export const BUILDINGS: BuildingDef[] = [
     emoji: "🗼",
     description: "Магическая переработка ресурсов",
     produces: "gold",
-    baseCost: { gold: 52000, stone: 2600, energy: 800 },
-    baseRate: 32,
-    costMultiplier: 1.48,
-    rateMultiplier: 1.22,
+    baseCost: { gold: 75000, stone: 4000, energy: 1200 },
+    baseRate: 18,
+    costMultiplier: 1.7,
+    rateMultiplier: 1.2,
     unlockLevel: 18,
   },
 ];
@@ -94,7 +94,7 @@ export const ISLANDS: IslandDef[] = [
     id: "volcano",
     name: "Остров Вулкана",
     emoji: "🌋",
-    unlockCost: 120_000,
+    unlockCost: 250_000,
     rateBonus: 1.25,
     description: "Огненный остров вокруг действующего вулкана. Земля богата редкими минералами, но потоки лавы делают освоение непростым. +25% к добыче камня и редких ресурсов.",
   },
@@ -102,7 +102,7 @@ export const ISLANDS: IslandDef[] = [
     id: "crystal",
     name: "Кристальный Атолл",
     emoji: "💎",
-    unlockCost: 2_500_000,
+    unlockCost: 5_000_000,
     rateBonus: 1.8,
     description: "Сияет магической энергией",
   },
@@ -110,7 +110,7 @@ export const ISLANDS: IslandDef[] = [
     id: "golden",
     name: "Золотые Острова",
     emoji: "🏖️",
-    unlockCost: 35_000_000,
+    unlockCost: 75_000_000,
     rateBonus: 2.5,
     description:
       "Легендарный архипелаг, о котором мечтает каждый исследователь. Говорят, что в его песках и скалах скрыты бесконечные богатства. Золотые пляжи, роскошная природа и залежи драгоценных металлов делают это место настоящим раем для предпринимателей. +30% к доходу золота и увеличение офлайн-прибыли.",
@@ -144,22 +144,22 @@ export const ACHIEVEMENTS: Achievement[] = [
 ];
 
 export const COSMETICS = [
-  { id: "torches", name: "Огненные факелы", price: 1_500, emoji: "🔥" },
-  { id: "statue", name: "Каменная статуя", price: 5_000, emoji: "🗿" },
-  { id: "lighthouse", name: "Маяк", price: 12_000, emoji: "🗼" },
-  { id: "garden", name: "Цветочный сад", price: 3_000, emoji: "🌺" },
+  { id: "torches", name: "Огненные факелы", price: 2_500, emoji: "🔥" },
+  { id: "statue", name: "Каменная статуя", price: 8_000, emoji: "🗿" },
+  { id: "lighthouse", name: "Маяк", price: 20_000, emoji: "🗼" },
+  { id: "garden", name: "Цветочный сад", price: 5_000, emoji: "🌺" },
 ];
 
 export const SHOP_BOOSTERS = [
-  { id: "speed", name: "Ускоритель x2", description: "x2 скорость добычи на 5 минут", price: 1_500, emoji: "⚡", duration: 300 },
-  { id: "double", name: "Удвоение дохода", description: "x2 ко всему золоту на 10 минут", price: 3_500, emoji: "💰", duration: 600 },
-  { id: "worker", name: "Дополнительный рабочий", description: "+5% к добыче навсегда", price: 14_000, emoji: "👷", duration: 0 },
+  { id: "speed", name: "Ускоритель x2", description: "x2 скорость добычи на 5 минут", price: 2_500, emoji: "⚡", duration: 300 },
+  { id: "double", name: "Удвоение дохода", description: "x2 ко всему золоту на 10 минут", price: 6_000, emoji: "💰", duration: 600 },
+  { id: "worker", name: "Дополнительный рабочий", description: "+5% к добыче навсегда", price: 25_000, emoji: "👷", duration: 0 },
 ];
 
-// Player levels steadily, with a faster early-game ramp.
-export const xpForLevel = (lvl: number) => Math.floor(120 * Math.pow(1.45, lvl - 1));
-// Plot expansion stays meaningful, but no longer blocks early building.
-export const plotCost = (owned: number) => Math.floor(350 * Math.pow(1.8, owned - 1));
+// Player levels much more slowly: each level costs ~1.6x more XP than the last.
+export const xpForLevel = (lvl: number) => Math.floor(180 * Math.pow(1.6, lvl - 1));
+// Plot expansion gets expensive fast — encourages building density before sprawl.
+export const plotCost = (owned: number) => Math.floor(600 * Math.pow(2.1, owned - 1));
 
 /**
  * Soft cap on income (per resource per second) that grows with player level.
@@ -167,7 +167,7 @@ export const plotCost = (owned: number) => Math.floor(350 * Math.pow(1.8, owned 
  * late-game progression breathe. Beyond the cap, excess income is heavily
  * compressed via a square-root curve (still rewards stacking, but smoothly).
  */
-export const incomeSoftCap = (level: number) => 6 + level * level * 0.75;
+export const incomeSoftCap = (level: number) => 3 + level * level * 0.45;
 export const applySoftCap = (rate: number, level: number) => {
   const cap = incomeSoftCap(level);
   if (rate <= cap) return rate;
@@ -190,22 +190,22 @@ export interface DailyRewardDef {
 
 // 7-day cycle. Resource amounts scale with level at claim time.
 export const DAILY_REWARDS: DailyRewardDef[] = [
-  { day: 1, kind: "gold",   amount: 500,  emoji: "🪙", label: "Золото" },
-  { day: 2, kind: "wood",   amount: 220,  emoji: "🪵", label: "Дерево" },
+  { day: 1, kind: "gold",   amount: 250,  emoji: "🪙", label: "Золото" },
+  { day: 2, kind: "wood",   amount: 120,  emoji: "🪵", label: "Дерево" },
   { day: 3, kind: "speed",  amount: 300,  emoji: "⚡", label: "Ускоритель x2 · 5м" },
-  { day: 4, kind: "stone",  amount: 150,  emoji: "🪨", label: "Камень", rare: true },
-  { day: 5, kind: "gold",   amount: 2500, emoji: "💰", label: "Сундучок золота" },
+  { day: 4, kind: "stone",  amount: 80,   emoji: "🪨", label: "Камень", rare: true },
+  { day: 5, kind: "gold",   amount: 1200, emoji: "💰", label: "Сундучок золота" },
   { day: 6, kind: "double", amount: 600,  emoji: "💎", label: "x2 золото · 10м", rare: true },
-  { day: 7, kind: "chest",  amount: 9000, emoji: "🎁", label: "Большой сундук", rare: true },
+  { day: 7, kind: "chest",  amount: 5000, emoji: "🎁", label: "Большой сундук", rare: true },
 ];
 
 // Resource rewards scale with level (gentle quadratic).
 export const dailyRewardAmount = (def: DailyRewardDef, level: number): number => {
   if (def.kind === "gold" || def.kind === "chest") {
-    return Math.floor(def.amount * (1 + level * 0.45 + level * level * 0.05));
+    return Math.floor(def.amount * (1 + level * 0.35 + level * level * 0.04));
   }
   if (def.kind === "wood" || def.kind === "stone") {
-    return Math.floor(def.amount * (1 + level * 0.35));
+    return Math.floor(def.amount * (1 + level * 0.25));
   }
   return def.amount; // duration / worker count
 };
@@ -223,14 +223,14 @@ export interface SpinSegment {
 }
 
 export const SPIN_SEGMENTS: SpinSegment[] = [
-  { id: "s1", kind: "gold",   amount: 400,  emoji: "🪙", label: "Золото",       weight: 28, color: "from-amber-300 to-amber-500" },
-  { id: "s2", kind: "wood",   amount: 100,  emoji: "🪵", label: "Дерево",       weight: 22, color: "from-lime-300 to-emerald-500" },
-  { id: "s3", kind: "stone",  amount: 70,   emoji: "🪨", label: "Камень",       weight: 18, color: "from-slate-300 to-slate-500" },
-  { id: "s4", kind: "gold",   amount: 1200, emoji: "💰", label: "Куча золота",  weight: 12, color: "from-yellow-300 to-orange-500" },
+  { id: "s1", kind: "gold",   amount: 200,  emoji: "🪙", label: "Золото",       weight: 28, color: "from-amber-300 to-amber-500" },
+  { id: "s2", kind: "wood",   amount: 60,   emoji: "🪵", label: "Дерево",       weight: 22, color: "from-lime-300 to-emerald-500" },
+  { id: "s3", kind: "stone",  amount: 40,   emoji: "🪨", label: "Камень",       weight: 18, color: "from-slate-300 to-slate-500" },
+  { id: "s4", kind: "gold",   amount: 600,  emoji: "💰", label: "Куча золота",  weight: 12, color: "from-yellow-300 to-orange-500" },
   { id: "s5", kind: "speed",  amount: 180,  emoji: "⚡", label: "x2 скорость 3м", weight: 8,  color: "from-cyan-300 to-sky-500" },
   { id: "s6", kind: "double", amount: 300,  emoji: "💎", label: "x2 доход 5м",  weight: 6,  color: "from-fuchsia-300 to-purple-500" },
-  { id: "s7", kind: "wood",   amount: 450,  emoji: "🌲", label: "Много дерева", weight: 4,  color: "from-emerald-400 to-teal-600" },
-  { id: "s8", kind: "chest",  amount: 3000, emoji: "🎁", label: "Сундук!",      weight: 2,  color: "from-rose-400 to-pink-600" },
+  { id: "s7", kind: "wood",   amount: 250,  emoji: "🌲", label: "Много дерева", weight: 4,  color: "from-emerald-400 to-teal-600" },
+  { id: "s8", kind: "chest",  amount: 1500, emoji: "🎁", label: "Сундук!",      weight: 2,  color: "from-rose-400 to-pink-600" },
 ];
 
 export const pickSpinSegment = (): SpinSegment => {
@@ -254,12 +254,12 @@ interface MissionTemplate {
 }
 
 const MISSION_TEMPLATES: MissionTemplate[] = [
-  { type: "earnGold",  title: "Заработать {n} золота",  emoji: "🪙", baseGoal: 600 },
-  { type: "earnWood",  title: "Собрать {n} дерева",     emoji: "🪵", baseGoal: 220 },
-  { type: "earnStone", title: "Добыть {n} камня",       emoji: "🪨", baseGoal: 110 },
-  { type: "upgrade",   title: "Улучшить здания {n}×",  emoji: "🔨", baseGoal: 2 },
+  { type: "earnGold",  title: "Заработать {n} золота",  emoji: "🪙", baseGoal: 800 },
+  { type: "earnWood",  title: "Собрать {n} дерева",     emoji: "🪵", baseGoal: 300 },
+  { type: "earnStone", title: "Добыть {n} камня",       emoji: "🪨", baseGoal: 150 },
+  { type: "upgrade",   title: "Улучшить здания {n}×",  emoji: "🔨", baseGoal: 3 },
   { type: "build",     title: "Построить {n} здания",   emoji: "🏗️", baseGoal: 2 },
-  { type: "spend",     title: "Потратить {n} золота",   emoji: "💸", baseGoal: 1000 },
+  { type: "spend",     title: "Потратить {n} золота",   emoji: "💸", baseGoal: 1500 },
 ];
 
 export const generateDailyMissions = (level: number, date: string): DailyMission[] => {
@@ -285,8 +285,8 @@ export const generateDailyMissions = (level: number, date: string): DailyMission
       claimed: false,
       title: t.title.replace("{n}", goal.toLocaleString("ru-RU")),
       emoji: t.emoji,
-      rewardGold: Math.floor(700 * scale * (1 + i * 0.25)),
-      rewardXp: 35 + i * 20,
+      rewardGold: Math.floor(400 * scale * (1 + i * 0.25)),
+      rewardXp: 20 + i * 15,
     };
   });
 };
