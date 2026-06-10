@@ -1,6 +1,12 @@
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
+function redirectToLoginWithError(error: string) {
+  const params = new URLSearchParams({ mode: "login", auth_error: error });
+  window.history.replaceState({}, "", `/login?${params.toString()}`);
+  window.dispatchEvent(new CustomEvent("supabase-auth-error", { detail: error }));
+}
+
 export function AuthCallbackHandler() {
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -9,6 +15,7 @@ export function AuthCallbackHandler() {
 
     if (error) {
       console.error("[Supabase Auth] OAuth callback error:", error);
+      redirectToLoginWithError(error);
       return;
     }
 
@@ -22,6 +29,7 @@ export function AuthCallbackHandler() {
         if (cancelled) return;
         if (exchangeError) {
           console.error("[Supabase Auth] Could not finish Google login:", exchangeError.message);
+          redirectToLoginWithError(exchangeError.message);
           return;
         }
 

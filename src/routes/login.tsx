@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 type LoginSearch = {
   mode?: "login" | "register";
+  auth_error?: string;
 };
 
 function LoginPage() {
@@ -15,6 +16,17 @@ function LoginPage() {
   const [busy, setBusy] = useState(false);
   const mode = search.mode === "register" ? "register" : "login";
   const isRegister = mode === "register";
+
+  useEffect(() => {
+    if (search.auth_error) {
+      const isInvalidKey = /invalid api key|UNAUTHORIZED_INVALID_API_KEY/i.test(search.auth_error);
+      toast.error("Не удалось завершить вход через Google", {
+        description: isInvalidKey
+          ? "Supabase отклонил API key. Обновите VITE_SUPABASE_PUBLISHABLE_KEY / VITE_SUPABASE_ANON_KEY в переменных окружения."
+          : search.auth_error,
+      });
+    }
+  }, [search.auth_error]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -124,6 +136,7 @@ function LoginPage() {
 export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>): LoginSearch => ({
     mode: search.mode === "register" ? "register" : "login",
+    auth_error: typeof search.auth_error === "string" ? search.auth_error : undefined,
   }),
   head: () => ({
     meta: [
