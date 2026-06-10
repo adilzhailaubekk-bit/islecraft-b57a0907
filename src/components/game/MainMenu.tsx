@@ -1206,6 +1206,338 @@ function Bird2DLayer({ mounted }: { mounted: boolean }) {
   );
 }
 
+function Premium2DMenuBackdrop({ mounted }: { mounted: boolean }) {
+  return (
+    <div className="absolute inset-0 z-0 overflow-hidden bg-[#8dddf6]">
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(180deg, #74c6f2 0%, #b9edff 36%, #f4fdff 51%, #86e6e5 52%, #31b8d5 72%, #0b78b3 100%)",
+        }}
+      />
+      <div
+        className="absolute left-[7%] top-[7%] h-32 w-32 rounded-full"
+        style={{
+          background: "radial-gradient(circle, #fff8c8 0%, #ffd36c 42%, rgba(255,211,108,0) 72%)",
+          boxShadow: "0 0 70px rgba(255,216,114,0.55)",
+        }}
+      />
+      <div
+        className="absolute left-0 top-0 h-[54%] w-full"
+        style={{
+          background:
+            "linear-gradient(115deg, rgba(255,244,190,0.35) 0%, rgba(255,244,190,0.14) 18%, rgba(255,255,255,0) 42%)",
+        }}
+      />
+      <PremiumClouds mounted={mounted} />
+      <PremiumArchipelago />
+      <PremiumOcean mounted={mounted} />
+      <PremiumIslandArt />
+      <PremiumBirds mounted={mounted} />
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(255,246,214,0.18) 0%, rgba(255,255,255,0) 42%), radial-gradient(ellipse at center, rgba(255,255,255,0) 43%, rgba(3,28,54,0.26) 100%)",
+        }}
+      />
+    </div>
+  );
+}
+
+function PremiumClouds({ mounted }: { mounted: boolean }) {
+  if (!mounted) return null;
+  return (
+    <>
+      {[
+        { top: "10%", scale: 1.1, duration: 88, delay: -12, opacity: 0.82 },
+        { top: "20%", scale: 0.78, duration: 104, delay: -48, opacity: 0.6 },
+        { top: "30%", scale: 1.32, duration: 122, delay: -76, opacity: 0.45 },
+      ].map((cloud, i) => (
+        <motion.svg
+          key={i}
+          className="absolute"
+          style={{ top: cloud.top, opacity: cloud.opacity }}
+          width={280 * cloud.scale}
+          height={104 * cloud.scale}
+          viewBox="0 0 280 104"
+          initial={{ x: "-24vw" }}
+          animate={{ x: "118vw" }}
+          transition={{ duration: cloud.duration, delay: cloud.delay, repeat: Infinity, ease: "linear" }}
+        >
+          <g fill="#fff">
+            <ellipse cx="62" cy="68" rx="52" ry="25" />
+            <ellipse cx="120" cy="52" rx="64" ry="36" />
+            <ellipse cx="188" cy="64" rx="58" ry="29" />
+            <ellipse cx="232" cy="72" rx="38" ry="19" />
+          </g>
+          <path d="M26 76 C80 58 166 88 254 70" fill="none" stroke="rgba(120,180,205,0.2)" strokeWidth="5" />
+        </motion.svg>
+      ))}
+    </>
+  );
+}
+
+function PremiumArchipelago() {
+  return (
+    <svg className="absolute left-0 top-[33%] h-[22%] w-full" viewBox="0 0 1200 240" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="premiumHaze" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="#e6fbff" stopOpacity="0.72" />
+          <stop offset="100%" stopColor="#e6fbff" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <rect width="1200" height="240" fill="url(#premiumHaze)" />
+      {[
+        [88, 132, 0.9],
+        [292, 108, 0.7],
+        [860, 124, 0.88],
+        [1066, 102, 0.64],
+      ].map(([x, y, s], i) => (
+        <g key={i} transform={`translate(${x} ${y}) scale(${s})`} opacity="0.72">
+          <ellipse cx="0" cy="56" rx="104" ry="17" fill="#6fc5cd" opacity="0.42" />
+          <path d="M-110 52 C-62 14 0 24 42 0 C70 -14 116 10 148 46 C80 62 -42 66 -110 52Z" fill="#72bd72" />
+          <path d="M-124 58 C-52 38 70 38 158 55 C90 74 -58 76 -124 58Z" fill="#ebd08c" />
+          <path d="M-62 38 L-26 4 L4 40Z" fill="#86a0a4" opacity="0.5" />
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+function PremiumOcean({ mounted }: { mounted: boolean }) {
+  return (
+    <div className="absolute inset-x-0 bottom-0 h-[53%] overflow-hidden">
+      <div
+        className="absolute inset-0"
+        style={{ background: "linear-gradient(180deg, #95f2ef 0%, #44cde0 24%, #1392c6 58%, #08649e 100%)" }}
+      />
+      <motion.div
+        className="absolute left-[23%] top-[5%] h-[20%] w-[46%]"
+        style={{
+          background:
+            "radial-gradient(ellipse at center, rgba(255,251,208,0.7) 0%, rgba(255,251,208,0.22) 34%, rgba(255,251,208,0) 74%)",
+          mixBlendMode: "screen",
+          filter: "blur(7px)",
+        }}
+        animate={{ opacity: [0.48, 0.82, 0.48], scaleX: [0.96, 1.06, 0.96] }}
+        transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut" }}
+      />
+      {[0, 1, 2, 3, 4].map((i) => (
+        <motion.svg
+          key={i}
+          className="absolute left-0 w-[200%]"
+          style={{ top: `${5 + i * 12}%`, height: 90 }}
+          viewBox="0 0 1600 90"
+          preserveAspectRatio="none"
+          animate={{ x: i % 2 ? ["-50%", "0%"] : ["0%", "-50%"] }}
+          transition={{ duration: 19 + i * 5, repeat: Infinity, ease: "linear" }}
+        >
+          <path
+            d={`M0,48 Q160,${34 + i * 2} 320,48 T640,48 T960,48 T1280,48 T1600,48 L1600,90 L0,90Z`}
+            fill={i < 2 ? "#ffffff" : i < 4 ? "#77dce9" : "#116fa2"}
+            opacity={i < 2 ? 0.26 : 0.22}
+          />
+        </motion.svg>
+      ))}
+      {mounted &&
+        Array.from({ length: 18 }).map((_, i) => (
+          <motion.span
+            key={i}
+            className="absolute rounded-full bg-white"
+            style={{
+              left: `${(i * 53) % 100}%`,
+              top: `${5 + ((i * 17) % 34)}%`,
+              width: i % 4 === 0 ? 4 : 2,
+              height: i % 4 === 0 ? 4 : 2,
+              boxShadow: "0 0 8px rgba(255,255,255,0.85)",
+            }}
+            animate={{ opacity: [0, 0.9, 0], scale: [0.7, 1.55, 0.7] }}
+            transition={{ duration: 2.4 + (i % 5) * 0.42, delay: i * 0.16, repeat: Infinity, ease: "easeInOut" }}
+          />
+        ))}
+    </div>
+  );
+}
+
+function PremiumIslandArt() {
+  return (
+    <motion.div
+      className="absolute left-1/2 top-[45%] w-[min(900px,93vw)] -translate-x-1/2"
+      animate={{ y: [0, -4, 0] }}
+      transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+    >
+      <svg viewBox="0 0 900 460" className="w-full drop-shadow-[0_34px_34px_rgba(14,74,87,0.25)]">
+        <defs>
+          <radialGradient id="premiumGrass" cx="50%" cy="40%" r="66%">
+            <stop offset="0%" stopColor="#a4f17a" />
+            <stop offset="58%" stopColor="#54c860" />
+            <stop offset="100%" stopColor="#2d8c47" />
+          </radialGradient>
+          <radialGradient id="premiumSand" cx="48%" cy="43%" r="68%">
+            <stop offset="0%" stopColor="#fff3b9" />
+            <stop offset="100%" stopColor="#d9ae58" />
+          </radialGradient>
+          <linearGradient id="premiumCliff" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="#bb8d4e" />
+            <stop offset="100%" stopColor="#70451f" />
+          </linearGradient>
+        </defs>
+        <ellipse cx="450" cy="342" rx="390" ry="78" fill="#bffaff" opacity="0.42" />
+        <ellipse cx="450" cy="352" rx="358" ry="60" fill="#ffffff" opacity="0.45" />
+        <path d="M98 294 C150 216 268 204 358 170 C458 130 564 152 640 196 C716 240 802 238 834 300 C704 374 230 382 98 294Z" fill="url(#premiumCliff)" />
+        <path d="M72 270 C140 184 260 174 356 138 C466 94 592 124 670 178 C748 232 822 226 852 286 C716 342 220 356 72 270Z" fill="url(#premiumSand)" />
+        <path d="M156 238 C224 154 344 128 446 116 C560 102 664 150 736 232 C646 288 280 298 156 238Z" fill="url(#premiumGrass)" />
+        <path d="M164 252 C260 286 642 286 728 238" fill="none" stroke="#1f7f43" strokeWidth="8" opacity="0.18" />
+        <path d="M154 276 C252 310 656 308 760 262" fill="none" stroke="#fff8df" strokeWidth="7" strokeDasharray="28 18" opacity="0.6" />
+        <PremiumPaths />
+        <PremiumBuildings />
+        <PremiumFountain />
+        <PremiumPlants />
+        <PremiumDockAndShip />
+      </svg>
+    </motion.div>
+  );
+}
+
+function PremiumPaths() {
+  return (
+    <g fill="none" strokeLinecap="round">
+      <path d="M450 246 C432 220 398 196 346 164" stroke="#dfc997" strokeWidth="21" />
+      <path d="M450 246 C492 218 570 202 692 232" stroke="#dfc997" strokeWidth="18" />
+      <path d="M450 246 C426 270 382 284 322 288" stroke="#dfc997" strokeWidth="17" />
+      <path d="M450 246 C432 220 398 196 346 164" stroke="#fff4c8" strokeWidth="7" opacity="0.52" />
+      <path d="M450 246 C492 218 570 202 692 232" stroke="#fff4c8" strokeWidth="6" opacity="0.48" />
+      <path d="M450 246 C426 270 382 284 322 288" stroke="#fff4c8" strokeWidth="6" opacity="0.48" />
+    </g>
+  );
+}
+
+function PremiumBuildings() {
+  return (
+    <g>
+      {[
+        [318, 166, "#df5650", 1],
+        [584, 208, "#3d8bd8", 0.9],
+        [390, 292, "#e5ad3f", 0.76],
+        [506, 170, "#27a987", 0.82],
+      ].map(([x, y, roof, s], i) => (
+        <g key={i} transform={`translate(${x} ${y}) scale(${s})`}>
+          <ellipse cx="0" cy="48" rx="42" ry="10" fill="#1b5b3d" opacity="0.18" />
+          <rect x="-30" y="-8" width="60" height="52" rx="6" fill="#f0cf9b" stroke="#9a6a38" strokeWidth="3" />
+          <path d="M-38 -8 L0 -38 L38 -8Z" fill={roof as string} stroke="#7a4a26" strokeWidth="3" />
+          <rect x="-9" y="16" width="18" height="28" rx="4" fill="#8b5530" />
+          <rect x="-23" y="6" width="14" height="13" rx="3" fill="#86e4ff" stroke="#5b8faa" strokeWidth="2" />
+          <rect x="12" y="6" width="14" height="13" rx="3" fill="#86e4ff" stroke="#5b8faa" strokeWidth="2" />
+        </g>
+      ))}
+    </g>
+  );
+}
+
+function PremiumFountain() {
+  return (
+    <g transform="translate(450 246)">
+      <ellipse cx="0" cy="25" rx="54" ry="16" fill="#235c65" opacity="0.18" />
+      <ellipse cx="0" cy="10" rx="42" ry="18" fill="#d8d4bf" stroke="#9d9580" strokeWidth="4" />
+      <ellipse cx="0" cy="7" rx="30" ry="10" fill="#72eaff" opacity="0.9" />
+      <path d="M0 5 C-10 -14 -4 -24 0 -36 C5 -22 12 -12 0 5Z" fill="#baf8ff" opacity="0.86" />
+      <circle cx="-15" cy="2" r="4" fill="#ffffff" opacity="0.75" />
+      <circle cx="17" cy="5" r="3" fill="#ffffff" opacity="0.7" />
+    </g>
+  );
+}
+
+function PremiumPlants() {
+  const palms = [
+    [218, 196, 1.18, -8],
+    [260, 260, 0.88, 6],
+    [682, 198, 1.02, 8],
+    [722, 264, 0.82, -7],
+    [366, 132, 0.74, 5],
+  ];
+  return (
+    <g>
+      {palms.map(([x, y, s, r], i) => (
+        <g key={i} transform={`translate(${x} ${y}) rotate(${r}) scale(${s})`}>
+          <path d="M0 82 C-8 50 -4 24 8 0" fill="none" stroke="#7a4a26" strokeWidth="11" strokeLinecap="round" />
+          <path d="M7 0 C-36 -18 -56 0 -76 20 C-42 22 -14 14 7 0Z" fill="#48b957" />
+          <path d="M7 0 C-24 -42 0 -58 26 -72 C22 -36 18 -14 7 0Z" fill="#72db67" />
+          <path d="M7 0 C42 -34 70 -18 88 6 C52 12 28 8 7 0Z" fill="#42ad50" />
+          <path d="M7 0 C28 -2 48 26 56 52 C30 34 14 18 7 0Z" fill="#64ce60" />
+          <circle cx="3" cy="6" r="8" fill="#7a4a26" />
+        </g>
+      ))}
+      {Array.from({ length: 26 }).map((_, i) => {
+        const x = 190 + ((i * 67) % 520);
+        const y = 158 + ((i * 43) % 146);
+        const color = ["#ff6f9e", "#ffd84a", "#ffffff", "#9a6cff", "#ff9e4d"][i % 5];
+        return (
+          <g key={i} transform={`translate(${x} ${y})`}>
+            <ellipse cx="0" cy="10" rx="15" ry="6" fill="#217840" opacity="0.16" />
+            <circle cx="-5" cy="1" r="5" fill={color} />
+            <circle cx="4" cy="-2" r="4" fill={color} />
+            <circle cx="7" cy="6" r="4" fill={color} />
+            <circle cx="1" cy="2" r="3" fill="#ffeaa0" />
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
+function PremiumDockAndShip() {
+  return (
+    <g transform="translate(698 310)">
+      <g transform="rotate(-10)">
+        <rect x="-8" y="-10" width="96" height="13" rx="3" fill="#8a532f" />
+        {[-2, 22, 46, 70].map((x) => (
+          <rect key={x} x={x} y="-6" width="7" height="32" rx="3" fill="#6f4226" />
+        ))}
+        <path d="M-8 -2 H88" stroke="#d39a5a" strokeWidth="3" opacity="0.6" />
+      </g>
+      <g transform="translate(122 -22) rotate(-8)">
+        <ellipse cx="0" cy="42" rx="76" ry="12" fill="#235c65" opacity="0.18" />
+        <path d="M-74 0 C-48 32 46 34 78 0 C56 50 -56 50 -74 0Z" fill="#6e3f24" stroke="#3f2417" strokeWidth="4" />
+        <path d="M-54 2 C-18 22 34 22 58 2" fill="none" stroke="#d1a064" strokeWidth="6" />
+        <rect x="-6" y="-70" width="9" height="84" rx="4" fill="#70401f" />
+        <path d="M3 -66 C34 -58 48 -34 6 -18Z" fill="#fff7dd" stroke="#d4b47b" strokeWidth="3" />
+        <path d="M-4 -52 C-36 -46 -48 -24 -6 -12Z" fill="#fff7dd" stroke="#d4b47b" strokeWidth="3" />
+        <path d="M3 -66 C22 -58 32 -48 36 -36" stroke="#f4c45a" strokeWidth="4" fill="none" />
+        <path d="M2 -76 C26 -76 32 -64 2 -60Z" fill="#2e9ad7" />
+      </g>
+    </g>
+  );
+}
+
+function PremiumBirds({ mounted }: { mounted: boolean }) {
+  if (!mounted) return null;
+  return (
+    <>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <motion.svg
+          key={i}
+          className="absolute"
+          style={{ top: `${14 + (i % 3) * 7}%`, opacity: 0.82 }}
+          width="52"
+          height="26"
+          viewBox="0 0 52 26"
+          initial={{ x: `${-10 - i * 8}vw` }}
+          animate={{ x: "112vw", y: [0, -10, 5, 0] }}
+          transition={{
+            x: { duration: 42 + i * 7, delay: -i * 8, repeat: Infinity, ease: "linear" },
+            y: { duration: 4.2, repeat: Infinity, ease: "easeInOut" },
+          }}
+        >
+          <path d="M6 15 C15 4 24 6 27 15 C32 6 42 4 48 15" fill="none" stroke="#ffffff" strokeWidth="4" strokeLinecap="round" />
+          <path d="M26 16 L29 18 L26 20 Z" fill="#ffbf62" />
+        </motion.svg>
+      ))}
+    </>
+  );
+}
+
 export function MainMenu({
   onPlay, onNewGame, onSettings, onLeaderboards, onDaily, onShop,
   onPrestige, onAchievements, onQuests, onEvents, hasSave,
@@ -1230,10 +1562,17 @@ export function MainMenu({
     setSnap(loadSnap());
   }, []);
 
-  // Kept for the legacy fallback block below; the cinematic background owns the active frame loop.
+  // Time-of-day cycle (60s loop)
   const [t, setT] = useState(0);
   useEffect(() => {
-    setT(0.18);
+    let raf = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      setT(((now - start) / 60000) % 1);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   // Sky gradient cycles: dawn -> day -> dusk -> night
@@ -1270,16 +1609,6 @@ export function MainMenu({
 
   return (
     <div className="fixed inset-0 overflow-hidden select-none" style={{ fontFamily: "'Manrope', system-ui, sans-serif" }}>
-      <Enhanced2DMenuBackdrop mounted={mounted} />
-      <div
-        className="absolute inset-0 pointer-events-none z-10"
-        style={{
-          background:
-            "linear-gradient(90deg, rgba(4,23,38,0.18) 0%, rgba(4,23,38,0.04) 34%, rgba(4,23,38,0.08) 70%, rgba(4,23,38,0.22) 100%), radial-gradient(ellipse at center, rgba(255,255,255,0) 48%, rgba(2,15,30,0.34) 100%)",
-        }}
-      />
-      {false && (
-        <>
       {/* === Animated sky === */}
       <motion.div
         className="absolute inset-0 transition-colors"
@@ -1656,9 +1985,6 @@ export function MainMenu({
 
       {/* Soft canvas-tone vignette (lighter so Miro UI reads cleanly) */}
       <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at center, transparent 50%, rgba(0,0,20,0.35) 100%)" }} />
-
-        </>
-      )}
 
       {/* ============ FOREGROUND UI — Miro design tokens ============ */}
 
