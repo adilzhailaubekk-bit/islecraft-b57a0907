@@ -3699,9 +3699,6 @@ function IslandScene({ state, onPlotClick, moveMode, movingFrom, lowPower = fals
       {island.id === "golden" && <ambientLight color="#ffd070" intensity={0.4} />}
 
       <Ocean />
-      {!lowPower && (
-        <Sparkles count={30} scale={[60, 1, 60]} position={[0, -0.15, 0]} size={3} speed={0.3} color={theme.oceanFoam} />
-      )}
 
       <group scale={ISLAND_SCALE}>
       <IslandBase grassTint={tint} />
